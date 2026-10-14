@@ -11,6 +11,8 @@ export default defineConfig({
       }),
       {
         plugins: [storybookTest()],
+        // 初回実行時 (CI など) に後から最適化されると Vite がリロードしてテストが落ちるため、先に含めておく
+        optimizeDeps: { include: ['vue'] },
         test: {
           name: 'storybook',
           browser: {
