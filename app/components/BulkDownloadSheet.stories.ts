@@ -46,9 +46,21 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** ZIP を選んでいる。開始ボタンで `start` が、閉じるボタンで `close` が 1 回ずつ発火する。 */
+/**
+ * ZIP を選んでいる。
+ * 保存のしかたを切り替えると `update:method` が、開始ボタンで `start` が、閉じるボタンで `close` が発火する。
+ */
 export const ChooseZip: Story = {
   play: async ({ args, canvas, userEvent }) => {
+    await userEvent.click(
+      canvas.getByRole('radio', { name: /1本ずつ続けて保存/ }),
+    )
+    await expect(args['onUpdate:method']).toHaveBeenLastCalledWith('seq')
+    await userEvent.click(
+      canvas.getByRole('radio', { name: /ZIPでまとめて保存/ }),
+    )
+    await expect(args['onUpdate:method']).toHaveBeenLastCalledWith('zip')
+
     await userEvent.click(
       canvas.getByRole('button', { name: 'ダウンロードを開始' }),
     )
