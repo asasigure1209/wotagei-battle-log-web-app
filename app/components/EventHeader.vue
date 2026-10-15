@@ -95,7 +95,7 @@ const lights = [
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  background: #15151b;
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: 12px;
 }

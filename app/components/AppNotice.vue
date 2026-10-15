@@ -33,7 +33,7 @@ defineProps<{
 
 .caution {
   padding: 14px 16px;
-  background: #0f0f14;
+  background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   line-height: 1.7;

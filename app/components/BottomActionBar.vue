@@ -53,7 +53,7 @@ defineEmits<{
   box-sizing: border-box;
   width: 100%;
   padding: 12px 16px 20px;
-  background: rgb(10 10 13 / 94%);
+  background: color-mix(in srgb, var(--color-bg) 94%, transparent);
   border-top: 1px solid var(--color-line);
   backdrop-filter: blur(8px);
   color: var(--color-text);

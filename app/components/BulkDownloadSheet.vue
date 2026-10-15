@@ -130,7 +130,7 @@ const title = computed(() =>
   gap: 18px;
   width: 100%;
   padding: 10px 20px 28px;
-  background: #15151b;
+  background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border);
   border-radius: 20px 20px 0 0;
   color: var(--color-text);
@@ -142,7 +142,7 @@ const title = computed(() =>
   width: 40px;
   height: 4px;
   border-radius: 2px;
-  background: #3a3a45;
+  background: var(--color-border-strong);
 }
 
 .head {

@@ -46,7 +46,7 @@ defineEmits<{
 
 .outline {
   background: #1e1e26;
-  border: 1px solid #3a3a45;
+  border: 1px solid var(--color-border-strong);
   color: var(--color-text);
 }
 

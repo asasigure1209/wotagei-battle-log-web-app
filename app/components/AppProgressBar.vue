@@ -53,7 +53,7 @@ const percent = computed(() => Math.max(0, Math.min(100, props.value)))
   height: 100%;
   border-radius: 5px;
   background: var(--color-accent);
-  box-shadow: 0 0 12px rgb(217 255 59 / 60%);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 60%, transparent);
 }
 
 .caption {

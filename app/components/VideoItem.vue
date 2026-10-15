@@ -68,7 +68,7 @@ const checkboxId = useId()
   gap: 12px;
   width: 100%;
   padding: 10px;
-  background: #121217;
+  background: var(--color-surface);
   border: 1px solid #22222a;
   border-radius: 12px;
   color: var(--color-text);

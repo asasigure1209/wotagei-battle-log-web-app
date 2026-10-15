@@ -47,7 +47,7 @@ const copy = {
   gap: 12px;
   width: 100%;
   padding: 14px;
-  background: #0f0f14;
+  background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   color: var(--color-text);

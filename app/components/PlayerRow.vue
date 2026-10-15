@@ -30,7 +30,7 @@ defineProps<{
   gap: 12px;
   min-height: 56px;
   padding: 0 12px 0 16px;
-  background: #121217;
+  background: var(--color-surface);
   border-radius: 10px;
   color: var(--color-text);
   font-family: var(--font-body);

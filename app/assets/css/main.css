@@ -10,4 +10,11 @@
   --color-accent: #d9ff3b;
   --color-line: #24242c;
   --color-border: #2a2a33;
+  --color-border-strong: #3a3a45;
+  /* 一覧の行やカード */
+  --color-surface: #121217;
+  /* 選択肢や注意の枠など、カードより一段沈んだ面 */
+  --color-surface-sunken: #0f0f14;
+  /* シートなど、背景より浮いた面 */
+  --color-surface-raised: #15151b;
 }
