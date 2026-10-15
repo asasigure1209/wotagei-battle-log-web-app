@@ -18,7 +18,7 @@ withDefaults(
     /** true にするとボタンを押せなくなる */
     disabled?: boolean
   }>(),
-  { variant: 'primary', size: 'M', full: false, disabled: false },
+  { variant: 'primary', size: 'M' },
 )
 
 defineEmits<{
@@ -43,13 +43,14 @@ defineEmits<{
 <style scoped>
 .app-button {
   box-sizing: border-box;
-  width: fit-content;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   border: none;
+  border-radius: 14px;
   font-family: var(--font-body);
+  font-weight: 700;
   cursor: pointer;
 }
 
@@ -60,17 +61,13 @@ defineEmits<{
 .size-L {
   min-height: 56px;
   padding: 0 24px;
-  border-radius: 14px;
   font-size: 16px;
-  font-weight: 700;
 }
 
 .size-M {
   min-height: 52px;
   padding: 0 22px;
-  border-radius: 14px;
   font-size: 15px;
-  font-weight: 700;
 }
 
 .size-S {
