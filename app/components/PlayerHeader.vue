@@ -22,12 +22,11 @@ defineProps<{
       <span>動画 <strong>{{ count }}</strong> 本</span>
       <span>合計 <strong>{{ totalSize }}</strong></span>
     </div>
-    <div class="notice">
-      <AppNotice
-        type="wifi"
-        text="容量が大きいため、Wi-Fi 環境でのダウンロードをおすすめします"
-      />
-    </div>
+    <AppNotice
+      class="notice"
+      type="wifi"
+      text="容量が大きいため、Wi-Fi 環境でのダウンロードをおすすめします"
+    />
   </header>
 </template>
 
