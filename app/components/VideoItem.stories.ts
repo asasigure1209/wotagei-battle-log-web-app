@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { useArgs } from 'storybook/preview-api'
 import { expect, fn } from 'storybook/test'
+import { ref, watch } from 'vue'
 import VideoItem from './VideoItem.vue'
 
 /**
@@ -21,16 +21,23 @@ const meta = {
     onDownload: fn(),
     'onUpdate:selected': fn(),
   },
-  // v-model:selected で受け取った値を args に戻し、親で v-model を使ったときと同じように動かす
-  render: (args) => {
-    const [, updateArgs] = useArgs()
-    return {
-      components: { VideoItem },
-      setup: () => ({ args, updateArgs }),
-      template:
-        '<VideoItem v-bind="args" @update:selected="(selected) => updateArgs({ selected })" />',
-    }
-  },
+  // 選んだかどうかはストーリーの中で持ち、親で v-model を使ったときと同じように動かす。
+  // args に書き戻すと、play 関数の途中で Storybook が描画し直し、そのときに fn() の呼び出しの記録が消えてしまう
+  render: (args) => ({
+    components: { VideoItem },
+    setup() {
+      const selected = ref(args.selected)
+      // Controls で変えた値は反映する
+      watch(
+        () => args.selected,
+        (value) => {
+          selected.value = value
+        },
+      )
+      return { args, selected }
+    },
+    template: '<VideoItem v-bind="args" v-model:selected="selected" />',
+  }),
 } satisfies Meta<typeof VideoItem>
 
 export default meta

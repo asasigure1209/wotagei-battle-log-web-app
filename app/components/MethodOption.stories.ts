@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { useArgs } from 'storybook/preview-api'
 import { expect, fn } from 'storybook/test'
+import { ref, watch } from 'vue'
 import MethodOption from './MethodOption.vue'
 
 /**
@@ -18,17 +18,24 @@ const meta = {
     modelValue: 'zip',
     'onUpdate:modelValue': fn(),
   },
-  // v-model で受け取った値を args に戻し、親で v-model を使ったときと同じように動かす。
+  // 選ばれている値はストーリーの中で持ち、親で v-model を使ったときと同じように動かす。
+  // args に書き戻すと、play 関数の途中で Storybook が描画し直し、そのときに fn() の呼び出しの記録が消えてしまう
   // ラジオのグループは form ごとに分かれるので、docs で同じ name のストーリーが並んでも干渉しないよう form で囲む
-  render: (args) => {
-    const [, updateArgs] = useArgs()
-    return {
-      components: { MethodOption },
-      setup: () => ({ args, updateArgs }),
-      template:
-        '<form><MethodOption v-bind="args" @update:model-value="(modelValue) => updateArgs({ modelValue })" /></form>',
-    }
-  },
+  render: (args) => ({
+    components: { MethodOption },
+    setup() {
+      const model = ref(args.modelValue)
+      // Controls で変えた値は反映する
+      watch(
+        () => args.modelValue,
+        (value) => {
+          model.value = value
+        },
+      )
+      return { args, model }
+    },
+    template: '<form><MethodOption v-bind="args" v-model="model" /></form>',
+  }),
 } satisfies Meta<typeof MethodOption>
 
 export default meta
