@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from './AppIcon.vue'
+import AppIcon, { type IconName } from './AppIcon.vue'
 
 withDefaults(
   defineProps<{
@@ -10,7 +10,7 @@ withDefaults(
     /** 大きさ。画面下の大きな操作には L、一覧の見出しの横に置く小さな操作には S を使う */
     size?: 'L' | 'M' | 'S'
     /** 文字の前に置くアイコン */
-    icon?: 'download'
+    icon?: IconName
     /** 文字の後ろに添える補足 (本数や容量など) */
     meta?: string
     /** true にすると親の幅いっぱいに広がる */

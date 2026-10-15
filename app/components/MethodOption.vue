@@ -1,13 +1,6 @@
-<script setup lang="ts">
-defineProps<{
-  /** この選択肢が表す保存のしかた。zip は ZIP にまとめる、seq は 1 本ずつ続けて保存する */
-  method: 'zip' | 'seq'
-  /** ラジオボタンのグループ名。同じグループの選択肢には同じ名前を付ける */
-  name: string
-}>()
-
-/** 選ばれている保存のしかた */
-const model = defineModel<'zip' | 'seq'>()
+<script lang="ts">
+/** 保存のしかた。zip は ZIP にまとめる、seq は 1 本ずつ続けて保存する */
+export type Method = 'zip' | 'seq'
 
 const copy = {
   zip: {
@@ -21,6 +14,18 @@ const copy = {
       '動画ごとに順番に保存。iPhone の写真アプリに入れたい方におすすめ。',
   },
 }
+</script>
+
+<script setup lang="ts">
+defineProps<{
+  /** この選択肢が表す保存のしかた */
+  method: Method
+  /** ラジオボタンのグループ名。同じグループの選択肢には同じ名前を付ける */
+  name: string
+}>()
+
+/** 選ばれている保存のしかた */
+const model = defineModel<Method>()
 </script>
 
 <template>

@@ -4,7 +4,7 @@ import AppButton from './AppButton.vue'
 import AppIconButton from './AppIconButton.vue'
 import AppNotice from './AppNotice.vue'
 import AppProgressBar from './AppProgressBar.vue'
-import MethodOption from './MethodOption.vue'
+import MethodOption, { type Method } from './MethodOption.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -25,7 +25,7 @@ const props = withDefaults(
 )
 
 /** 選ばれている保存のしかた */
-const method = defineModel<'zip' | 'seq'>('method', { default: 'zip' })
+const method = defineModel<Method>('method', { default: 'zip' })
 
 defineEmits<{
   /** 閉じるボタンかキャンセルボタンが押されたとき */

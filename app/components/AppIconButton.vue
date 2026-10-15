@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppIcon from './AppIcon.vue'
+import AppIcon, { type IconName } from './AppIcon.vue'
 
 withDefaults(
   defineProps<{
     /** 表示するアイコン */
-    icon: 'download' | 'close' | 'back'
+    icon: IconName
     /** 見た目の種類。単独で目立たせたいときは outline、シートの隅などに控えめに置くときは ghost を使う */
     variant?: 'outline' | 'ghost'
     /** 読み上げ用の名前 (画面には表示しない) */
