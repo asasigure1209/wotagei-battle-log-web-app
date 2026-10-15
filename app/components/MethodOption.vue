@@ -50,8 +50,6 @@ const copy = {
   background: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: var(--color-text);
-  font-family: var(--font-body);
   cursor: pointer;
 }
 

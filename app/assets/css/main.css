@@ -18,3 +18,9 @@
   /* シートなど、背景より浮いた面 */
   --color-surface-raised: #15151b;
 }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}

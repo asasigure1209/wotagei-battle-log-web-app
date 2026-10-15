@@ -30,9 +30,6 @@ defineProps<{
   height: 56px;
   padding: 0 8px;
   border-bottom: 1px solid var(--color-line);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .back {

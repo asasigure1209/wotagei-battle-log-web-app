@@ -19,7 +19,6 @@ defineProps<{
 <style scoped>
 .app-notice {
   margin: 0;
-  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.5;
   color: var(--color-muted);

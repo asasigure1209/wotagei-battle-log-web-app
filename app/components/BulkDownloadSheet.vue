@@ -133,8 +133,6 @@ const title = computed(() =>
   background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border);
   border-radius: 20px 20px 0 0;
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .handle {

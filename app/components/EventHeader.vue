@@ -55,9 +55,6 @@ const lights = [
   gap: 14px;
   padding: 28px 20px 24px;
   border-bottom: 1px solid var(--color-line);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .lights {

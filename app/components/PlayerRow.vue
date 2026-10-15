@@ -33,7 +33,6 @@ defineProps<{
   background: var(--color-surface);
   border-radius: 10px;
   color: var(--color-text);
-  font-family: var(--font-body);
   text-decoration: none;
 }
 

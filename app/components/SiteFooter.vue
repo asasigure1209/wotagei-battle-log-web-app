@@ -23,8 +23,6 @@ defineProps<{
   gap: 6px;
   padding: 20px 20px 40px;
   border-top: 1px solid var(--color-line);
-  background: var(--color-bg);
-  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.7;
   color: var(--color-muted);

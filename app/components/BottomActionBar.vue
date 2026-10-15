@@ -56,8 +56,6 @@ defineEmits<{
   background: color-mix(in srgb, var(--color-bg) 94%, transparent);
   border-top: 1px solid var(--color-line);
   backdrop-filter: blur(8px);
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .selection {

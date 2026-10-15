@@ -71,8 +71,6 @@ const checkboxId = useId()
   background: var(--color-surface);
   border: 1px solid #22222a;
   border-radius: 12px;
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .selected {

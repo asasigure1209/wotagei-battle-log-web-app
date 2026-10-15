@@ -37,9 +37,6 @@ defineProps<{
   flex-direction: column;
   gap: 10px;
   padding: 24px 20px 20px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-body);
 }
 
 .name {

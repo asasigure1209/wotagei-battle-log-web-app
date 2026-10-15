@@ -11,12 +11,6 @@ const meta = {
   component: AppIcon,
   tags: ['autodocs'],
   args: { name: 'download' },
-  // 色は親の文字色を使うので、文字色を指定した要素の中に置く
-  decorators: [
-    () => ({
-      template: '<div style="color: var(--color-text)"><story /></div>',
-    }),
-  ],
 } satisfies Meta<typeof AppIcon>
 
 export default meta
