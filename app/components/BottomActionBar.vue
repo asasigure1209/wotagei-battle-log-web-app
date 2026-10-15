@@ -5,14 +5,10 @@ withDefaults(
   defineProps<{
     /** 表示のしかた。all はすべての動画をダウンロードするボタン、selection は選んだ動画の数とダウンロードボタンを出す */
     variant?: 'all' | 'selection'
-    /** 動画の本数 (all のときに使う) */
+    /** 動画の本数。all ではすべての動画、selection では選んだ動画の本数。selection で 0 本のときはダウンロードボタンを押せない */
     count: number
-    /** 動画の合計の容量 (all のときに使う) */
-    totalSize: string
-    /** 選んだ動画の本数 (selection のときに使う)。0 本のときはダウンロードボタンを押せない */
-    selCount: number
-    /** 選んだ動画の合計の容量 (selection のときに使う) */
-    selSize: string
+    /** count 本の動画の合計の容量 */
+    size: string
   }>(),
   { variant: 'all' },
 )
@@ -30,18 +26,18 @@ defineEmits<{
       label="すべてダウンロード"
       size="L"
       icon="download"
-      :meta="`${count}本 · ${totalSize}`"
+      :meta="`${count}本 · ${size}`"
       full
       @click="$emit('download')"
     />
     <div v-else class="selection">
       <div class="summary">
-        <span class="sel-count">{{ selCount }}本を選択中</span>
-        <span class="sel-size">{{ selSize }}</span>
+        <span class="sel-count">{{ count }}本を選択中</span>
+        <span class="sel-size">{{ size }}</span>
       </div>
       <AppButton
         label="ダウンロード"
-        :disabled="selCount === 0"
+        :disabled="count === 0"
         @click="$emit('download')"
       />
     </div>

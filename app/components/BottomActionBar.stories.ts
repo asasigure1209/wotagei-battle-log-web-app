@@ -14,9 +14,7 @@ const meta = {
   tags: ['autodocs'],
   args: {
     count: 6,
-    totalSize: '4.2 GB',
-    selCount: 0,
-    selSize: '未選択',
+    size: '4.2 GB',
     onDownload: fn(),
   },
 } satisfies Meta<typeof BottomActionBar>
@@ -36,7 +34,7 @@ export const All: Story = {
 
 /** 選択モードで、まだ 1 本も選んでいない。ダウンロードボタンは押せない。 */
 export const SelectionEmpty: Story = {
-  args: { variant: 'selection' },
+  args: { variant: 'selection', count: 0, size: '未選択' },
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('button', { name: 'ダウンロード' }),
@@ -46,5 +44,5 @@ export const SelectionEmpty: Story = {
 
 /** 選択モードで、3 本選んでいる。 */
 export const Selection: Story = {
-  args: { variant: 'selection', selCount: 3, selSize: '2.2 GB' },
+  args: { variant: 'selection', count: 3, size: '2.2 GB' },
 }
