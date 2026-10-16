@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Method } from '~/components/MethodOption.vue'
+
 definePageMeta({
   // イベントページと同じ
   validate: ({ params }) =>
@@ -28,6 +30,18 @@ const targets = computed(() =>
 )
 const targetMb = computed(() => sumMb(targets.value))
 
+const method = ref<Method>('zip')
+const sheetStep = ref<'choose' | 'preparing'>('choose')
+const sheet = useTemplateRef('sheet-dialog')
+
+// ダウンロードの処理は API ができてから作るので、準備の進み具合はモックと同じ 64% で止めておく
+const progress = 64
+const detail = computed(() =>
+  method.value === 'zip'
+    ? `${formatSize(Math.round((targetMb.value * progress) / 100))} / ${formatSize(targetMb.value)}`
+    : `${Math.max(1, Math.round((targets.value.length * progress) / 100))} / ${targets.value.length} 本`,
+)
+
 function sumMb(list: { mb: number }[]) {
   return list.reduce((sum, v) => sum + v.mb, 0)
 }
@@ -39,6 +53,12 @@ function formatSize(mb: number) {
 function toggleSelectMode() {
   selectMode.value = !selectMode.value
   selected.value = {}
+}
+
+// シートは dialog の showModal で開き、背面を操作できなくする・シートにフォーカスを移す・Esc で閉じる、をブラウザに任せる
+function openSheet() {
+  sheetStep.value = 'choose'
+  sheet.value?.showModal()
 }
 </script>
 
@@ -85,7 +105,21 @@ function toggleSelectMode() {
       :variant="selectMode ? 'selection' : 'all'"
       :count="targets.length"
       :size="targets.length ? formatSize(targetMb) : '未選択'"
+      @download="openSheet"
     />
+    <dialog ref="sheet-dialog" class="sheet">
+      <BulkDownloadSheet
+        v-model:method="method"
+        :step="sheetStep"
+        :player-name="player.name"
+        :count="targets.length"
+        :total-size="formatSize(targetMb)"
+        :progress="progress"
+        :detail="detail"
+        @close="sheet?.close()"
+        @start="sheetStep = 'preparing'"
+      />
+    </dialog>
   </div>
 </template>
 
@@ -128,5 +162,20 @@ function toggleSelectMode() {
   z-index: 10;
   max-width: 480px;
   margin: 0 auto;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  /* 画面の下に寄せる */
+  margin: auto auto 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 66%);
 }
 </style>

@@ -15,7 +15,7 @@ describe('イベントページ', () => {
 })
 
 describe('プレイヤーの動画一覧ページ', () => {
-  it('選択モードで選んだ動画の本数と容量を、画面下のバーに出す', async () => {
+  it('選択モードで選んだ動画を、画面下のバーとまとめてダウンロードのシートに出す', async () => {
     const wrapper = await mountSuspended(App, {
       route: '/elnino/elnino_vol_5/players/05',
     })
@@ -31,5 +31,14 @@ describe('プレイヤーの動画一覧ページ', () => {
     await checkboxes[2]?.setValue(true)
     expect(wrapper.text()).toContain('2本を選択中')
     expect(wrapper.text()).toContain('1.6 GB')
+
+    await button('ダウンロード').trigger('click')
+    expect(wrapper.find('dialog').attributes()).toHaveProperty('open')
+    const sheet = wrapper.find('[role="dialog"]')
+    expect(sheet.text()).toContain('2本 · 1.6 GB')
+
+    await button('ダウンロードを開始').trigger('click')
+    expect(sheet.text()).toContain('ZIPを作成しています')
+    expect(sheet.text()).toContain('996 MB / 1.6 GB')
   })
 })
