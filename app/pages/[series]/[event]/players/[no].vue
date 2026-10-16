@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import type { Method } from '~/components/MethodOption.vue'
 
-definePageMeta({
-  // イベントページと同じ
-  validate: ({ params }) =>
-    [params.series, params.event].every((id) => /^[\w-]+$/.test(String(id))),
-})
-
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 const player = mockPlayers.find((p) => p.no === params.no)
@@ -125,8 +119,6 @@ function openSheet() {
 
 <style scoped>
 .player-page {
-  max-width: 480px;
-  margin: 0 auto;
   /* 画面下に固定したバーに、一覧の最後が隠れないようにする */
   padding-bottom: 120px;
 }

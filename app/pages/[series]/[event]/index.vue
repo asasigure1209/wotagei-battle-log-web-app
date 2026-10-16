@@ -1,11 +1,4 @@
 <script setup lang="ts">
-definePageMeta({
-  // シリーズ ID・イベント ID は、動画をアップロードするとき (video_upload の mise upload) と同じく英数字と _ - だけ。
-  // リンクの URL に埋め込むので、ほかの文字を含むものは 404 にする
-  validate: ({ params }) =>
-    [params.series, params.event].every((id) => /^[\w-]+$/.test(String(id))),
-})
-
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 
@@ -13,7 +6,7 @@ useHead({ title: mockEvent.title })
 </script>
 
 <template>
-  <div class="event-page">
+  <div>
     <EventHeader
       :event-title="mockEvent.title"
       :date="mockEvent.date"
@@ -43,11 +36,6 @@ useHead({ title: mockEvent.title })
 </template>
 
 <style scoped>
-.event-page {
-  max-width: 480px;
-  margin: 0 auto;
-}
-
 .players {
   padding-bottom: 28px;
 }

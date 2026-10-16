@@ -12,6 +12,13 @@ describe('イベントページ', () => {
     expect(links[4]?.attributes('href')).toBe('/elnino/elnino_vol_5/players/05')
     expect(links[4]?.text()).toContain('はやて')
   })
+
+  it('英数字と _ - 以外を含むイベント ID は、配下のページも 404 にする', async () => {
+    const wrapper = await mountSuspended(App, {
+      route: '/elnino/vol%205/players/05',
+    })
+    expect(wrapper.text()).not.toContain('はやて')
+  })
 })
 
 describe('プレイヤーの動画一覧ページ', () => {
