@@ -8,19 +8,25 @@ import BulkDownloadSheet from './BulkDownloadSheet.vue'
  *
  * - `choose` で保存のしかた (ZIP / 1 本ずつ) を選び、選んだ値を `v-model:method` でやり取りする。開始ボタンで `start` を発火する
  * - `preparing` で準備の進み具合を示す。見出しと注意は保存のしかたによって変わる
- * - 閉じるボタン・キャンセルボタンは `close` を発火する。背面の暗い幕や開け閉めは、置く画面の側で受け持つ
+ * - `v-model:open` で開け閉めする。dialog の showModal で開くので、背面の暗い幕・フォーカスの移動・Esc で閉じる、はブラウザが受け持つ。
+ *   閉じるボタン・キャンセルボタン・Esc で閉じると `update:open` に false を渡す
  */
 const meta = {
   component: BulkDownloadSheet,
   tags: ['autodocs'],
+  parameters: {
+    // 開いたシートは画面の最前面に出て、docs ページに並べると重なるので、ストーリーごとに iframe に分ける
+    docs: { story: { inline: false, height: '560px' } },
+  },
   args: {
+    open: true,
     playerName: 'はやて',
     count: 6,
     totalSize: '4.2 GB',
     progress: 64,
     detail: '2.7 GB / 4.2 GB',
     method: 'zip',
-    onClose: fn(),
+    'onUpdate:open': fn(),
     onStart: fn(),
     'onUpdate:method': fn(),
   },
@@ -48,7 +54,7 @@ type Story = StoryObj<typeof meta>
 
 /**
  * ZIP を選んでいる。
- * 保存のしかたを切り替えると `update:method` が、開始ボタンで `start` が、閉じるボタンで `close` が発火する。
+ * 保存のしかたを切り替えると `update:method` が、開始ボタンで `start` が、閉じるボタンで `update:open` が発火する。
  */
 export const ChooseZip: Story = {
   play: async ({ args, canvas, userEvent }) => {
@@ -66,7 +72,7 @@ export const ChooseZip: Story = {
     )
     await expect(args.onStart).toHaveBeenCalledOnce()
     await userEvent.click(canvas.getByRole('button', { name: '閉じる' }))
-    await expect(args.onClose).toHaveBeenCalledOnce()
+    await expect(args['onUpdate:open']).toHaveBeenCalledExactlyOnceWith(false)
   },
 }
 
@@ -75,12 +81,12 @@ export const ChooseSeq: Story = {
   args: { method: 'seq' },
 }
 
-/** ZIP を作っている。キャンセルボタンで `close` が発火する。 */
+/** ZIP を作っている。キャンセルボタンで `update:open` が発火する。 */
 export const PreparingZip: Story = {
   args: { step: 'preparing' },
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'キャンセル' }))
-    await expect(args.onClose).toHaveBeenCalledOnce()
+    await expect(args['onUpdate:open']).toHaveBeenCalledExactlyOnceWith(false)
   },
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, useId, useTemplateRef, watchPostEffect } from 'vue'
 import AppButton from './AppButton.vue'
 import AppIconButton from './AppIconButton.vue'
 import AppNotice from './AppNotice.vue'
@@ -24,15 +24,22 @@ const props = withDefaults(
   { step: 'choose' },
 )
 
+/** 開いているかどうか。閉じるボタン・キャンセルボタン・Esc で閉じると false になる */
+const open = defineModel<boolean>('open', { default: false })
 /** 選ばれている保存のしかた */
 const method = defineModel<Method>('method', { default: 'zip' })
 
 defineEmits<{
-  /** 閉じるボタンかキャンセルボタンが押されたとき */
-  close: []
   /** ダウンロードを開始するボタンが押されたとき */
   start: []
 }>()
+
+// dialog の showModal で開き、背面を操作できなくする・シートにフォーカスを移す・Esc で閉じる、をブラウザに任せる
+const dialog = useTemplateRef('dialog')
+watchPostEffect(() => {
+  if (open.value) dialog.value?.showModal()
+  else dialog.value?.close()
+})
 
 const titleId = useId()
 const methodName = useId()
@@ -57,72 +64,89 @@ const title = computed(() =>
 </script>
 
 <template>
-  <div
-    class="bulk-download-sheet"
-    role="dialog"
-    aria-modal="true"
+  <dialog
+    ref="dialog"
+    class="sheet"
     :aria-labelledby="titleId"
+    @close="open = false"
   >
-    <div class="handle" aria-hidden="true" />
-    <div class="head">
-      <div class="heading">
-        <h2 :id="titleId" class="title">
-          {{ title }}
-        </h2>
-        <p class="summary">
-          {{ playerName }} ·
-          <span class="mono">{{ count }}本 · {{ totalSize }}</span>
-        </p>
+    <div class="bulk-download-sheet">
+      <div class="handle" aria-hidden="true" />
+      <div class="head">
+        <div class="heading">
+          <h2 :id="titleId" class="title">
+            {{ title }}
+          </h2>
+          <p class="summary">
+            {{ playerName }} ·
+            <span class="mono">{{ count }}本 · {{ totalSize }}</span>
+          </p>
+        </div>
+        <AppIconButton
+          v-if="step === 'choose'"
+          class="close"
+          icon="close"
+          variant="ghost"
+          label="閉じる"
+          @click="open = false"
+        />
       </div>
-      <AppIconButton
-        v-if="step === 'choose'"
-        class="close"
-        icon="close"
-        variant="ghost"
-        label="閉じる"
-        @click="$emit('close')"
-      />
+      <template v-if="step === 'choose'">
+        <fieldset class="methods">
+          <legend class="legend">保存のしかた</legend>
+          <MethodOption v-model="method" method="zip" :name="methodName" />
+          <MethodOption v-model="method" method="seq" :name="methodName" />
+        </fieldset>
+        <AppNotice
+          type="wifi"
+          text="Wi-Fi 環境でのダウンロードをおすすめします"
+        />
+        <AppButton
+          label="ダウンロードを開始"
+          size="L"
+          icon="download"
+          full
+          @click="$emit('start')"
+        />
+      </template>
+      <template v-else>
+        <AppProgressBar
+          :value="progress"
+          :detail="detail"
+          label="ダウンロードの進み具合"
+        />
+        <AppNotice
+          type="caution"
+          :text="`${preparingCopy[method].note}\n完了まで、この画面を開いたままにしてください。`"
+        />
+        <AppButton
+          label="キャンセル"
+          variant="secondary"
+          size="L"
+          full
+          @click="open = false"
+        />
+      </template>
     </div>
-    <template v-if="step === 'choose'">
-      <fieldset class="methods">
-        <legend class="legend">保存のしかた</legend>
-        <MethodOption v-model="method" method="zip" :name="methodName" />
-        <MethodOption v-model="method" method="seq" :name="methodName" />
-      </fieldset>
-      <AppNotice
-        type="wifi"
-        text="Wi-Fi 環境でのダウンロードをおすすめします"
-      />
-      <AppButton
-        label="ダウンロードを開始"
-        size="L"
-        icon="download"
-        full
-        @click="$emit('start')"
-      />
-    </template>
-    <template v-else>
-      <AppProgressBar
-        :value="progress"
-        :detail="detail"
-        label="ダウンロードの進み具合"
-      />
-      <AppNotice
-        type="caution"
-        :text="`${preparingCopy[method].note}\n完了まで、この画面を開いたままにしてください。`"
-      />
-      <AppButton
-        label="キャンセル"
-        variant="secondary"
-        size="L"
-        full
-        @click="$emit('close')"
-      />
-    </template>
-  </div>
+  </dialog>
 </template>
 
 <style scoped>
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  /* 画面の下に寄せる */
+  margin: auto auto 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 66%);
+}
+
 .bulk-download-sheet {
   box-sizing: border-box;
   display: flex;

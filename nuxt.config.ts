@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
+      htmlAttrs: { lang: 'ja' },
       // モック (mock-ui-html) で使っているフォント。CSS の @import より先に読み始められるよう head に置く。
       // 同じものを .storybook/preview-head.html にも書いている
       link: [
