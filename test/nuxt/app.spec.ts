@@ -40,12 +40,19 @@ describe('プレイヤーの動画一覧ページ', () => {
     expect(wrapper.text()).toContain('1.6 GB')
 
     await button('ダウンロード').trigger('click')
-    expect(wrapper.find('dialog').attributes()).toHaveProperty('open')
-    const sheet = wrapper.find('[role="dialog"]')
+    const sheet = wrapper.find('dialog')
+    expect(sheet.attributes()).toHaveProperty('open')
     expect(sheet.text()).toContain('2本 · 1.6 GB')
 
     await button('ダウンロードを開始').trigger('click')
     expect(sheet.text()).toContain('ZIPを作成しています')
     expect(sheet.text()).toContain('996 MB / 1.6 GB')
+
+    // 選択モードを抜ける「キャンセル」もあるので、シートの中から探す
+    await sheet
+      .findAll('button')
+      .find((b) => b.text() === 'キャンセル')
+      ?.trigger('click')
+    expect(sheet.attributes()).not.toHaveProperty('open')
   })
 })

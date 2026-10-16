@@ -26,7 +26,7 @@ const targetMb = computed(() => sumMb(targets.value))
 
 const method = ref<Method>('zip')
 const sheetStep = ref<'choose' | 'preparing'>('choose')
-const sheet = useTemplateRef('sheet-dialog')
+const sheetOpen = ref(false)
 
 // ダウンロードの処理は API ができてから作るので、準備の進み具合はモックと同じ 64% で止めておく
 const progress = 64
@@ -49,10 +49,9 @@ function toggleSelectMode() {
   selected.value = {}
 }
 
-// シートは dialog の showModal で開き、背面を操作できなくする・シートにフォーカスを移す・Esc で閉じる、をブラウザに任せる
 function openSheet() {
   sheetStep.value = 'choose'
-  sheet.value?.showModal()
+  sheetOpen.value = true
 }
 </script>
 
@@ -101,19 +100,17 @@ function openSheet() {
       :size="targets.length ? formatSize(targetMb) : '未選択'"
       @download="openSheet"
     />
-    <dialog ref="sheet-dialog" class="sheet">
-      <BulkDownloadSheet
-        v-model:method="method"
-        :step="sheetStep"
-        :player-name="player.name"
-        :count="targets.length"
-        :total-size="formatSize(targetMb)"
-        :progress="progress"
-        :detail="detail"
-        @close="sheet?.close()"
-        @start="sheetStep = 'preparing'"
-      />
-    </dialog>
+    <BulkDownloadSheet
+      v-model:open="sheetOpen"
+      v-model:method="method"
+      :step="sheetStep"
+      :player-name="player.name"
+      :count="targets.length"
+      :total-size="formatSize(targetMb)"
+      :progress="progress"
+      :detail="detail"
+      @start="sheetStep = 'preparing'"
+    />
   </div>
 </template>
 
@@ -154,20 +151,5 @@ function openSheet() {
   z-index: 10;
   max-width: 480px;
   margin: 0 auto;
-}
-
-.sheet {
-  width: 100%;
-  max-width: 480px;
-  /* 画面の下に寄せる */
-  margin: auto auto 0;
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-}
-
-.sheet::backdrop {
-  background: rgb(0 0 0 / 66%);
 }
 </style>
