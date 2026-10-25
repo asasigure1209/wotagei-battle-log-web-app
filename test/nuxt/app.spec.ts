@@ -1,11 +1,13 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import App from '~/app.vue'
-import { mockEvent, mockPlayers } from '~~/server/utils/mock'
+import { mockEvent, mockPlayers, mockVideos } from '~~/server/utils/mock'
 
 // nuxt 環境のテストではサーバー (Nitro) が動かないので、API の応答を差し替える
 registerEndpoint('/api/elnino/elnino_vol_5', () => mockEvent)
 registerEndpoint('/api/elnino/elnino_vol_5/players', () => mockPlayers)
+// 05 番 (はやて) の動画は 6 本で、モックの動画すべて
+registerEndpoint('/api/elnino/elnino_vol_5/players/05/videos', () => mockVideos)
 
 describe('イベントページ', () => {
   it('出場プレイヤーを並べ、それぞれの動画一覧ページへリンクする', async () => {

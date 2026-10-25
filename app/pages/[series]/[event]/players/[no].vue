@@ -3,19 +3,23 @@ import type { Method } from '~/components/MethodOption.vue'
 
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
-// URL を series と event に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
-const [{ data: event }, { data: players }] = await Promise.all([
-  useFetch(`/api/${params.series}/${params.event}`),
-  useFetch(`/api/${params.series}/${params.event}/players`),
-])
+// URL を series・event・no に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
+const [{ data: event }, { data: players }, { data: playerVideos }] =
+  await Promise.all([
+    useFetch(`/api/${params.series}/${params.event}`),
+    useFetch(`/api/${params.series}/${params.event}/players`),
+    useFetch(
+      `/api/${params.series}/${params.event}/players/${params.no}/videos`,
+    ),
+  ])
 const player = players.value?.find((p) => p.no === params.no)
-if (!player) {
+if (!player || !playerVideos.value) {
   throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
 }
 
 useHead({ title: () => `${player.name} | ${event.value?.title}` })
 
-const videos = mockVideos.slice(0, player.count)
+const videos = playerVideos.value
 
 const selectMode = ref(false)
 const selected = ref<Record<string, boolean>>({})
