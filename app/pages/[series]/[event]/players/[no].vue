@@ -5,10 +5,8 @@ const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 // URL を series・event・no に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
 const [{ data: event }, { data: playerData }] = await Promise.all([
-  useFetch(`/api/${params.series}/${params.event}`, { headers: apiHeaders() }),
-  useFetch(`/api/${params.series}/${params.event}/players/${params.no}`, {
-    headers: apiHeaders(),
-  }),
+  useApiFetch(`/api/${params.series}/${params.event}`),
+  useApiFetch(`/api/${params.series}/${params.event}/players/${params.no}`),
 ])
 // いないプレイヤーは API が 404 を返し、data が空になる
 const player = playerData.value
