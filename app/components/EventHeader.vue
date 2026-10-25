@@ -36,11 +36,9 @@ const lights = [
     <AppEyebrow text="VIDEO ARCHIVE" />
     <h1 class="title">{{ eventTitle }}</h1>
     <p class="date">{{ date }}</p>
-    <div class="guide">
-      <p class="guide-text">
-        自分の名前を探してタップすると、あなたの出場動画をダウンロードできます。
-      </p>
-    </div>
+    <p class="guide">
+      自分の名前を探してタップすると、あなたの出場動画をダウンロードできます。
+    </p>
   </header>
 </template>
 
@@ -84,17 +82,11 @@ const lights = [
 }
 
 .guide {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  margin: 0;
   padding: 14px 16px;
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-}
-
-.guide-text {
-  margin: 0;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.6;
