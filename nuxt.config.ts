@@ -1,7 +1,15 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { randomUUID } from 'node:crypto'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  runtimeConfig: {
+    // API (/api/**) を、このアプリのサーバーからの呼び出しだけに限るための合言葉。
+    // サーバー側にしか渡らない非公開の値。本番では NUXT_API_SECRET で指定し、
+    // 指定がなければビルドごと (dev では起動ごと) にランダムな値にする
+    apiSecret: randomUUID(),
+  },
   css: ['~/assets/css/main.css'],
   app: {
     head: {
