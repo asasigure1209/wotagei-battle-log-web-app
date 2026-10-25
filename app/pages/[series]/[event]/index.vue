@@ -1,27 +1,28 @@
 <script setup lang="ts">
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
+// URL を series と event に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
+const [{ data: event }, { data: players }] = await Promise.all([
+  useFetch(`/api/${params.series}/${params.event}`),
+  useFetch(`/api/${params.series}/${params.event}/players`),
+])
 
-useHead({ title: mockEvent.title })
+useHead({ title: () => event.value?.title })
 </script>
 
 <template>
   <div>
-    <EventHeader
-      :event-title="mockEvent.title"
-      :date="mockEvent.date"
-      :expiry="mockEvent.expiry"
-    />
+    <EventHeader :event-title="event?.title ?? ''" :date="event?.date ?? ''" />
     <main class="players">
       <div class="head">
         <h2 class="title">出場プレイヤー</h2>
         <span class="meta">
-          <span class="total">{{ mockPlayers.length }}</span>名 ·
+          <span class="total">{{ players?.length ?? 0 }}</span>名 ·
           エントリーNo.順
         </span>
       </div>
       <ul class="list">
-        <li v-for="player in mockPlayers" :key="player.no">
+        <li v-for="player in players" :key="player.no">
           <PlayerRow
             :entry-no="player.no"
             :player-name="player.name"
@@ -31,7 +32,7 @@ useHead({ title: mockEvent.title })
         </li>
       </ul>
     </main>
-    <SiteFooter :contact="mockEvent.contact" contact-href="#" />
+    <SiteFooter :contact="event?.contact ?? ''" contact-href="#" />
   </div>
 </template>
 

@@ -3,14 +3,19 @@ import type { Method } from '~/components/MethodOption.vue'
 
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
-const player = mockPlayers.find((p) => p.no === params.no)
+// URL を series・event・no に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
+const [{ data: event }, { data: playerData }] = await Promise.all([
+  useFetch(`/api/${params.series}/${params.event}`),
+  useFetch(`/api/${params.series}/${params.event}/players/${params.no}`),
+])
+// いないプレイヤーは API が 404 を返し、data が空になる
+const player = playerData.value
 if (!player) {
   throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
 }
+const { videos } = player
 
-useHead({ title: `${player.name} | ${mockEvent.title}` })
-
-const videos = mockVideos.slice(0, player.count)
+useHead({ title: () => `${player.name} | ${event.value?.title}` })
 
 const selectMode = ref(false)
 const selected = ref<Record<string, boolean>>({})
@@ -60,7 +65,7 @@ function openSheet() {
     <TopBar
       back-label="プレイヤー一覧"
       :back-href="eventPath"
-      :event-name="mockEvent.title"
+      :event-name="event?.title ?? ''"
     />
     <main>
       <PlayerHeader

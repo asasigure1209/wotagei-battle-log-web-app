@@ -17,11 +17,6 @@ type Story = StoryObj<typeof meta>
 /** 通信量の注意。Wi-Fi のアイコンを添える。 */
 export const Wifi: Story = {}
 
-/** 動画の公開期限。 */
-export const Expiry: Story = {
-  args: { type: 'expiry', text: '公開期限：[YYYY/MM/DD] まで' },
-}
-
 /** ダウンロードの準備を待っている間の注意。枠で囲み、改行をそのまま表示する。 */
 export const Caution: Story = {
   args: {

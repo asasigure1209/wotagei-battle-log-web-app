@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import AppEyebrow from './AppEyebrow.vue'
-import AppNotice from './AppNotice.vue'
 
 defineProps<{
   /** イベントの名前 */
   eventTitle: string
   /** 開催日 */
   date: string
-  /** 動画の公開期限 (YYYY/MM/DD) */
-  expiry: string
 }>()
 
 // 扇のように広げたサイリウムの飾り (色・長さ・傾き)
@@ -39,12 +36,9 @@ const lights = [
     <AppEyebrow text="VIDEO ARCHIVE" />
     <h1 class="title">{{ eventTitle }}</h1>
     <p class="date">{{ date }}</p>
-    <div class="guide">
-      <p class="guide-text">
-        自分の名前を探してタップすると、あなたの出場動画をダウンロードできます。
-      </p>
-      <AppNotice type="expiry" :text="`公開期限：${expiry} まで`" />
-    </div>
+    <p class="guide">
+      自分の名前を探してタップすると、あなたの出場動画をダウンロードできます。
+    </p>
   </header>
 </template>
 
@@ -88,17 +82,11 @@ const lights = [
 }
 
 .guide {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  margin: 0;
   padding: 14px 16px;
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-}
-
-.guide-text {
-  margin: 0;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.6;

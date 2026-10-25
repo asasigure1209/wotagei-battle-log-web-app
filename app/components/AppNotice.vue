@@ -2,8 +2,8 @@
 import AppIcon from './AppIcon.vue'
 
 defineProps<{
-  /** 種類。wifi は通信量の注意、expiry は公開期限、caution は待っている間の注意 (枠で囲む) */
-  type: 'wifi' | 'expiry' | 'caution'
+  /** 種類。wifi は通信量の注意、caution は待っている間の注意 (枠で囲む) */
+  type: 'wifi' | 'caution'
   /** 表示する文。caution では改行 (\n) をそのまま改行として表示する */
   text: string
 }>()

@@ -1,9 +1,8 @@
-// API ができるまで画面に出す仮のデータ。値はモック (mock-ui-html) と同じ
+// DB ができるまで API が返す仮のデータ。値はモック (mock-ui-html) と同じ
 
 export const mockEvent = {
   title: '[イベント名]',
   date: '[開催日]',
-  expiry: '[YYYY/MM/DD]',
   contact: '[運営の連絡先]',
 }
 
