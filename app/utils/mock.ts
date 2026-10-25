@@ -3,7 +3,6 @@
 export const mockEvent = {
   title: '[イベント名]',
   date: '[開催日]',
-  expiry: '[YYYY/MM/DD]',
   contact: '[運営の連絡先]',
 }
 

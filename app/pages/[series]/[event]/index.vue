@@ -7,11 +7,7 @@ useHead({ title: mockEvent.title })
 
 <template>
   <div>
-    <EventHeader
-      :event-title="mockEvent.title"
-      :date="mockEvent.date"
-      :expiry="mockEvent.expiry"
-    />
+    <EventHeader :event-title="mockEvent.title" :date="mockEvent.date" />
     <main class="players">
       <div class="head">
         <h2 class="title">出場プレイヤー</h2>
