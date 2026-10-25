@@ -1,11 +1,5 @@
 // API ができるまで画面に出す仮のデータ。値はモック (mock-ui-html) と同じ
 
-export const mockEvent = {
-  title: '[イベント名]',
-  date: '[開催日]',
-  contact: '[運営の連絡先]',
-}
-
 /** プレイヤーの動画。どのプレイヤーにも、先頭から動画の本数ぶんを使う */
 export const mockVideos = [
   { no: '01', file: 'video_01.mp4', duration: '03:12', mb: 742 },

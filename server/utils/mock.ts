@@ -1,5 +1,11 @@
 // DB ができるまで API が返す仮のデータ。値はモック (mock-ui-html) と同じ
 
+export const mockEvent = {
+  title: '[イベント名]',
+  date: '[開催日]',
+  contact: '[運営の連絡先]',
+}
+
 /** 出場プレイヤー (エントリー No. 順) と、それぞれの動画の本数 */
 export const mockPlayers = (
   [

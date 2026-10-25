@@ -1,17 +1,18 @@
 <script setup lang="ts">
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
-// URL を series と event に分けて書くと、API (server/api/[series]/[event]/players.get.ts) の戻り値の型が付く
-const { data: players } = await useFetch(
-  `/api/${params.series}/${params.event}/players`,
-)
+// URL を series と event に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
+const [{ data: event }, { data: players }] = await Promise.all([
+  useFetch(`/api/${params.series}/${params.event}`),
+  useFetch(`/api/${params.series}/${params.event}/players`),
+])
 
-useHead({ title: mockEvent.title })
+useHead({ title: () => event.value?.title })
 </script>
 
 <template>
   <div>
-    <EventHeader :event-title="mockEvent.title" :date="mockEvent.date" />
+    <EventHeader :event-title="event?.title ?? ''" :date="event?.date ?? ''" />
     <main class="players">
       <div class="head">
         <h2 class="title">出場プレイヤー</h2>
@@ -31,7 +32,7 @@ useHead({ title: mockEvent.title })
         </li>
       </ul>
     </main>
-    <SiteFooter :contact="mockEvent.contact" contact-href="#" />
+    <SiteFooter :contact="event?.contact ?? ''" contact-href="#" />
   </div>
 </template>
 
