@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
+// URL を series と event に分けて書くと、API (server/api/[series]/[event]/players.get.ts) の戻り値の型が付く
+const { data: players } = await useFetch(
+  `/api/${params.series}/${params.event}/players`,
+)
 
 useHead({ title: mockEvent.title })
 </script>
@@ -12,12 +16,12 @@ useHead({ title: mockEvent.title })
       <div class="head">
         <h2 class="title">出場プレイヤー</h2>
         <span class="meta">
-          <span class="total">{{ mockPlayers.length }}</span>名 ·
+          <span class="total">{{ players?.length ?? 0 }}</span>名 ·
           エントリーNo.順
         </span>
       </div>
       <ul class="list">
-        <li v-for="player in mockPlayers" :key="player.no">
+        <li v-for="player in players" :key="player.no">
           <PlayerRow
             :entry-no="player.no"
             :player-name="player.name"

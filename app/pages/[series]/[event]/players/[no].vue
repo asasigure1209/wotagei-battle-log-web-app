@@ -3,7 +3,11 @@ import type { Method } from '~/components/MethodOption.vue'
 
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
-const player = mockPlayers.find((p) => p.no === params.no)
+// URL を series と event に分けて書くと、API (server/api/[series]/[event]/players.get.ts) の戻り値の型が付く
+const { data: players } = await useFetch(
+  `/api/${params.series}/${params.event}/players`,
+)
+const player = players.value?.find((p) => p.no === params.no)
 if (!player) {
   throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
 }

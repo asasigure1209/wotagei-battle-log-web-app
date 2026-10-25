@@ -1,6 +1,10 @@
-import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import App from '~/app.vue'
+import { mockPlayers } from '~~/server/utils/mock'
+
+// nuxt 環境のテストではサーバー (Nitro) が動かないので、API の応答を差し替える
+registerEndpoint('/api/elnino/elnino_vol_5/players', () => mockPlayers)
 
 describe('イベントページ', () => {
   it('出場プレイヤーを並べ、それぞれの動画一覧ページへリンクする', async () => {
