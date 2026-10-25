@@ -4,22 +4,18 @@ import type { Method } from '~/components/MethodOption.vue'
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 // URL を series・event・no に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
-const [{ data: event }, { data: players }, { data: playerVideos }] =
-  await Promise.all([
-    useFetch(`/api/${params.series}/${params.event}`),
-    useFetch(`/api/${params.series}/${params.event}/players`),
-    useFetch(
-      `/api/${params.series}/${params.event}/players/${params.no}/videos`,
-    ),
-  ])
-const player = players.value?.find((p) => p.no === params.no)
-if (!player || !playerVideos.value) {
+const [{ data: event }, { data: playerData }] = await Promise.all([
+  useFetch(`/api/${params.series}/${params.event}`),
+  useFetch(`/api/${params.series}/${params.event}/players/${params.no}`),
+])
+// いないプレイヤーは API が 404 を返し、data が空になる
+const player = playerData.value
+if (!player) {
   throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
 }
+const { videos } = player
 
 useHead({ title: () => `${player.name} | ${event.value?.title}` })
-
-const videos = playerVideos.value
 
 const selectMode = ref(false)
 const selected = ref<Record<string, boolean>>({})
