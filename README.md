@@ -38,6 +38,19 @@ yarn dev
 bun run dev
 ```
 
+## Database
+
+The schema lives in `server/db/schema.ts` (Drizzle ORM, SQLite). Without `NUXT_DATABASE_URL`, a local SQLite file at `.data/db.sqlite` is used.
+
+```bash
+# Create the local DB and fill it with the mock data
+bun run db:migrate
+bun run db:seed
+
+# After changing server/db/schema.ts, generate a migration
+bun run db:generate --name <what-changed>
+```
+
 ## Production
 
 Build the application for production:
