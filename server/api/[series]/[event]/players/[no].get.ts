@@ -1,10 +1,12 @@
-// プレイヤーと、その動画。
-// DB ができるまでは、どのプレイヤーにもモックの動画を先頭から本数ぶん返す
-export default defineEventHandler((event) => {
-  const no = getRouterParam(event, 'no')
-  const player = mockPlayers.find((p) => p.no === no)
+// プレイヤーと、その動画
+export default defineEventHandler(async (event) => {
+  const player = await getPlayer(
+    getRouterParam(event, 'series') ?? '',
+    getRouterParam(event, 'event') ?? '',
+    getRouterParam(event, 'no') ?? '',
+  )
   if (!player) {
     throw createError({ status: 404, statusText: 'Player Not Found' })
   }
-  return { ...player, videos: mockVideos.slice(0, player.count) }
+  return player
 })
