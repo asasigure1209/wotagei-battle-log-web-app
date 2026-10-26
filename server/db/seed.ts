@@ -1,8 +1,6 @@
 // 開発用の DB に入れるデータ。8 人のトーナメントを 1 つ入れる。
-// 入れる前に全部消すので、何度流しても同じ中身になる
-import { createClient } from '@libsql/client'
-import { drizzle } from 'drizzle-orm/libsql'
-import { databaseUrl } from '../../drizzle.config'
+// 入れる前にシリーズごと消すので、何度流しても同じ中身になる
+import { connectDb } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
 const event = { seriesId: 'elnino', eventId: 'elnino_vol_5' }
@@ -113,18 +111,11 @@ const performerRows = [
   { ...event, videoNo: 7, entryNo: 5 },
 ]
 
-const client = createClient({
-  url: databaseUrl,
-  authToken: process.env.NUXT_DATABASE_AUTH_TOKEN,
-})
-const db = drizzle(client)
+const db = await connectDb()
 
 await db.transaction(async (tx) => {
-  // 外部キーが有効か (PRAGMA foreign_keys) は接続しだいなので、
-  // ON DELETE CASCADE に頼らず子の表から消す
-  for (const table of [performers, videos, entries, events, eventSeries]) {
-    await tx.delete(table)
-  }
+  // 配下のイベント・エントリー・動画は ON DELETE CASCADE で一緒に消える
+  await tx.delete(eventSeries)
   await tx.insert(eventSeries).values(seriesRows)
   await tx.insert(events).values(eventRows)
   await tx.insert(entries).values(entryRows)
@@ -132,4 +123,4 @@ await db.transaction(async (tx) => {
   await tx.insert(performers).values(performerRows)
 })
 
-client.close()
+db.$client.close()
