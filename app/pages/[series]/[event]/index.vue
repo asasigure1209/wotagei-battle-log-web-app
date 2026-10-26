@@ -6,6 +6,10 @@ const [{ data: event }, { data: players }] = await Promise.all([
   useApiFetch(`/api/${params.series}/${params.event}`),
   useApiFetch(`/api/${params.series}/${params.event}/players`),
 ])
+// ないイベントは API が 404 を返し、data が空になる
+if (!event.value) {
+  throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
+}
 
 useHead({ title: () => event.value?.title })
 </script>

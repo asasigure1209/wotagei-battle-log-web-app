@@ -37,6 +37,13 @@ describe('イベントページ', () => {
     expect(links[4]?.text()).toContain('はやて')
   })
 
+  it('ないイベントは 404 にする', async () => {
+    const wrapper = await mountSuspended(App, {
+      route: '/elnino/elnino_vol_99',
+    })
+    expect(wrapper.findAll('a[href*="/players/"]')).toHaveLength(0)
+  })
+
   it('英数字と _ - 以外を含むイベント ID は、配下のページも 404 にする', async () => {
     const wrapper = await mountSuspended(App, {
       route: '/elnino/vol%205/players/05',
