@@ -1,15 +1,19 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import App from '~/app.vue'
-import { mockEvent, mockPlayers, mockVideos } from '~~/server/utils/mock'
+import { getEvent, getPlayer, listPlayers } from '~~/server/utils/repository'
 
-// nuxt 環境のテストではサーバー (Nitro) が動かないので、API の応答を差し替える
-registerEndpoint('/api/elnino/elnino_vol_5', () => mockEvent)
-registerEndpoint('/api/elnino/elnino_vol_5/players', () => mockPlayers)
-registerEndpoint('/api/elnino/elnino_vol_5/players/05', () => {
-  const player = mockPlayers[4]
-  return player && { ...player, videos: mockVideos.slice(0, player.count) }
-})
+// nuxt 環境のテストではサーバー (Nitro) が動かないので、API の応答を
+// API のハンドラと同じリポジトリの戻り値に差し替える
+registerEndpoint('/api/elnino/elnino_vol_5', () =>
+  getEvent('elnino', 'elnino_vol_5'),
+)
+registerEndpoint('/api/elnino/elnino_vol_5/players', () =>
+  listPlayers('elnino', 'elnino_vol_5'),
+)
+registerEndpoint('/api/elnino/elnino_vol_5/players/05', () =>
+  getPlayer('elnino', 'elnino_vol_5', '05'),
+)
 
 describe('イベントページ', () => {
   it('出場プレイヤーを並べ、それぞれの動画一覧ページへリンクする', async () => {
