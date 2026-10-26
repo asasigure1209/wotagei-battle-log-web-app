@@ -1,6 +1,8 @@
 import { mkdirSync, rmSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { dbCredentials } from '../../server/db/client'
 import {
   entries,
   eventSeries,
@@ -16,8 +18,9 @@ const event = { seriesId: 's', eventId: 'e' }
 // テスト用の DB (vitest.config.ts の NUXT_DATABASE_URL) を作り直し、
 // A と B が対戦した動画 1 と、A だけの動画 2 を入れる。C はどの動画にも出ていない
 beforeAll(async () => {
-  mkdirSync('.data', { recursive: true })
-  rmSync('.data/test.sqlite', { force: true })
+  const file = dbCredentials.url.replace(/^file:/, '')
+  mkdirSync(dirname(file), { recursive: true })
+  rmSync(file, { force: true })
   const db = await useDb()
   await migrate(db, { migrationsFolder: 'server/db/migrations' })
   await db.insert(eventSeries).values({ id: 's', name: 'シリーズ' })
