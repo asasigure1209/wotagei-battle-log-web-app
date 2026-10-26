@@ -7,8 +7,21 @@ export default defineConfig({
   test: {
     projects: [
       await defineVitestProject({
-        test: { name: 'nuxt', environment: 'nuxt' },
+        test: {
+          name: 'nuxt',
+          include: ['test/nuxt/**/*.spec.ts'],
+          environment: 'nuxt',
+        },
       }),
+      {
+        // サーバーの処理を、テスト用の SQLite ファイルにつないで確かめる
+        test: {
+          name: 'server',
+          include: ['test/server/**/*.spec.ts'],
+          environment: 'node',
+          env: { NUXT_DATABASE_URL: 'file:.data/test.sqlite' },
+        },
+      },
       {
         plugins: [storybookTest()],
         // 初回実行時 (CI など) に後から最適化されると Vite がリロードしてテストが落ちるため、先に含めておく
