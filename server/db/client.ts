@@ -19,6 +19,13 @@ export function usesD1Proxy() {
   return Boolean(d1ProxyCredentials.url)
 }
 
+/** 接続先の URL。コマンドが、どの DB に流すのかを表示するのに使う */
+export function dbTarget() {
+  return usesD1Proxy() ? d1ProxyCredentials.url : dbCredentials.url
+}
+
+export type Db = Awaited<ReturnType<typeof connectDb>>
+
 type Query = { sql: string; params: unknown[] }
 /** 行は列の値の配列 (列名は Drizzle が付け直す) */
 type Rows = unknown[][]
@@ -32,8 +39,8 @@ type Executor = {
 
 export async function connectDb() {
   const { url, token } = d1ProxyCredentials
-  const executor = url
-    ? d1Proxy(url, token ?? '')
+  const executor = usesD1Proxy()
+    ? d1Proxy(url ?? '', token ?? '')
     : await localSqlite(dbCredentials.url)
   // Drizzle の sqlite-proxy は、get なら 1 行ぶん (なければ undefined)、それ以外なら行の並びを受け取る
   const toResult = (rows: Rows, method: string) => ({
