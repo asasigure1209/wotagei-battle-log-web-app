@@ -1,11 +1,15 @@
-# D1 の中継 Worker。本番の D1 を作ったら database_id を書き換える (README の「本番の DB」)
+# D1 の中継 Worker。database_id は本番の D1 (wrangler d1 create で作ったもの)
 name = "wotagei-battle-log-d1-proxy"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+# Vercel のアプリは workers.dev の URL に SQL を送る。
+# デプロイした版ごとの URL (Preview URLs) は使わないので、DB への入口を増やさないよう止める
+workers_dev = true
+preview_urls = false
 
 [[d1_databases]]
 binding = "DB"
 database_name = "wotagei-battle-log"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "db07a5e1-ce61-4670-a57d-d1a323a19044"
 # マイグレーションは drizzle-kit が生成したものを、そのまま wrangler d1 migrations apply で流す
 migrations_dir = "../../server/db/migrations"
