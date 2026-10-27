@@ -2,6 +2,10 @@
 name = "wotagei-battle-log-d1-proxy"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+# Vercel のアプリは workers.dev の URL に SQL を送る。
+# デプロイした版ごとの URL (Preview URLs) は使わないので、DB への入口を増やさないよう止める
+workers_dev = true
+preview_urls = false
 
 [[d1_databases]]
 binding = "DB"
