@@ -19,6 +19,8 @@ export default defineConfig({
           name: 'server',
           include: ['test/server/**/*.spec.ts'],
           environment: 'node',
+          // どのテストファイルも同じテスト用の DB ファイルを作り直して使うので、1 つずつ流す
+          fileParallelism: false,
           // 中継 Worker の指定があっても、テストはローカルのファイルだけを使う
           env: {
             NUXT_DATABASE_URL: 'file:.data/test.sqlite',
