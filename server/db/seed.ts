@@ -1,6 +1,7 @@
 // 開発用の DB に入れるデータ。8 人のトーナメントを 1 つ入れる。
 // 入れる前にシリーズごと消すので、何度流しても同じ中身になる。
-// 本番の DB を消さないよう、ローカル (SQLite ファイルか、wrangler dev で動かした中継 Worker) にだけ流せる
+// 本番の DB を消さないよう、中継 Worker の先に流すのは --allow-d1-proxy を付けたときだけ
+// (wrangler dev で動かした、ローカルの D1 に入れるときに使う)
 import { connectDb, d1ProxyCredentials, usesD1Proxy } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
@@ -112,12 +113,9 @@ const performerRows = [
   { ...event, videoNo: 7, entryNo: 5 },
 ]
 
-if (
-  usesD1Proxy() &&
-  !/^http:\/\/(localhost|127\.0\.0\.1)[:/]/.test(d1ProxyCredentials.url ?? '')
-) {
+if (usesD1Proxy() && !process.argv.includes('--allow-d1-proxy')) {
   throw new Error(
-    `seed はローカルの DB にだけ流せる: ${d1ProxyCredentials.url}`,
+    `seed は全部消してから入れるので、中継 Worker (${d1ProxyCredentials.url}) の先に流すときは --allow-d1-proxy を付ける`,
   )
 }
 

@@ -67,11 +67,11 @@ bun run d1:migrate:local
 bun run d1-proxy:dev   # http://localhost:8787
 
 export NUXT_D1_PROXY_URL=http://localhost:8787 NUXT_D1_PROXY_TOKEN=local-proxy-token
-bun run db:seed
+bun run db:seed --allow-d1-proxy
 bun run dev
 ```
 
-`db:seed` deletes everything first, so it refuses to run against anything but a local database.
+`db:seed` deletes everything first, so it refuses to run through the proxy Worker unless `--allow-d1-proxy` is given. Never give it while pointing at the production Worker.
 
 ### Production (first time)
 
