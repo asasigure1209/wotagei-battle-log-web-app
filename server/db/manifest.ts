@@ -5,7 +5,8 @@ import { readFile } from 'node:fs/promises'
 import { and, eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { parse } from 'yaml'
-import type { connectDb } from './client'
+import { isId } from '../../shared/utils/id'
+import type { Db } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
 export type Manifest = {
@@ -39,9 +40,8 @@ export function parseManifest(data: unknown): Manifest {
   const problems: string[] = []
   const root = asRecord(data)
 
-  // シリーズ ID・イベント ID は URL とオブジェクトキーの 1 階層になる (app/pages/[series]/[event].vue と同じ規則)
   const id = (value: unknown, path: string) => {
-    if (typeof value === 'string' && /^[\w-]+$/.test(value)) return value
+    if (isId(value)) return value
     problems.push(`${path} は英数字と _ - だけで書いてください`)
     return ''
   }
@@ -49,6 +49,12 @@ export function parseManifest(data: unknown): Manifest {
     if (typeof value === 'string' && value.trim()) return value.trim()
     problems.push(`${path} を書いてください`)
     return ''
+  }
+  const count = (value: unknown, path: string) => {
+    if (Number.isInteger(value) && (value as number) >= 0)
+      return value as number
+    problems.push(`${path} は 0 以上の整数で書いてください`)
+    return 0
   }
 
   const series = asRecord(root.series)
@@ -123,8 +129,8 @@ export function parseManifest(data: unknown): Manifest {
 
     manifest.videos.push({
       key,
-      durationSec: count(video.durationSec, `${path}.durationSec`, problems),
-      sizeBytes: count(video.sizeBytes, `${path}.sizeBytes`, problems),
+      durationSec: count(video.durationSec, `${path}.durationSec`),
+      sizeBytes: count(video.sizeBytes, `${path}.sizeBytes`),
       performers: performerNos,
     })
   })
@@ -138,10 +144,7 @@ export function parseManifest(data: unknown): Manifest {
  * 同じシリーズのほかのイベントには触れない。D1 は複数のリクエストにまたがるトランザクションを使えないので、
  * 1 つの batch (= 1 つのトランザクション) で流し、途中で失敗しても半端な状態を残さない
  */
-export async function importManifest(
-  db: Awaited<ReturnType<typeof connectDb>>,
-  manifest: Manifest,
-) {
+export async function importManifest(db: Db, manifest: Manifest) {
   const seriesId = manifest.series.id
   const eventId = manifest.event.id
   const event = { seriesId, eventId }
@@ -176,7 +179,6 @@ export async function importManifest(
     ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
   ]
   await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
-  return { entries: manifest.entries.length, videos: videoRows.length }
 }
 
 /** D1 は 1 つの SQL に渡せる値が 100 個までなので、insert する行をそれに収まるよう分ける */
@@ -205,11 +207,4 @@ function isDate(value: string) {
     !Number.isNaN(date.getTime()) &&
     date.toISOString().startsWith(value)
   )
-}
-
-/** 0 以上の整数 */
-function count(value: unknown, path: string, problems: string[]) {
-  if (Number.isInteger(value) && (value as number) >= 0) return value as number
-  problems.push(`${path} は 0 以上の整数で書いてください`)
-  return 0
 }
