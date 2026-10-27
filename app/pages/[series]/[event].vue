@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { isId } from '~~/shared/utils/id'
+
 definePageMeta({
-  // シリーズ ID・イベント ID は、動画をアップロードするとき (video_upload の mise upload) と同じく英数字と _ - だけ。
-  // リンクの URL に埋め込むので、ほかの文字を含むものは 404 にする。
+  // シリーズ ID・イベント ID はリンクの URL に埋め込むので、規則 (isId) に合わないものは 404 にする。
   // vue-router が親の meta を子のページに引き継ぐので、イベント配下のページすべてに効く
-  validate: ({ params }) =>
-    [params.series, params.event].every((id) => /^[\w-]+$/.test(String(id))),
+  validate: ({ params }) => [params.series, params.event].every(isId),
 })
 
 // ないイベントは API が 404 を返し、data が空になる。ここで 404 にすれば、イベント配下のページすべてに効く

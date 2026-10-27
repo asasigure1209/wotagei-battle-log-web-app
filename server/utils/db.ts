@@ -1,6 +1,6 @@
-import { connectDb } from '../db/client'
+import { connectDb, type Db } from '../db/client'
 
-let db: ReturnType<typeof connectDb> | undefined
+let db: Promise<Db> | undefined
 
 /** サーバーで使う DB の接続。最初に呼ばれたときに 1 度だけ接続し、あとは使い回す */
 export function useDb() {

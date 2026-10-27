@@ -1,9 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs'
-import { dirname } from 'node:path'
-import { sql } from 'drizzle-orm'
-import { migrate } from 'drizzle-orm/sqlite-proxy/migrator'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { dbCredentials } from '../../server/db/client'
 import {
   entries,
   eventSeries,
@@ -11,25 +6,14 @@ import {
   performers,
   videos,
 } from '../../server/db/schema'
-import { useDb } from '../../server/utils/db'
 import { getEvent, getPlayer, listPlayers } from '../../server/utils/repository'
+import { resetTestDb } from './test-db'
 
 const event = { seriesId: 's', eventId: 'e' }
 
-// テスト用の DB (vitest.config.ts の NUXT_DATABASE_URL) を作り直し、
-// A と B が対戦した動画 1 と、A だけの動画 2 を入れる。C はどの動画にも出ていない
+// テスト用の DB を作り直し、A と B が対戦した動画 1 と、A だけの動画 2 を入れる。C はどの動画にも出ていない
 beforeAll(async () => {
-  const file = dbCredentials.url.replace(/^file:/, '')
-  mkdirSync(dirname(file), { recursive: true })
-  rmSync(file, { force: true })
-  const db = await useDb()
-  await migrate(
-    db,
-    async (queries) => {
-      for (const query of queries) await db.run(sql.raw(query))
-    },
-    { migrationsFolder: 'server/db/migrations' },
-  )
+  const db = await resetTestDb()
   await db.insert(eventSeries).values({ id: 's', name: 'シリーズ' })
   await db.insert(events).values({
     seriesId: 's',
