@@ -1,0 +1,51 @@
+# 開発用の DB に入れるサンプル。8 人のトーナメントを 1 つ入れる (bun run db:seed)。
+# 本番のデータと同じく、イベントごとのデータファイル (manifest) の形で書く
+series:
+  id: elnino
+  name: エルニーニョ
+event:
+  id: elnino_vol_5
+  name: エルニーニョ vol.5
+  date: 2026-01-01
+  contact: "[運営の連絡先]"
+entries:
+  1: BLAZE
+  2: しぐれ
+  3: あおば
+  4: K-ROCK
+  5: はやて
+  6: きりん
+  7: Akatsuki
+  8: つばさ
+videos:
+  # 1 回戦
+  - key: elnino/elnino_vol_5/video_01.mp4
+    durationSec: 192
+    sizeBytes: 742000000
+    performers: [1, 2]
+  - key: elnino/elnino_vol_5/video_02.mp4
+    durationSec: 178
+    sizeBytes: 688000000
+    performers: [3, 4]
+  - key: elnino/elnino_vol_5/video_03.mp4
+    durationSec: 220
+    sizeBytes: 815000000
+    performers: [5, 6]
+  - key: elnino/elnino_vol_5/video_04.mp4
+    durationSec: 151
+    sizeBytes: 590000000
+    performers: [7, 8]
+  # 準決勝 (1・4・5・8 が勝ち上がり)
+  - key: elnino/elnino_vol_5/video_05.mp4
+    durationSec: 235
+    sizeBytes: 863000000
+    performers: [1, 4]
+  - key: elnino/elnino_vol_5/video_06.mp4
+    durationSec: 132
+    sizeBytes: 512000000
+    performers: [5, 8]
+  # 決勝 (1・5 が勝ち上がり)
+  - key: elnino/elnino_vol_5/video_07.mp4
+    durationSec: 245
+    sizeBytes: 901000000
+    performers: [1, 5]
