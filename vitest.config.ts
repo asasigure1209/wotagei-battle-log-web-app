@@ -19,7 +19,11 @@ export default defineConfig({
           name: 'server',
           include: ['test/server/**/*.spec.ts'],
           environment: 'node',
-          env: { NUXT_DATABASE_URL: 'file:.data/test.sqlite' },
+          // 中継 Worker の指定があっても、テストはローカルのファイルだけを使う
+          env: {
+            NUXT_DATABASE_URL: 'file:.data/test.sqlite',
+            NUXT_D1_PROXY_URL: '',
+          },
         },
       },
       {

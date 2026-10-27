@@ -1,6 +1,8 @@
 // 開発用の DB に入れるデータ。8 人のトーナメントを 1 つ入れる。
-// 入れる前にシリーズごと消すので、何度流しても同じ中身になる
-import { connectDb } from './client'
+// 入れる前にシリーズごと消すので、何度流しても同じ中身になる。
+// 本番の DB を消さないよう、中継 Worker の先に流すのは --allow-d1-proxy を付けたときだけ
+// (wrangler dev で動かした、ローカルの D1 に入れるときに使う)
+import { connectDb, d1ProxyCredentials, usesD1Proxy } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
 const event = { seriesId: 'elnino', eventId: 'elnino_vol_5' }
@@ -111,16 +113,21 @@ const performerRows = [
   { ...event, videoNo: 7, entryNo: 5 },
 ]
 
+if (usesD1Proxy() && !process.argv.includes('--allow-d1-proxy')) {
+  throw new Error(
+    `seed は全部消してから入れるので、中継 Worker (${d1ProxyCredentials.url}) の先に流すときは --allow-d1-proxy を付ける`,
+  )
+}
+
 const db = await connectDb()
 
-await db.transaction(async (tx) => {
-  // 配下のイベント・エントリー・動画は ON DELETE CASCADE で一緒に消える
-  await tx.delete(eventSeries)
-  await tx.insert(eventSeries).values(seriesRows)
-  await tx.insert(events).values(eventRows)
-  await tx.insert(entries).values(entryRows)
-  await tx.insert(videos).values(videoRows)
-  await tx.insert(performers).values(performerRows)
-})
-
-db.$client.close()
+// D1 は複数のリクエストにまたがるトランザクションを使えないので、batch で 1 つのトランザクションにする。
+// 配下のイベント・エントリー・動画は ON DELETE CASCADE で一緒に消える
+await db.batch([
+  db.delete(eventSeries),
+  db.insert(eventSeries).values(seriesRows),
+  db.insert(events).values(eventRows),
+  db.insert(entries).values(entryRows),
+  db.insert(videos).values(videoRows),
+  db.insert(performers).values(performerRows),
+])

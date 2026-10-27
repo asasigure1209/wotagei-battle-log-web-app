@@ -1,6 +1,7 @@
 import { mkdirSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { migrate } from 'drizzle-orm/libsql/migrator'
+import { sql } from 'drizzle-orm'
+import { migrate } from 'drizzle-orm/sqlite-proxy/migrator'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { dbCredentials } from '../../server/db/client'
 import {
@@ -22,7 +23,13 @@ beforeAll(async () => {
   mkdirSync(dirname(file), { recursive: true })
   rmSync(file, { force: true })
   const db = await useDb()
-  await migrate(db, { migrationsFolder: 'server/db/migrations' })
+  await migrate(
+    db,
+    async (queries) => {
+      for (const query of queries) await db.run(sql.raw(query))
+    },
+    { migrationsFolder: 'server/db/migrations' },
+  )
   await db.insert(eventSeries).values({ id: 's', name: 'シリーズ' })
   await db.insert(events).values({
     seriesId: 's',
