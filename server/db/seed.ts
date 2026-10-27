@@ -1,7 +1,7 @@
 // 開発用の DB に入れるデータ。8 人のトーナメントを 1 つ入れる。
 // 入れる前にシリーズごと消すので、何度流しても同じ中身になる。
 // 本番の DB を消さないよう、ローカル (SQLite ファイルか、wrangler dev で動かした中継 Worker) にだけ流せる
-import { connectDb, dbCredentials, isRemote } from './client'
+import { connectDb, d1ProxyCredentials, usesD1Proxy } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
 const event = { seriesId: 'elnino', eventId: 'elnino_vol_5' }
@@ -113,10 +113,12 @@ const performerRows = [
 ]
 
 if (
-  isRemote() &&
-  !/^http:\/\/(localhost|127\.0\.0\.1)[:/]/.test(dbCredentials.url)
+  usesD1Proxy() &&
+  !/^http:\/\/(localhost|127\.0\.0\.1)[:/]/.test(d1ProxyCredentials.url ?? '')
 ) {
-  throw new Error(`seed はローカルの DB にだけ流せる: ${dbCredentials.url}`)
+  throw new Error(
+    `seed はローカルの DB にだけ流せる: ${d1ProxyCredentials.url}`,
+  )
 }
 
 const db = await connectDb()

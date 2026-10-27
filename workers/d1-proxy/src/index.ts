@@ -1,16 +1,15 @@
 // D1 の中継 Worker。Vercel のアプリ (server/db/client.ts) から SQL を受け取り、D1 で実行して返す。
 // D1 は Workers の中からしか直接つなげず、Cloudflare の REST API は管理用で呼び出し回数の上限が厳しいため、間に立てる。
 // SQL をそのまま流すので、トークン (PROXY_TOKEN) を知っているのはアプリのサーバーだけにする
-import {
-  type RemoteQuery,
-  type RemoteResult,
-  toRemoteResult,
-} from '../../../server/db/remote'
 
 type Env = {
   DB: D1Database
   PROXY_TOKEN: string
 }
+
+type Query = { sql: string; params: unknown[] }
+/** 行は列の値の配列。結果を Drizzle の形に整えるのはアプリ側 (server/db/client.ts) */
+type Rows = unknown[][]
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -49,32 +48,21 @@ function isAuthorized(request: Request, token: string) {
   )
 }
 
-async function query(
-  db: D1Database,
-  { sql, params, method }: RemoteQuery,
-): Promise<RemoteResult> {
-  const statement = db.prepare(sql).bind(...params)
-  if (method === 'run') {
-    await statement.run()
-    return toRemoteResult([], method)
-  }
-  return toRemoteResult(await statement.raw(), method)
+async function query(db: D1Database, { sql, params }: Query): Promise<Rows> {
+  return db
+    .prepare(sql)
+    .bind(...params)
+    .raw()
 }
 
 /** D1 の batch は、まとめて 1 つのトランザクションで実行する */
-async function batch(
-  db: D1Database,
-  queries: RemoteQuery[],
-): Promise<RemoteResult[]> {
+async function batch(db: D1Database, queries: Query[]): Promise<Rows[]> {
   const results = await db.batch(
     queries.map(({ sql, params }) => db.prepare(sql).bind(...params)),
   )
   // batch では列の値の配列 (raw) で受け取れないので、行のオブジェクトの値を列の順に並べる。
   // そのため、batch で同じ名前の列を 2 つ以上 select すると、片方しか返らない
-  return results.map((result, i) =>
-    toRemoteResult(
-      result.results.map((row) => Object.values(row as object)),
-      queries[i]?.method ?? 'all',
-    ),
+  return results.map((result) =>
+    result.results.map((row) => Object.values(row as object)),
   )
 }

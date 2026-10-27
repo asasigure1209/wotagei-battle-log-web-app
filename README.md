@@ -42,10 +42,11 @@ bun run dev
 
 The schema lives in `server/db/schema.ts` (Drizzle ORM, SQLite). In production the database is Cloudflare D1. The app runs on Vercel and cannot bind to D1 directly, so it sends SQL to a small proxy Worker (`workers/d1-proxy`) that runs it on D1.
 
-| `NUXT_DATABASE_URL` | Database |
+| Environment variable | Meaning |
 | --- | --- |
-| unset | Local SQLite file at `.data/db.sqlite` |
-| `http(s)://...` | D1, through the proxy Worker at that URL. `NUXT_DATABASE_AUTH_TOKEN` must match the Worker's `PROXY_TOKEN` |
+| `NUXT_D1_PROXY_URL` | URL of the proxy Worker. When set, the app uses D1 through it |
+| `NUXT_D1_PROXY_TOKEN` | Must match the Worker's `PROXY_TOKEN` |
+| `NUXT_DATABASE_URL` | Local SQLite file used when `NUXT_D1_PROXY_URL` is unset (default `file:.data/db.sqlite`) |
 
 ### Local development
 
@@ -65,8 +66,9 @@ echo 'PROXY_TOKEN=local-proxy-token' > workers/d1-proxy/.dev.vars
 bun run d1:migrate:local
 bun run d1-proxy:dev   # http://localhost:8787
 
-NUXT_DATABASE_URL=http://localhost:8787 NUXT_DATABASE_AUTH_TOKEN=local-proxy-token bun run db:seed
-NUXT_DATABASE_URL=http://localhost:8787 NUXT_DATABASE_AUTH_TOKEN=local-proxy-token bun run dev
+export NUXT_D1_PROXY_URL=http://localhost:8787 NUXT_D1_PROXY_TOKEN=local-proxy-token
+bun run db:seed
+bun run dev
 ```
 
 `db:seed` deletes everything first, so it refuses to run against anything but a local database.
@@ -81,7 +83,7 @@ bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml   # a lon
 bun run d1-proxy:deploy
 ```
 
-Then set `NUXT_DATABASE_URL` (the deployed Worker's URL) and `NUXT_DATABASE_AUTH_TOKEN` (the same value as `PROXY_TOKEN`) in the Vercel project's environment variables. After adding a migration, run `bun run d1:migrate:remote` again.
+Then set `NUXT_D1_PROXY_URL` (the deployed Worker's URL) and `NUXT_D1_PROXY_TOKEN` (the same value as `PROXY_TOKEN`) in the Vercel project's environment variables. After adding a migration, run `bun run d1:migrate:remote` again.
 
 ## Production
 
