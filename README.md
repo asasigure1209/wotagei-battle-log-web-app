@@ -71,7 +71,18 @@ bun run db:seed --allow-d1-proxy
 bun run dev
 ```
 
-`db:seed` deletes everything first, so it refuses to run through the proxy Worker unless `--allow-d1-proxy` is given. Never give it while pointing at the production Worker.
+`db:seed` imports the sample event in `server/db/seed.yaml`. So that the sample never ends up in production, it refuses to run through the proxy Worker unless `--allow-d1-proxy` is given. Never give it while pointing at the production Worker.
+
+### Importing an event
+
+Each event's data is one YAML file (a manifest). `mise manifest` in the video uploader repository (wotagei-battle-log-video-uploader) writes a template with every video's key, length and size. Fill in the event, the entries and each video's performers, then import it:
+
+```bash
+bun run db:import <yaml> --dry-run   # only check the file and show what would be imported
+bun run db:import <yaml>             # import it
+```
+
+The import target follows the same environment variables as the app: with `NUXT_D1_PROXY_URL` / `NUXT_D1_PROXY_TOKEN` set to the production Worker it goes to production, otherwise to the local SQLite file. Importing replaces that event's entries, videos and performers, and leaves other events alone. Everything is sent in one batch, so a failed import changes nothing. Mistakes in the file (blank fields, an unknown entry No. in `performers`, a duplicated key, ...) are all listed before anything is written.
 
 ### Production (first time)
 
