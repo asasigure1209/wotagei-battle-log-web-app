@@ -24,6 +24,10 @@ logs
 !.env.example
 .vercel
 
+# Cloudflare Workers (wrangler) のローカルの状態と秘密情報
+.wrangler
+.dev.vars
+
 # Storybook
 storybook-static
 *storybook.log
