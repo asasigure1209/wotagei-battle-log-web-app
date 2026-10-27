@@ -1,6 +1,7 @@
 // 開発用の DB に入れるデータ。8 人のトーナメントを 1 つ入れる。
-// 入れる前にシリーズごと消すので、何度流しても同じ中身になる
-import { connectDb } from './client'
+// 入れる前にシリーズごと消すので、何度流しても同じ中身になる。
+// 本番の DB を消さないよう、ローカル (SQLite ファイルか、wrangler dev で動かした中継 Worker) にだけ流せる
+import { connectDb, dbCredentials, isRemote } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
 const event = { seriesId: 'elnino', eventId: 'elnino_vol_5' }
@@ -111,16 +112,22 @@ const performerRows = [
   { ...event, videoNo: 7, entryNo: 5 },
 ]
 
+if (
+  isRemote() &&
+  !/^http:\/\/(localhost|127\.0\.0\.1)[:/]/.test(dbCredentials.url)
+) {
+  throw new Error(`seed はローカルの DB にだけ流せる: ${dbCredentials.url}`)
+}
+
 const db = await connectDb()
 
-await db.transaction(async (tx) => {
-  // 配下のイベント・エントリー・動画は ON DELETE CASCADE で一緒に消える
-  await tx.delete(eventSeries)
-  await tx.insert(eventSeries).values(seriesRows)
-  await tx.insert(events).values(eventRows)
-  await tx.insert(entries).values(entryRows)
-  await tx.insert(videos).values(videoRows)
-  await tx.insert(performers).values(performerRows)
-})
-
-db.$client.close()
+// D1 は複数のリクエストにまたがるトランザクションを使えないので、batch で 1 つのトランザクションにする。
+// 配下のイベント・エントリー・動画は ON DELETE CASCADE で一緒に消える
+await db.batch([
+  db.delete(eventSeries),
+  db.insert(eventSeries).values(seriesRows),
+  db.insert(events).values(eventRows),
+  db.insert(entries).values(entryRows),
+  db.insert(videos).values(videoRows),
+  db.insert(performers).values(performerRows),
+])
