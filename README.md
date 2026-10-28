@@ -21,11 +21,10 @@ bun run dev
 
 ## 静的チェック
 
-lint と整形は Biome で行います。関数のサイクロマチック複雑度は ESLint の `complexity` ルールで調べ、10 を超えるとエラーになります。どちらも PR の `lint` ジョブで実行されます。
+lint と整形は Biome で行います。関数の認知的複雑度 (`noExcessiveCognitiveComplexity`) が 15 を超えるとエラーになり、PR の `lint` ジョブが落ちます。
 
 ```bash
 bunx biome check
-bun run complexity
 ```
 
 ## データベース

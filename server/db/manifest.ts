@@ -109,23 +109,9 @@ export function parseManifest(data: unknown): Manifest {
     keys.add(key)
 
     const performerNos = Array.isArray(video.performers) ? video.performers : []
-    if (!performerNos.length) {
-      problems.push(
-        `${path}.performers に、出ているエントリー No. を書いてください (${key})`,
-      )
-    }
-    for (const no of performerNos) {
-      if (!entryNos.has(no)) {
-        problems.push(
-          `${path}.performers の ${no} は entries にありません (${key})`,
-        )
-      }
-    }
-    if (new Set(performerNos).size !== performerNos.length) {
-      problems.push(
-        `${path}.performers に同じエントリー No. が重なっています (${key})`,
-      )
-    }
+    problems.push(
+      ...performerProblems(performerNos, entryNos, `${path}.performers`, key),
+    )
 
     manifest.videos.push({
       key,
@@ -191,6 +177,30 @@ function chunks<T extends object>(rows: T[]) {
     result.push(rows.slice(i, i + size))
   }
   return result
+}
+
+/** 動画の出演者 (エントリー No. の並び) の誤り */
+function performerProblems(
+  performerNos: unknown[],
+  entryNos: Set<number>,
+  path: string,
+  key: string,
+) {
+  const problems: string[] = []
+  if (!performerNos.length) {
+    problems.push(
+      `${path} に、出ているエントリー No. を書いてください (${key})`,
+    )
+  }
+  for (const no of performerNos) {
+    if (!entryNos.has(no as number)) {
+      problems.push(`${path} の ${no} は entries にありません (${key})`)
+    }
+  }
+  if (new Set(performerNos).size !== performerNos.length) {
+    problems.push(`${path} に同じエントリー No. が重なっています (${key})`)
+  }
+  return problems
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
