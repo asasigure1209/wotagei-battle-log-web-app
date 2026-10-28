@@ -1,22 +1,13 @@
-# Nuxt Minimal Starter
+# wotagei-battle-log-web-app
 
-詳しくは [Nuxt のドキュメント](https://nuxt.com/docs/getting-started/introduction) を参照してください。
+Nuxt で作った Web アプリです。Nuxt について詳しくは [Nuxt のドキュメント](https://nuxt.com/docs/getting-started/introduction) を参照してください。
 
 ## セットアップ
 
-依存パッケージをインストールします。
+bun と Node.js のバージョンは `mise.toml` で決めています。[mise](https://mise.jdx.dev/) で入れてから、依存パッケージをインストールします。
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
+mise install
 bun install
 ```
 
@@ -25,16 +16,6 @@ bun install
 `http://localhost:3000` で開発サーバーを起動します。
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
 bun run dev
 ```
 
@@ -46,6 +27,7 @@ bun run dev
 | --- | --- |
 | `NUXT_D1_PROXY_URL` | プロキシ Worker の URL。設定されていると、アプリはこの Worker を通して D1 を使う |
 | `NUXT_D1_PROXY_TOKEN` | Worker の `PROXY_TOKEN` と同じ値にする |
+| `NUXT_API_SECRET` | API (`/api/**`) をこのアプリのサーバーからの呼び出しだけに限るための合言葉。未設定ならビルドごと (dev では起動ごと) にランダムな値になる |
 | `NUXT_DATABASE_URL` | `NUXT_D1_PROXY_URL` が未設定のときに使うローカルの SQLite ファイル (既定値 `file:.data/db.sqlite`) |
 
 ### ローカル開発
@@ -75,7 +57,7 @@ bun run dev
 
 ### イベントの取り込み
 
-イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダーのリポジトリ (wotagei-battle-log-video-uploader) の `mise manifest` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。イベント、エントリー、各動画の出演者を埋めてから取り込みます。
+イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダーのリポジトリ (wotagei-battle-log-video-uploader) の `mise manifest --series <シリーズID> --event <イベントID>` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。シリーズ名、イベント、エントリー、各動画の出演者を埋めてから取り込みます。
 
 ```bash
 bun run db:import <yaml> --dry-run   # ファイルを検査し、取り込まれる内容を表示するだけ
@@ -94,39 +76,14 @@ bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml   # 長�
 bun run d1-proxy:deploy
 ```
 
-そのあと、Vercel プロジェクトの環境変数に `NUXT_D1_PROXY_URL` (デプロイした Worker の URL) と `NUXT_D1_PROXY_TOKEN` (`PROXY_TOKEN` と同じ値) を設定します。マイグレーションを追加したら、もう一度 `bun run d1:migrate:remote` を実行してください。
+そのあと、Vercel プロジェクトの環境変数に `NUXT_D1_PROXY_URL` (デプロイした Worker の URL)、`NUXT_D1_PROXY_TOKEN` (`PROXY_TOKEN` と同じ値)、`NUXT_API_SECRET` (長いランダムな値) を設定します。マイグレーションを追加したら、もう一度 `bun run d1:migrate:remote` を実行してください。
 
 ## 本番
 
-本番用にアプリケーションをビルドします。
+本番用にアプリケーションをビルドし、ローカルでプレビューします。
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
 bun run build
-```
-
-本番ビルドをローカルでプレビューします。
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
 bun run preview
 ```
 
