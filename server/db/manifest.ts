@@ -37,104 +37,157 @@ export async function readManifest(file: string | URL) {
 
 /** YAML を読んだ値を確かめて Manifest にする。誤りがあれば ManifestError を投げる */
 export function parseManifest(data: unknown): Manifest {
-  const problems: string[] = []
+  const check = new Checker()
   const root = asRecord(data)
+  const series = parseSeries(root.series, check)
+  const event = parseEvent(root.event, check)
+  const entries = parseEntries(root.entries, check)
+  const videos = parseVideos(root.videos, check, {
+    prefix: `${series.id}/${event.id}/`,
+    entryNos: new Set(entries.map((e) => e.entryNo)),
+  })
 
-  const id = (value: unknown, path: string) => {
+  if (check.problems.length) throw new ManifestError(check.problems)
+  return { series, event, entries, videos }
+}
+
+/** 値を確かめ、誤りを problems に溜めていく。誤った値の代わりには空の値を返す */
+class Checker {
+  readonly problems: string[] = []
+
+  push(problem: string) {
+    this.problems.push(problem)
+  }
+
+  id(value: unknown, path: string) {
     if (isId(value)) return value
-    problems.push(`${path} は英数字と _ - だけで書いてください`)
+    this.push(`${path} は英数字と _ - だけで書いてください`)
     return ''
   }
-  const text = (value: unknown, path: string) => {
+
+  text(value: unknown, path: string) {
     if (typeof value === 'string' && value.trim()) return value.trim()
-    problems.push(`${path} を書いてください`)
+    this.push(`${path} を書いてください`)
     return ''
   }
-  const count = (value: unknown, path: string) => {
+
+  count(value: unknown, path: string) {
     if (Number.isInteger(value) && (value as number) >= 0)
       return value as number
-    problems.push(`${path} は 0 以上の整数で書いてください`)
+    this.push(`${path} は 0 以上の整数で書いてください`)
     return 0
   }
+}
 
-  const series = asRecord(root.series)
-  const event = asRecord(root.event)
-  const manifest: Manifest = {
-    series: {
-      id: id(series.id, 'series.id'),
-      name: text(series.name, 'series.name'),
-    },
-    event: {
-      id: id(event.id, 'event.id'),
-      name: text(event.name, 'event.name'),
-      date: text(event.date, 'event.date'),
-      contact: text(event.contact, 'event.contact'),
-    },
-    entries: [],
-    videos: [],
-  }
-  if (manifest.event.date && !isDate(manifest.event.date)) {
-    problems.push(
-      `event.date は YYYY-MM-DD で書いてください: ${manifest.event.date}`,
-    )
-  }
+/** 動画を確かめるのに使う、manifest のほかの部分から決まる値 */
+type VideoScope = {
+  /** key が始まるはずの `シリーズ ID/イベント ID/` */
+  prefix: string
+  entryNos: Set<number>
+}
 
+function parseSeries(value: unknown, check: Checker): Manifest['series'] {
+  const series = asRecord(value)
+  return {
+    id: check.id(series.id, 'series.id'),
+    name: check.text(series.name, 'series.name'),
+  }
+}
+
+function parseEvent(value: unknown, check: Checker): Manifest['event'] {
+  const event = asRecord(value)
+  const result = {
+    id: check.id(event.id, 'event.id'),
+    name: check.text(event.name, 'event.name'),
+    date: check.text(event.date, 'event.date'),
+    contact: check.text(event.contact, 'event.contact'),
+  }
+  if (result.date && !isDate(result.date)) {
+    check.push(`event.date は YYYY-MM-DD で書いてください: ${result.date}`)
+  }
+  return result
+}
+
+function parseEntries(value: unknown, check: Checker): Manifest['entries'] {
+  const result: Manifest['entries'] = []
   // YAML のキーは文字列で読まれるので、エントリー No. は数に直す
-  for (const [no, name] of Object.entries(asRecord(root.entries))) {
+  for (const [no, name] of Object.entries(asRecord(value))) {
     const entryNo = Number(no)
     if (!/^\d+$/.test(no) || entryNo < 1) {
-      problems.push(
+      check.push(
         `entries のエントリー No. は 1 以上の整数で書いてください: ${no}`,
       )
       continue
     }
-    manifest.entries.push({ entryNo, name: text(name, `entries.${no}`) })
+    result.push({ entryNo, name: check.text(name, `entries.${no}`) })
   }
-  manifest.entries.sort((a, b) => a.entryNo - b.entryNo)
-  if (!manifest.entries.length) problems.push('entries を書いてください')
-  const entryNos = new Set(manifest.entries.map((e) => e.entryNo))
-  const performerList = (value: unknown, path: string, key: string) => {
-    const nos: number[] = Array.isArray(value) ? value : []
-    if (!nos.length) {
-      problems.push(
-        `${path} に、出ているエントリー No. を書いてください (${key})`,
-      )
-    }
-    for (const no of nos) {
-      if (!entryNos.has(no)) {
-        problems.push(`${path} の ${no} は entries にありません (${key})`)
-      }
-    }
-    if (new Set(nos).size !== nos.length) {
-      problems.push(`${path} に同じエントリー No. が重なっています (${key})`)
-    }
-    return nos
-  }
+  result.sort((a, b) => a.entryNo - b.entryNo)
+  if (!result.length) check.push('entries を書いてください')
+  return result
+}
 
-  const rawVideos = Array.isArray(root.videos) ? root.videos : []
-  if (!rawVideos.length) problems.push('videos がありません')
-  const prefix = `${manifest.series.id}/${manifest.event.id}/`
+function parseVideos(
+  value: unknown,
+  check: Checker,
+  { prefix, entryNos }: VideoScope,
+): Manifest['videos'] {
+  const rawVideos = Array.isArray(value) ? value : []
+  if (!rawVideos.length) check.push('videos がありません')
+  // ここまでに出てきた key。重なりを見つけるのに使う
   const keys = new Set<string>()
-  rawVideos.forEach((raw, i) => {
+  return rawVideos.map((raw, i) => {
     const video = asRecord(raw)
     const path = `videos[${i}]`
-    const key = text(video.key, `${path}.key`)
-    if (key && !key.startsWith(prefix)) {
-      problems.push(`${path}.key は ${prefix} で始まるはずです: ${key}`)
-    }
-    if (keys.has(key)) problems.push(`${path}.key が重なっています: ${key}`)
-    keys.add(key)
-
-    manifest.videos.push({
+    const key = videoKey(video.key, `${path}.key`, check, prefix, keys)
+    return {
       key,
-      durationSec: count(video.durationSec, `${path}.durationSec`),
-      sizeBytes: count(video.sizeBytes, `${path}.sizeBytes`),
-      performers: performerList(video.performers, `${path}.performers`, key),
-    })
+      durationSec: check.count(video.durationSec, `${path}.durationSec`),
+      sizeBytes: check.count(video.sizeBytes, `${path}.sizeBytes`),
+      performers: performerList(
+        video.performers,
+        `${path}.performers`,
+        key,
+        check,
+        entryNos,
+      ),
+    }
   })
+}
 
-  if (problems.length) throw new ManifestError(problems)
-  return manifest
+function videoKey(
+  value: unknown,
+  path: string,
+  check: Checker,
+  prefix: string,
+  keys: Set<string>,
+) {
+  const key = check.text(value, path)
+  if (key && !key.startsWith(prefix)) {
+    check.push(`${path} は ${prefix} で始まるはずです: ${key}`)
+  }
+  if (keys.has(key)) check.push(`${path} が重なっています: ${key}`)
+  keys.add(key)
+  return key
+}
+
+function performerList(
+  value: unknown,
+  path: string,
+  key: string,
+  check: Checker,
+  entryNos: Set<number>,
+) {
+  const nos: number[] = Array.isArray(value) ? value : []
+  if (!nos.length) {
+    check.push(`${path} に、出ているエントリー No. を書いてください (${key})`)
+  }
+  for (const no of nos.filter((no) => !entryNos.has(no))) {
+    check.push(`${path} の ${no} は entries にありません (${key})`)
+  }
+  if (new Set(nos).size !== nos.length) {
+    check.push(`${path} に同じエントリー No. が重なっています (${key})`)
+  }
+  return nos
 }
 
 /**
