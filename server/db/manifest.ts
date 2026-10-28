@@ -39,13 +39,12 @@ export async function readManifest(file: string | URL) {
 export function parseManifest(data: unknown): Manifest {
   const check = new Checker()
   const root = asRecord(data)
-  const series = parseSeries(asRecord(root.series), check)
-  const event = parseEvent(asRecord(root.event), check)
-  const entries = parseEntries(asRecord(root.entries), check)
+  const series = parseSeries(root.series, check)
+  const event = parseEvent(root.event, check)
+  const entries = parseEntries(root.entries, check)
   const videos = parseVideos(root.videos, check, {
     prefix: `${series.id}/${event.id}/`,
     entryNos: new Set(entries.map((e) => e.entryNo)),
-    keys: new Set(),
   })
 
   if (check.problems.length) throw new ManifestError(check.problems)
@@ -85,24 +84,18 @@ type VideoScope = {
   /** key が始まるはずの `シリーズ ID/イベント ID/` */
   prefix: string
   entryNos: Set<number>
-  /** ここまでに出てきた key。重なりを見つけるのに使う */
-  keys: Set<string>
 }
 
-function parseSeries(
-  series: Record<string, unknown>,
-  check: Checker,
-): Manifest['series'] {
+function parseSeries(value: unknown, check: Checker): Manifest['series'] {
+  const series = asRecord(value)
   return {
     id: check.id(series.id, 'series.id'),
     name: check.text(series.name, 'series.name'),
   }
 }
 
-function parseEvent(
-  event: Record<string, unknown>,
-  check: Checker,
-): Manifest['event'] {
+function parseEvent(value: unknown, check: Checker): Manifest['event'] {
+  const event = asRecord(value)
   const result = {
     id: check.id(event.id, 'event.id'),
     name: check.text(event.name, 'event.name'),
@@ -115,13 +108,10 @@ function parseEvent(
   return result
 }
 
-function parseEntries(
-  rawEntries: Record<string, unknown>,
-  check: Checker,
-): Manifest['entries'] {
+function parseEntries(value: unknown, check: Checker): Manifest['entries'] {
   const result: Manifest['entries'] = []
   // YAML のキーは文字列で読まれるので、エントリー No. は数に直す
-  for (const [no, name] of Object.entries(rawEntries)) {
+  for (const [no, name] of Object.entries(asRecord(value))) {
     const entryNo = Number(no)
     if (!/^\d+$/.test(no) || entryNo < 1) {
       check.push(
@@ -139,22 +129,27 @@ function parseEntries(
 function parseVideos(
   value: unknown,
   check: Checker,
-  scope: VideoScope,
+  { prefix, entryNos }: VideoScope,
 ): Manifest['videos'] {
   const rawVideos = Array.isArray(value) ? value : []
   if (!rawVideos.length) check.push('videos がありません')
+  // ここまでに出てきた key。重なりを見つけるのに使う
+  const keys = new Set<string>()
   return rawVideos.map((raw, i) => {
     const video = asRecord(raw)
     const path = `videos[${i}]`
-    const key = videoKey(video.key, `${path}.key`, check, scope)
+    const key = videoKey(video.key, `${path}.key`, check, prefix, keys)
     return {
       key,
       durationSec: check.count(video.durationSec, `${path}.durationSec`),
       sizeBytes: check.count(video.sizeBytes, `${path}.sizeBytes`),
-      performers: performerList(video.performers, `${path}.performers`, key, {
+      performers: performerList(
+        video.performers,
+        `${path}.performers`,
+        key,
         check,
-        entryNos: scope.entryNos,
-      }),
+        entryNos,
+      ),
     }
   })
 }
@@ -163,7 +158,8 @@ function videoKey(
   value: unknown,
   path: string,
   check: Checker,
-  { prefix, keys }: VideoScope,
+  prefix: string,
+  keys: Set<string>,
 ) {
   const key = check.text(value, path)
   if (key && !key.startsWith(prefix)) {
@@ -178,7 +174,8 @@ function performerList(
   value: unknown,
   path: string,
   key: string,
-  { check, entryNos }: { check: Checker; entryNos: Set<number> },
+  check: Checker,
+  entryNos: Set<number>,
 ) {
   const nos: number[] = Array.isArray(value) ? value : []
   if (!nos.length) {
