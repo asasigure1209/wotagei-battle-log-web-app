@@ -1,65 +1,47 @@
-# Nuxt Minimal Starter
+# wotagei-battle-log-web-app
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt で作った Web アプリです。Nuxt について詳しくは [Nuxt のドキュメント](https://nuxt.com/docs/getting-started/introduction) を参照してください。
 
-## Setup
+## セットアップ
 
-Make sure to install dependencies:
+bun と Node.js のバージョンは `mise.toml` で決めています。[mise](https://mise.jdx.dev/) で入れてから、依存パッケージをインストールします。
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
+mise install
 bun install
 ```
 
-## Development Server
+## 開発サーバー
 
-Start the development server on `http://localhost:3000`:
+`http://localhost:3000` で開発サーバーを起動します。
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
 bun run dev
 ```
 
-## Database
+## データベース
 
-The schema lives in `server/db/schema.ts` (Drizzle ORM, SQLite). In production the database is Cloudflare D1. The app runs on Vercel and cannot bind to D1 directly, so it sends SQL to a small proxy Worker (`workers/d1-proxy`) that runs it on D1.
+スキーマは `server/db/schema.ts` にあります (Drizzle ORM、SQLite)。本番のデータベースは Cloudflare D1 です。アプリは Vercel で動いていて D1 に直接バインドできないため、SQL を小さなプロキシ Worker (`workers/d1-proxy`) に送り、Worker が D1 で実行します。
 
-| Environment variable | Meaning |
+| 環境変数 | 意味 |
 | --- | --- |
-| `NUXT_D1_PROXY_URL` | URL of the proxy Worker. When set, the app uses D1 through it |
-| `NUXT_D1_PROXY_TOKEN` | Must match the Worker's `PROXY_TOKEN` |
-| `NUXT_DATABASE_URL` | Local SQLite file used when `NUXT_D1_PROXY_URL` is unset (default `file:.data/db.sqlite`) |
+| `NUXT_D1_PROXY_URL` | プロキシ Worker の URL。設定されていると、アプリはこの Worker を通して D1 を使う |
+| `NUXT_D1_PROXY_TOKEN` | Worker の `PROXY_TOKEN` と同じ値にする |
+| `NUXT_API_SECRET` | API (`/api/**`) をこのアプリのサーバーからの呼び出しだけに限るための合言葉。未設定ならビルドごと (dev では起動ごと) にランダムな値になる |
+| `NUXT_DATABASE_URL` | `NUXT_D1_PROXY_URL` が未設定のときに使うローカルの SQLite ファイル (既定値 `file:.data/db.sqlite`) |
 
-### Local development
+### ローカル開発
 
 ```bash
-# Create the local DB and fill it with the sample data
+# ローカルの DB を作り、サンプルデータを入れる
 bun run db:migrate
 bun run db:seed
 
-# After changing server/db/schema.ts, generate a migration
-bun run db:generate --name <what-changed>
+# server/db/schema.ts を変更したら、マイグレーションを生成する
+bun run db:generate --name <変更内容>
 ```
 
-To try the D1 setup locally, run the proxy Worker against a local D1:
+D1 の構成をローカルで試すには、ローカルの D1 に対してプロキシ Worker を動かします。
 
 ```bash
 echo 'PROXY_TOKEN=local-proxy-token' > workers/d1-proxy/.dev.vars
@@ -71,63 +53,38 @@ bun run db:seed --allow-d1-proxy
 bun run dev
 ```
 
-`db:seed` imports the sample event in `server/db/seed.yaml`. So that the sample never ends up in production, it refuses to run through the proxy Worker unless `--allow-d1-proxy` is given. Never give it while pointing at the production Worker.
+`db:seed` は `server/db/seed.yaml` のサンプルイベントを取り込みます。サンプルが本番に入ってしまわないよう、`--allow-d1-proxy` を付けない限りプロキシ Worker 経由では実行を拒否します。本番の Worker を向いているときは決して付けないでください。
 
-### Importing an event
+### イベントの取り込み
 
-Each event's data is one YAML file (a manifest). `mise manifest` in the video uploader repository (wotagei-battle-log-video-uploader) writes a template with every video's key, length and size. Fill in the event, the entries and each video's performers, then import it:
+イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダーのリポジトリ (wotagei-battle-log-video-uploader) の `mise manifest --series <シリーズID> --event <イベントID>` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。シリーズ名、イベント、エントリー、各動画の出演者を埋めてから取り込みます。
 
 ```bash
-bun run db:import <yaml> --dry-run   # only check the file and show what would be imported
-bun run db:import <yaml>             # import it
+bun run db:import <yaml> --dry-run   # ファイルを検査し、取り込まれる内容を表示するだけ
+bun run db:import <yaml>             # 取り込む
 ```
 
-The import target follows the same environment variables as the app: with `NUXT_D1_PROXY_URL` / `NUXT_D1_PROXY_TOKEN` set to the production Worker it goes to production, otherwise to the local SQLite file. Importing replaces that event's entries, videos and performers, and leaves other events alone. Everything is sent in one batch, so a failed import changes nothing. Mistakes in the file (blank fields, an unknown entry No. in `performers`, a duplicated key, ...) are all listed before anything is written.
+取り込み先はアプリと同じ環境変数に従います。`NUXT_D1_PROXY_URL` / `NUXT_D1_PROXY_TOKEN` が本番の Worker を指していれば本番に、そうでなければローカルの SQLite ファイルに取り込まれます。取り込むとそのイベントのエントリー・動画・出演者が置き換えられ、他のイベントには影響しません。すべてを 1 回のバッチで送るため、取り込みに失敗した場合は何も変更されません。ファイルの誤り (空欄、`performers` にある存在しないエントリー No.、重複したキーなど) は、何かを書き込む前にすべて一覧表示されます。
 
-### Production (first time)
+### 本番 (初回)
 
 ```bash
 bunx wrangler login
-bunx wrangler d1 create wotagei-battle-log   # write the printed database_id into workers/d1-proxy/wrangler.toml
+bunx wrangler d1 create wotagei-battle-log   # 表示された database_id を workers/d1-proxy/wrangler.toml に書く
 bun run d1:migrate:remote
-bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml   # a long random value
+bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml   # 長いランダムな値
 bun run d1-proxy:deploy
 ```
 
-Then set `NUXT_D1_PROXY_URL` (the deployed Worker's URL) and `NUXT_D1_PROXY_TOKEN` (the same value as `PROXY_TOKEN`) in the Vercel project's environment variables. After adding a migration, run `bun run d1:migrate:remote` again.
+そのあと、Vercel プロジェクトの環境変数に `NUXT_D1_PROXY_URL` (デプロイした Worker の URL)、`NUXT_D1_PROXY_TOKEN` (`PROXY_TOKEN` と同じ値)、`NUXT_API_SECRET` (長いランダムな値) を設定します。マイグレーションを追加したら、もう一度 `bun run d1:migrate:remote` を実行してください。
 
-## Production
+## 本番
 
-Build the application for production:
+本番用にアプリケーションをビルドし、ローカルでプレビューします。
 
 ```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
 bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
 bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+詳しくは [デプロイのドキュメント](https://nuxt.com/docs/getting-started/deployment) を参照してください。
