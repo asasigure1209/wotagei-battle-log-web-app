@@ -19,6 +19,15 @@ bun install
 bun run dev
 ```
 
+## 静的チェック
+
+lint と整形は Biome で行います。関数のサイクロマチック複雑度は ESLint の `complexity` ルールで調べ、10 を超えるとエラーになります。どちらも PR の `lint` ジョブで実行されます。
+
+```bash
+bunx biome check
+bun run complexity
+```
+
 ## データベース
 
 スキーマは `server/db/schema.ts` にあります (Drizzle ORM、SQLite)。本番のデータベースは Cloudflare D1 です。アプリは Vercel で動いていて D1 に直接バインドできないため、SQL を小さなプロキシ Worker (`workers/d1-proxy`) に送り、Worker が D1 で実行します。
