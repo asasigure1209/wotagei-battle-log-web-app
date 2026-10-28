@@ -93,6 +93,23 @@ export function parseManifest(data: unknown): Manifest {
   manifest.entries.sort((a, b) => a.entryNo - b.entryNo)
   if (!manifest.entries.length) problems.push('entries を書いてください')
   const entryNos = new Set(manifest.entries.map((e) => e.entryNo))
+  const performerList = (value: unknown, path: string, key: string) => {
+    const nos: number[] = Array.isArray(value) ? value : []
+    if (!nos.length) {
+      problems.push(
+        `${path} に、出ているエントリー No. を書いてください (${key})`,
+      )
+    }
+    for (const no of nos) {
+      if (!entryNos.has(no)) {
+        problems.push(`${path} の ${no} は entries にありません (${key})`)
+      }
+    }
+    if (new Set(nos).size !== nos.length) {
+      problems.push(`${path} に同じエントリー No. が重なっています (${key})`)
+    }
+    return nos
+  }
 
   const rawVideos = Array.isArray(root.videos) ? root.videos : []
   if (!rawVideos.length) problems.push('videos がありません')
@@ -108,16 +125,11 @@ export function parseManifest(data: unknown): Manifest {
     if (keys.has(key)) problems.push(`${path}.key が重なっています: ${key}`)
     keys.add(key)
 
-    const performerNos = Array.isArray(video.performers) ? video.performers : []
-    problems.push(
-      ...performerProblems(performerNos, entryNos, `${path}.performers`, key),
-    )
-
     manifest.videos.push({
       key,
       durationSec: count(video.durationSec, `${path}.durationSec`),
       sizeBytes: count(video.sizeBytes, `${path}.sizeBytes`),
-      performers: performerNos,
+      performers: performerList(video.performers, `${path}.performers`, key),
     })
   })
 
@@ -177,30 +189,6 @@ function chunks<T extends object>(rows: T[]) {
     result.push(rows.slice(i, i + size))
   }
   return result
-}
-
-/** 動画の出演者 (エントリー No. の並び) の誤り */
-function performerProblems(
-  performerNos: unknown[],
-  entryNos: Set<number>,
-  path: string,
-  key: string,
-) {
-  const problems: string[] = []
-  if (!performerNos.length) {
-    problems.push(
-      `${path} に、出ているエントリー No. を書いてください (${key})`,
-    )
-  }
-  for (const no of performerNos) {
-    if (!entryNos.has(no as number)) {
-      problems.push(`${path} の ${no} は entries にありません (${key})`)
-    }
-  }
-  if (new Set(performerNos).size !== performerNos.length) {
-    problems.push(`${path} に同じエントリー No. が重なっています (${key})`)
-  }
-  return problems
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
