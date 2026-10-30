@@ -12,7 +12,7 @@ jobs:
           fetch-depth: 0 # ベースラインの探索と TurboSnap (onlyChanged) に git 履歴全体が必要
       - uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
       - run: bun install --frozen-lockfile
-      - uses: chromaui/action@e50abd573c8a789526f165fec06137a7c21d7299 # v18.13.0
+      - uses: chromaui/action@5bcadb5104b09e360e210c54f95a7437c2d82bab # v18.13.3
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           # 結果は Chromatic が PR の UI Tests チェックとして報告するので、アップロードで終える
