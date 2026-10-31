@@ -31,12 +31,12 @@ bunx biome check
 
 スキーマは `server/db/schema.ts` にあります (Drizzle ORM、SQLite)。本番のデータベースは Cloudflare D1 です。アプリは Vercel で動いていて D1 に直接バインドできないため、SQL を小さなプロキシ Worker (`workers/d1-proxy`) に送り、Worker が D1 で実行します。
 
-| 環境変数 | 意味 |
-| --- | --- |
-| `NUXT_D1_PROXY_URL` | プロキシ Worker の URL。設定されていると、アプリはこの Worker を通して D1 を使う |
-| `NUXT_D1_PROXY_TOKEN` | Worker の `PROXY_TOKEN` と同じ値にする |
-| `NUXT_API_SECRET` | API (`/api/**`) をこのアプリのサーバーからの呼び出しだけに限るための合言葉。未設定ならビルドごと (dev では起動ごと) にランダムな値になる |
-| `NUXT_DATABASE_URL` | `NUXT_D1_PROXY_URL` が未設定のときに使うローカルの SQLite ファイル (既定値 `file:.data/db.sqlite`) |
+| 環境変数              | 意味                                                                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `NUXT_D1_PROXY_URL`   | プロキシ Worker の URL。設定されていると、アプリはこの Worker を通して D1 を使う                                                         |
+| `NUXT_D1_PROXY_TOKEN` | Worker の `PROXY_TOKEN` と同じ値にする                                                                                                   |
+| `NUXT_API_SECRET`     | API (`/api/**`) をこのアプリのサーバーからの呼び出しだけに限るための合言葉。未設定ならビルドごと (dev では起動ごと) にランダムな値になる |
+| `NUXT_DATABASE_URL`   | `NUXT_D1_PROXY_URL` が未設定のときに使うローカルの SQLite ファイル (既定値 `file:.data/db.sqlite`)                                       |
 
 ### ローカル開発
 
