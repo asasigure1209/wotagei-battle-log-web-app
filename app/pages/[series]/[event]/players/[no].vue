@@ -30,20 +30,19 @@ const targets = computed(() =>
 )
 const targetMb = computed(() => sumMb(targets.value))
 
-// ZIP はまだ作っていないので、1 本ずつ続けて保存するほうだけを使う
 const method = ref<Method>('seq')
+// ZIP はまだ作っていないので選べなくしておく
+const disabledMethods: Method[] = ['zip']
 const sheetStep = ref<'choose' | 'preparing'>('choose')
 const sheetOpen = ref(false)
 
-// 続けて保存している動画と、保存を始めた本数
-const queue = ref<typeof videos>([])
+// 続けて保存している本数と、保存を始めた本数
+const total = ref(0)
 const doneCount = ref(0)
 const progress = computed(() =>
-  queue.value.length
-    ? Math.round((doneCount.value / queue.value.length) * 100)
-    : 0,
+  total.value ? Math.round((doneCount.value / total.value) * 100) : 0,
 )
-const detail = computed(() => `${doneCount.value} / ${queue.value.length} 本`)
+const detail = computed(() => `${doneCount.value} / ${total.value} 本`)
 let abort: AbortController | undefined
 
 function downloadOne(video: (typeof videos)[number]) {
@@ -53,28 +52,26 @@ function downloadOne(video: (typeof videos)[number]) {
 
 async function startSequence() {
   sheetStep.value = 'preparing'
-  queue.value = targets.value
+  total.value = targets.value.length
   doneCount.value = 0
   abort = new AbortController()
   const { signal } = abort
   await downloadInSequence(
-    queue.value.map((v) => videoDownloadPath(playerPath, v.no)),
-    {
-      signal,
-      onProgress: (done) => {
-        doneCount.value = done
-        const video = queue.value[done - 1]
-        if (video) saved.value[video.no] = true
-      },
+    targets.value,
+    (video, i) => {
+      downloadOne(video)
+      doneCount.value = i + 1
     },
+    signal,
   )
   if (!signal.aborted) sheetOpen.value = false
 }
 
-// キャンセルボタンや Esc でシートを閉じたら、続けて保存するのをやめる
+// キャンセルボタンや Esc でシートを閉じたり、画面を離れたりしたら、続けて保存するのをやめる
 watch(sheetOpen, (open) => {
   if (!open) abort?.abort()
 })
+onBeforeUnmount(() => abort?.abort())
 
 function sumMb(list: { mb: number }[]) {
   return list.reduce((sum, v) => sum + v.mb, 0)
@@ -143,6 +140,7 @@ function openSheet() {
     <BulkDownloadSheet
       v-model:open="sheetOpen"
       v-model:method="method"
+      :disabled-methods="disabledMethods"
       :step="sheetStep"
       :player-name="player.name"
       :count="targets.length"

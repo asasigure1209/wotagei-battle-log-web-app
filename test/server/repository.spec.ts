@@ -113,12 +113,12 @@ describe('getPlayer', () => {
 
 describe('getPlayerVideo', () => {
   it('プレイヤーの何本目かの動画の置き場所とファイル名を返す', async () => {
-    expect(await getPlayerVideo('s', 'e', '01', '02')).toEqual({
+    expect(await getPlayerVideo('s', 'e', '01', '02')).toMatchObject({
       storageKey: 's/e/video_02.mp4',
       fileName: 'video_02.mp4',
     })
     // B の 1 本目は、A と対戦した動画 1
-    expect(await getPlayerVideo('s', 'e', '02', '01')).toEqual({
+    expect(await getPlayerVideo('s', 'e', '02', '01')).toMatchObject({
       storageKey: 's/e/video_01.mp4',
       fileName: 'video_01.mp4',
     })

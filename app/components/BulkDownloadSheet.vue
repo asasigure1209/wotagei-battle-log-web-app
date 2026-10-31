@@ -20,14 +20,16 @@ const props = withDefaults(
     progress: number
     /** 進み具合の詳細 (ZIP なら容量、1 本ずつなら本数。preparing のときに使う) */
     detail: string
+    /** 選べなくする保存のしかた */
+    disabledMethods?: Method[]
   }>(),
-  { step: 'choose' },
+  { step: 'choose', disabledMethods: () => [] },
 )
 
 /** 開いているかどうか。閉じるボタン・キャンセルボタン・Esc で閉じると false になる */
 const open = defineModel<boolean>('open', { default: false })
 /** 選ばれている保存のしかた */
-const method = defineModel<Method>('method', { default: 'seq' })
+const method = defineModel<Method>('method', { default: 'zip' })
 
 defineEmits<{
   /** ダウンロードを開始するボタンが押されたとき */
@@ -94,14 +96,14 @@ const title = computed(() =>
       <template v-if="step === 'choose'">
         <fieldset class="methods">
           <legend class="legend">保存のしかた</legend>
-          <!-- ZIP はまだ作っていないので選べなくしておく -->
           <MethodOption
+            v-for="m in ['zip', 'seq'] as const"
+            :key="m"
             v-model="method"
-            method="zip"
+            :method="m"
             :name="methodName"
-            disabled
+            :disabled="disabledMethods.includes(m)"
           />
-          <MethodOption v-model="method" method="seq" :name="methodName" />
         </fieldset>
         <AppNotice
           type="wifi"

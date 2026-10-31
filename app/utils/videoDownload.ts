@@ -17,35 +17,30 @@ export function startDownload(path: string) {
 }
 
 /**
- * paths の動画を、間を空けて 1 本ずつ保存する。1 本始めるごとに、始めた本数で onProgress を呼ぶ。
+ * items を 1 つずつ、間を空けて download に渡す。download には何番目 (0 始まり) かも渡す。
  * signal が中断されたら、そこでやめる
  */
-export async function downloadInSequence(
-  paths: string[],
-  {
-    signal,
-    onProgress,
-  }: { signal: AbortSignal; onProgress: (done: number) => void },
+export async function downloadInSequence<T>(
+  items: readonly T[],
+  download: (item: T, index: number) => void,
+  signal: AbortSignal,
 ) {
-  for (const [i, path] of paths.entries()) {
+  for (const [i, item] of items.entries()) {
     if (i > 0) await wait(SEQUENCE_INTERVAL_MS, signal)
     if (signal.aborted) return
-    startDownload(path)
-    onProgress(i + 1)
+    download(item, i)
   }
 }
 
 /** ms ミリ秒待つ。signal が中断されたら、すぐに戻る */
 function wait(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms)
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer)
-        resolve()
-      },
-      { once: true },
-    )
+    const done = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', done)
+      resolve()
+    }
+    const timer = setTimeout(done, ms)
+    signal.addEventListener('abort', done, { once: true })
   })
 }

@@ -89,10 +89,7 @@ export async function getPlayerVideo(
 
   const db = await useDb()
   const rows = await playerVideos(db, series, event, entryNo)
-  const found = rows[index - 1]
-  return found
-    ? { storageKey: found.storageKey, fileName: found.fileName }
-    : null
+  return rows[index - 1] ?? null
 }
 
 /** プレイヤーの出ている動画 (イベントの中での順番) */

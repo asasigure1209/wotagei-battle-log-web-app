@@ -7,7 +7,7 @@ import BulkDownloadSheet from './BulkDownloadSheet.vue'
  * 動画をまとめてダウンロードするときに、画面の下から出すシート。
  *
  * - `choose` で保存のしかた (ZIP / 1 本ずつ) を選び、選んだ値を `v-model:method` でやり取りする。開始ボタンで `start` を発火する。
- *   ZIP はまだ作っていないので選べない
+ *   `disabledMethods` に入れた保存のしかたは選べない
  * - `preparing` で準備の進み具合を示す。見出しと注意は保存のしかたによって変わる
  * - `v-model:open` で開け閉めする。dialog の showModal で開くので、背面の暗い幕・フォーカスの移動・Esc で閉じる、はブラウザが受け持つ。
  *   閉じるボタン・キャンセルボタン・Esc で閉じると `update:open` に false を渡す
@@ -26,7 +26,7 @@ const meta = {
     totalSize: '4.2 GB',
     progress: 64,
     detail: '2.7 GB / 4.2 GB',
-    method: 'seq',
+    method: 'zip',
     'onUpdate:open': fn(),
     onStart: fn(),
     'onUpdate:method': fn(),
@@ -54,17 +54,19 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * 1 本ずつ保存するほうを選んでいる。ZIP は選べない。
- * 開始ボタンで `start` が、閉じるボタンで `update:open` が発火する。
+ * ZIP を選んでいる。
+ * 保存のしかたを切り替えると `update:method` が、開始ボタンで `start` が、閉じるボタンで `update:open` が発火する。
  */
-export const ChooseSeq: Story = {
+export const ChooseZip: Story = {
   play: async ({ args, canvas, userEvent }) => {
-    await expect(
-      canvas.getByRole('radio', { name: /ZIPでまとめて保存/ }),
-    ).toBeDisabled()
-    await expect(
+    await userEvent.click(
       canvas.getByRole('radio', { name: /1本ずつ続けて保存/ }),
-    ).toBeChecked()
+    )
+    await expect(args['onUpdate:method']).toHaveBeenLastCalledWith('seq')
+    await userEvent.click(
+      canvas.getByRole('radio', { name: /ZIPでまとめて保存/ }),
+    )
+    await expect(args['onUpdate:method']).toHaveBeenLastCalledWith('zip')
 
     await userEvent.click(
       canvas.getByRole('button', { name: 'ダウンロードを開始' }),
@@ -75,9 +77,27 @@ export const ChooseSeq: Story = {
   },
 }
 
+/** 1 本ずつ保存するほうを選んでいる。 */
+export const ChooseSeq: Story = {
+  args: { method: 'seq' },
+}
+
+/** まだ使えない ZIP を `disabledMethods` で選べなくしている。 */
+export const ZipDisabled: Story = {
+  args: { method: 'seq', disabledMethods: ['zip'] },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('radio', { name: /ZIPでまとめて保存/ }),
+    ).toBeDisabled()
+    await expect(
+      canvas.getByRole('radio', { name: /1本ずつ続けて保存/ }),
+    ).toBeChecked()
+  },
+}
+
 /** ZIP を作っている。キャンセルボタンで `update:open` が発火する。 */
 export const PreparingZip: Story = {
-  args: { step: 'preparing', method: 'zip' },
+  args: { step: 'preparing' },
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'キャンセル' }))
     await expect(args['onUpdate:open']).toHaveBeenCalledExactlyOnceWith(false)
@@ -86,5 +106,5 @@ export const PreparingZip: Story = {
 
 /** 1 本ずつ保存している。進み具合は本数で示す。 */
 export const PreparingSeq: Story = {
-  args: { step: 'preparing', detail: '4 / 6 本' },
+  args: { step: 'preparing', method: 'seq', detail: '4 / 6 本' },
 }
