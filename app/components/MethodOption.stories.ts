@@ -8,6 +8,7 @@ import MethodOption from './MethodOption.vue'
  *
  * - 同じグループの選択肢には同じ `name` を付け、選ばれている値を `v-model` でやり取りする
  * - 選ばれている選択肢は枠がアクセント色になる
+ * - `disabled` でまだ使えない保存のしかたを選べなくし、題名に「準備中」と添える
  */
 const meta = {
   component: MethodOption,
@@ -52,5 +53,18 @@ export const Seq: Story = {
       canvas.getByRole('radio', { name: /1本ずつ続けて保存/ }),
     )
     await expect(args['onUpdate:modelValue']).toHaveBeenCalledWith('seq')
+  },
+}
+
+/** 選べない選択肢。押しても `update:modelValue` は発火しない。 */
+export const Disabled: Story = {
+  args: { modelValue: 'seq', disabled: true },
+  play: async ({ args, canvas, userEvent }) => {
+    const radio = canvas.getByRole('radio', {
+      name: /ZIPでまとめて保存（準備中）/,
+    })
+    await expect(radio).toBeDisabled()
+    await userEvent.click(radio)
+    await expect(args['onUpdate:modelValue']).not.toHaveBeenCalled()
   },
 }

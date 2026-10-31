@@ -22,6 +22,8 @@ defineProps<{
   method: Method
   /** ラジオボタンのグループ名。同じグループの選択肢には同じ名前を付ける */
   name: string
+  /** 選べなくする (まだ使えない保存のしかた) */
+  disabled?: boolean
 }>()
 
 /** 選ばれている保存のしかた */
@@ -29,16 +31,19 @@ const model = defineModel<Method>()
 </script>
 
 <template>
-  <label :class="['method-option', { selected: model === method }]">
+  <label :class="['method-option', { selected: model === method, disabled }]">
     <input
       v-model="model"
       class="radio"
       type="radio"
       :name="name"
       :value="method"
+      :disabled="disabled"
     >
     <span class="text">
-      <span class="title">{{ copy[method].title }}</span>
+      <span class="title">
+        {{ copy[method].title }}{{ disabled ? '（準備中）' : '' }}
+      </span>
       <span class="description">{{ copy[method].description }}</span>
     </span>
   </label>
@@ -60,6 +65,11 @@ const model = defineModel<Method>()
 
 .selected {
   border-color: var(--color-accent);
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .radio {

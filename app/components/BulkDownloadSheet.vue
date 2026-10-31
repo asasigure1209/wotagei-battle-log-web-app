@@ -20,8 +20,10 @@ const props = withDefaults(
     progress: number
     /** 進み具合の詳細 (ZIP なら容量、1 本ずつなら本数。preparing のときに使う) */
     detail: string
+    /** 選べなくする保存のしかた */
+    disabledMethods?: Method[]
   }>(),
-  { step: 'choose' },
+  { step: 'choose', disabledMethods: () => [] },
 )
 
 /** 開いているかどうか。閉じるボタン・キャンセルボタン・Esc で閉じると false になる */
@@ -94,8 +96,14 @@ const title = computed(() =>
       <template v-if="step === 'choose'">
         <fieldset class="methods">
           <legend class="legend">保存のしかた</legend>
-          <MethodOption v-model="method" method="zip" :name="methodName" />
-          <MethodOption v-model="method" method="seq" :name="methodName" />
+          <MethodOption
+            v-for="m in ['zip', 'seq'] as const"
+            :key="m"
+            v-model="method"
+            :method="m"
+            :name="methodName"
+            :disabled="disabledMethods.includes(m)"
+          />
         </fieldset>
         <AppNotice
           type="wifi"

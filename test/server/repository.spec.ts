@@ -6,7 +6,12 @@ import {
   performers,
   videos,
 } from '../../server/db/schema'
-import { getEvent, getPlayer, listPlayers } from '../../server/utils/repository'
+import {
+  getEvent,
+  getPlayer,
+  getPlayerVideo,
+  listPlayers,
+} from '../../server/utils/repository'
 import { resetTestDb } from './test-db'
 
 const event = { seriesId: 's', eventId: 'e' }
@@ -102,6 +107,34 @@ describe('getPlayer', () => {
   it('いないプレイヤーや、2 桁に整えていない No. は null', async () => {
     for (const no of ['99', '2', '002', 'x']) {
       expect(await getPlayer('s', 'e', no)).toBeNull()
+    }
+  })
+})
+
+describe('getPlayerVideo', () => {
+  it('プレイヤーの何本目かの動画の置き場所とファイル名を返す', async () => {
+    expect(await getPlayerVideo('s', 'e', '01', '02')).toMatchObject({
+      storageKey: 's/e/video_02.mp4',
+      fileName: 'video_02.mp4',
+    })
+    // B の 1 本目は、A と対戦した動画 1
+    expect(await getPlayerVideo('s', 'e', '02', '01')).toMatchObject({
+      storageKey: 's/e/video_01.mp4',
+      fileName: 'video_01.mp4',
+    })
+  })
+
+  it('いないプレイヤーや動画、2 桁に整えていない No. は null', async () => {
+    for (const [no, videoNo] of [
+      ['01', '03'],
+      ['02', '02'],
+      ['03', '01'],
+      ['99', '01'],
+      ['01', '2'],
+      ['1', '01'],
+      ['01', '00'],
+    ] as const) {
+      expect(await getPlayerVideo('s', 'e', no, videoNo)).toBeNull()
     }
   })
 })
