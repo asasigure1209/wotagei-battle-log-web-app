@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { presignDownloadUrl } from '../../server/utils/r2'
+import { isR2Configured, presignDownloadUrl } from '../../server/utils/r2'
 
 const config = {
   accountId: 'account',
@@ -7,6 +7,22 @@ const config = {
   secretAccessKey: 'secret',
   bucket: 'bucket',
 }
+
+describe('isR2Configured', () => {
+  it('アカウント ID・アクセスキー・シークレットがそろっていれば true', () => {
+    expect(isR2Configured(config)).toBe(true)
+  })
+
+  it('署名に要る値が 1 つでも空なら false', () => {
+    for (const key of [
+      'accountId',
+      'accessKeyId',
+      'secretAccessKey',
+    ] as const) {
+      expect(isR2Configured({ ...config, [key]: '' })).toBe(false)
+    }
+  })
+})
 
 describe('presignDownloadUrl', () => {
   it('R2 の S3 互換 API の、キーをエンコードした URL に署名を載せる', async () => {
@@ -32,5 +48,10 @@ describe('presignDownloadUrl', () => {
     expect(url.searchParams.get('response-content-disposition')).toBe(
       `attachment; filename*=UTF-8''${encodeURIComponent('決勝.mp4')}`,
     )
+  })
+
+  it('期限を指定しなければ 600 秒にする', async () => {
+    const url = new URL(await presignDownloadUrl(config, 'a.mp4', 'a.mp4'))
+    expect(url.searchParams.get('X-Amz-Expires')).toBe('600')
   })
 })
