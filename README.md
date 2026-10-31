@@ -84,7 +84,20 @@ bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml   # 長�
 bun run d1-proxy:deploy
 ```
 
-そのあと、Vercel プロジェクトの環境変数に `NUXT_D1_PROXY_URL` (デプロイした Worker の URL)、`NUXT_D1_PROXY_TOKEN` (`PROXY_TOKEN` と同じ値)、`NUXT_API_SECRET` (長いランダムな値) を設定します。マイグレーションを追加したら、もう一度 `bun run d1:migrate:remote` を実行してください。
+そのあと、Vercel プロジェクトの環境変数に `NUXT_D1_PROXY_URL` (デプロイした Worker の URL)、`NUXT_D1_PROXY_TOKEN` (`PROXY_TOKEN` と同じ値)、`NUXT_API_SECRET` (長いランダムな値) を設定します。
+
+さらに、本番デプロイでマイグレーションを流せるよう、Vercel の Production 環境にだけ次の環境変数を設定します。
+
+| 環境変数                | 意味                                                              |
+| ----------------------- | ----------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Cloudflare の API トークン。権限は Account → D1 → Edit だけでよい |
+| `CLOUDFLARE_ACCOUNT_ID` | D1 があるアカウントの ID                                          |
+
+### マイグレーションの適用
+
+Vercel の本番ビルド (`bun run vercel-build`) は、`nuxt build` の前に `bun run d1:migrate:remote` を実行し、未適用のマイグレーションを本番の D1 に流します。失敗するとビルドごと失敗し、デプロイされません。Preview デプロイでは実行しません。
+
+マイグレーションはビルド中、つまり新しい版に切り替わる前に適用されるので、切り替わるまでの間は古いコードが新しいスキーマで動きます。マイグレーションのあとに `nuxt build` が失敗したときや、Vercel の Instant Rollback で前の版に戻したときも、スキーマは新しいまま残ります。列の削除やリネームのように古いコードを壊す変更は、コード側で使うのをやめるデプロイと、スキーマを変えるデプロイの 2 回に分けてください。
 
 ## 本番
 
