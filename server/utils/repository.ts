@@ -1,6 +1,7 @@
 // API が返すデータの取り出し口。API のハンドラはここだけを呼び、データの置き場所を知らない。
 // DB の値 (数値の No.・秒・バイト) を、API が返す表示用の形に整える
 import { and, asc, type Column, count, eq } from 'drizzle-orm'
+import type { Db } from '../db/client'
 import { entries, events, performers, videos } from '../db/schema'
 // テスト (node 環境) からも読めるよう、Nitro の自動 import に頼らず明示する
 import { useDb } from './db'
@@ -54,24 +55,7 @@ export async function getPlayer(series: string, event: string, no: string) {
       .where(
         and(inEvent(entries, series, event), eq(entries.entryNo, entryNo)),
       ),
-    db
-      .select({
-        fileName: videos.fileName,
-        durationSec: videos.durationSec,
-        sizeBytes: videos.sizeBytes,
-      })
-      .from(performers)
-      .innerJoin(
-        videos,
-        and(sameEvent(videos, performers), eq(videos.no, performers.videoNo)),
-      )
-      .where(
-        and(
-          inEvent(performers, series, event),
-          eq(performers.entryNo, entryNo),
-        ),
-      )
-      .orderBy(asc(videos.no)),
+    playerVideos(db, series, event, entryNo),
   ])
   if (!entry) return null
 
@@ -87,6 +71,48 @@ export async function getPlayer(series: string, event: string, no: string) {
       mb: Math.round(v.sizeBytes / 1_000_000),
     })),
   }
+}
+
+/**
+ * プレイヤーの、何本目か (videoNo。プレイヤー画面の動画の No. と同じ '02' の形) の動画の置き場所とファイル名。
+ * いないプレイヤーや動画は null
+ */
+export async function getPlayerVideo(
+  series: string,
+  event: string,
+  no: string,
+  videoNo: string,
+) {
+  const entryNo = parseNo(no)
+  const index = parseNo(videoNo)
+  if (entryNo === null || index === null) return null
+
+  const db = await useDb()
+  const rows = await playerVideos(db, series, event, entryNo)
+  const found = rows[index - 1]
+  return found
+    ? { storageKey: found.storageKey, fileName: found.fileName }
+    : null
+}
+
+/** プレイヤーの出ている動画 (イベントの中での順番) */
+function playerVideos(db: Db, series: string, event: string, entryNo: number) {
+  return db
+    .select({
+      fileName: videos.fileName,
+      storageKey: videos.storageKey,
+      durationSec: videos.durationSec,
+      sizeBytes: videos.sizeBytes,
+    })
+    .from(performers)
+    .innerJoin(
+      videos,
+      and(sameEvent(videos, performers), eq(videos.no, performers.videoNo)),
+    )
+    .where(
+      and(inEvent(performers, series, event), eq(performers.entryNo, entryNo)),
+    )
+    .orderBy(asc(videos.no))
 }
 
 /** イベントの中の表 (series_id・event_id を持つ表) */

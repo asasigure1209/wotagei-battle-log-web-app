@@ -27,7 +27,7 @@ const props = withDefaults(
 /** 開いているかどうか。閉じるボタン・キャンセルボタン・Esc で閉じると false になる */
 const open = defineModel<boolean>('open', { default: false })
 /** 選ばれている保存のしかた */
-const method = defineModel<Method>('method', { default: 'zip' })
+const method = defineModel<Method>('method', { default: 'seq' })
 
 defineEmits<{
   /** ダウンロードを開始するボタンが押されたとき */
@@ -94,7 +94,13 @@ const title = computed(() =>
       <template v-if="step === 'choose'">
         <fieldset class="methods">
           <legend class="legend">保存のしかた</legend>
-          <MethodOption v-model="method" method="zip" :name="methodName" />
+          <!-- ZIP はまだ作っていないので選べなくしておく -->
+          <MethodOption
+            v-model="method"
+            method="zip"
+            :name="methodName"
+            disabled
+          />
           <MethodOption v-model="method" method="seq" :name="methodName" />
         </fieldset>
         <AppNotice

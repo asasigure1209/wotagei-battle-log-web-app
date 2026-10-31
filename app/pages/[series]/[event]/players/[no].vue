@@ -17,11 +17,12 @@ const { videos } = player
 
 useHead({ title: () => `${player.name} | ${event.value?.title}` })
 
+const playerPath = `${eventPath}/players/${params.no}`
+
 const selectMode = ref(false)
 const selected = ref<Record<string, boolean>>({})
-// 保存済みの見た目を出すため、モックと同じく 2 本目を保存済みにしておき、
-// ダウンロードボタンを押した動画も保存済みにする (実際の保存は API ができてから)
-const saved = ref<Record<string, boolean>>({ '02': true })
+// 保存を始めた動画。ブラウザが保存し終えたかは分からないので、始めた時点で保存済みにする
+const saved = ref<Record<string, boolean>>({})
 
 // まとめてダウンロードする動画。選択モードでは選んだ動画だけ
 const targets = computed(() =>
@@ -29,17 +30,51 @@ const targets = computed(() =>
 )
 const targetMb = computed(() => sumMb(targets.value))
 
-const method = ref<Method>('zip')
+// ZIP はまだ作っていないので、1 本ずつ続けて保存するほうだけを使う
+const method = ref<Method>('seq')
 const sheetStep = ref<'choose' | 'preparing'>('choose')
 const sheetOpen = ref(false)
 
-// ダウンロードの処理は API ができてから作るので、準備の進み具合はモックと同じ 64% で止めておく
-const progress = 64
-const detail = computed(() =>
-  method.value === 'zip'
-    ? `${formatSize(Math.round((targetMb.value * progress) / 100))} / ${formatSize(targetMb.value)}`
-    : `${Math.max(1, Math.round((targets.value.length * progress) / 100))} / ${targets.value.length} 本`,
+// 続けて保存している動画と、保存を始めた本数
+const queue = ref<typeof videos>([])
+const doneCount = ref(0)
+const progress = computed(() =>
+  queue.value.length
+    ? Math.round((doneCount.value / queue.value.length) * 100)
+    : 0,
 )
+const detail = computed(() => `${doneCount.value} / ${queue.value.length} 本`)
+let abort: AbortController | undefined
+
+function downloadOne(video: (typeof videos)[number]) {
+  startDownload(videoDownloadPath(playerPath, video.no))
+  saved.value[video.no] = true
+}
+
+async function startSequence() {
+  sheetStep.value = 'preparing'
+  queue.value = targets.value
+  doneCount.value = 0
+  abort = new AbortController()
+  const { signal } = abort
+  await downloadInSequence(
+    queue.value.map((v) => videoDownloadPath(playerPath, v.no)),
+    {
+      signal,
+      onProgress: (done) => {
+        doneCount.value = done
+        const video = queue.value[done - 1]
+        if (video) saved.value[video.no] = true
+      },
+    },
+  )
+  if (!signal.aborted) sheetOpen.value = false
+}
+
+// キャンセルボタンや Esc でシートを閉じたら、続けて保存するのをやめる
+watch(sheetOpen, (open) => {
+  if (!open) abort?.abort()
+})
 
 function sumMb(list: { mb: number }[]) {
   return list.reduce((sum, v) => sum + v.mb, 0)
@@ -93,7 +128,7 @@ function openSheet() {
             :file="video.file"
             :duration="video.duration"
             :file-size="formatSize(video.mb)"
-            @download="saved[video.no] = true"
+            @download="downloadOne(video)"
           />
         </li>
       </ul>
@@ -114,7 +149,7 @@ function openSheet() {
       :total-size="formatSize(targetMb)"
       :progress="progress"
       :detail="detail"
-      @start="sheetStep = 'preparing'"
+      @start="startSequence"
     />
   </div>
 </template>
