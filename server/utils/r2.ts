@@ -1,14 +1,10 @@
 // R2 に置いた動画を、ブラウザが直接取りに行くための署名付き URL を作る。
 // R2 の S3 互換 API に、クエリに署名を載せた GET の URL を作るだけで、R2 には問い合わせない
 import { AwsV4Signer } from 'aws4fetch'
+import type { RuntimeConfig } from 'nuxt/schema'
 
-/** R2 につなぐための値 (runtimeConfig の r2) */
-export type R2Config = {
-  accountId: string
-  accessKeyId: string
-  secretAccessKey: string
-  bucket: string
-}
+/** R2 につなぐための値 (nuxt.config.ts の runtimeConfig.r2) */
+export type R2Config = RuntimeConfig['r2']
 
 /** 署名に要る値がそろっているか */
 export function isR2Configured(config: R2Config) {

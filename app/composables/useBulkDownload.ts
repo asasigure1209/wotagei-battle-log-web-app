@@ -8,7 +8,6 @@ export function useBulkDownload<T>(
   targets: () => readonly T[],
   downloadOne: (item: T) => void,
 ) {
-  const open = ref(false)
   const step = ref<'choose' | 'preparing'>('choose')
   const method = ref<Method>('seq')
   // ZIP はまだ作っていないので選べなくしておく
@@ -24,8 +23,13 @@ export function useBulkDownload<T>(
 
   let abort: AbortController | undefined
   // キャンセルボタンや Esc でシートを閉じたり、画面を離れたりしたら、続けて保存するのをやめる
-  watch(open, (o) => {
-    if (!o) abort?.abort()
+  const isOpen = ref(false)
+  const open = computed({
+    get: () => isOpen.value,
+    set: (o) => {
+      if (!o) abort?.abort()
+      isOpen.value = o
+    },
   })
   onBeforeUnmount(() => abort?.abort())
 
@@ -45,13 +49,13 @@ export function useBulkDownload<T>(
     const { signal } = abort
     await downloadInSequence(
       items,
-      (item, i) => {
+      (item) => {
         downloadOne(item)
-        done.value = i + 1
+        done.value++
       },
       signal,
     )
-    if (!signal.aborted) open.value = false
+    if (!signal.aborted) isOpen.value = false
   }
 
   return reactive({

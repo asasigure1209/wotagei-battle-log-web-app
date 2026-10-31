@@ -17,18 +17,18 @@ export function startDownload(path: string) {
 }
 
 /**
- * items を 1 つずつ、間を空けて download に渡す。download には何番目 (0 始まり) かも渡す。
+ * items を 1 つずつ、間を空けて download に渡す。
  * signal が中断されたら、そこでやめる
  */
 export async function downloadInSequence<T>(
   items: readonly T[],
-  download: (item: T, index: number) => void,
+  download: (item: T) => void,
   signal: AbortSignal,
 ) {
   for (const [i, item] of items.entries()) {
     if (i > 0) await wait(SEQUENCE_INTERVAL_MS, signal)
     if (signal.aborted) return
-    download(item, i)
+    download(item)
   }
 }
 

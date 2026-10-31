@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h } from 'vue'
 import { useBulkDownload } from '~/composables/useBulkDownload'
 
 // onBeforeUnmount を使うので、コンポーネントの中で呼ぶ
@@ -66,12 +66,9 @@ describe('useBulkDownload', () => {
 
   it('シートを閉じたら、続きを保存しない', async () => {
     const { bulk, downloadOne } = mountBulk(['a', 'b'])
-    // 開いたことを watch に伝えてから閉じる (同じ tick で開け閉めすると、変わっていないことになる)
     bulk.show()
-    await nextTick()
     const running = bulk.start()
     bulk.open = false
-    await nextTick()
     await running
     await vi.runAllTimersAsync()
     expect(downloadOne).toHaveBeenCalledTimes(1)
