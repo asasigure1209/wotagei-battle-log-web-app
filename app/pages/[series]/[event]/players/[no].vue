@@ -18,7 +18,7 @@ useHead({ title: () => `${player.name} | ${event.value?.title}` })
 
 const selection = useVideoSelection(videos)
 const download = useVideoDownload(playerPath)
-const bulk = useBulkDownload(() => selection.targets, download.download)
+const bulk = useBulkDownload(() => selection.targets, download.start)
 const targetSize = computed(() => formatSize(sumMb(selection.targets)))
 </script>
 
@@ -55,7 +55,7 @@ const targetSize = computed(() => formatSize(sumMb(selection.targets)))
             :file="video.file"
             :duration="video.duration"
             :file-size="formatSize(video.mb)"
-            @download="download.download(video)"
+            @download="download.start(video)"
           />
         </li>
       </ul>
@@ -64,7 +64,7 @@ const targetSize = computed(() => formatSize(sumMb(selection.targets)))
       class="action-bar"
       :variant="selection.active ? 'selection' : 'all'"
       :count="selection.targets.length"
-      :size="selection.targets.length ? targetSize : '未選択'"
+      :size="targetSize"
       @download="bulk.show"
     />
     <BulkDownloadSheet
