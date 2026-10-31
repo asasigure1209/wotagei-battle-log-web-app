@@ -18,4 +18,4 @@ jobs:
           # 結果は Chromatic が PR の UI Tests チェックとして報告するので、アップロードで終える
           exitOnceUploaded: true
           # Dependabot の push では Actions の secret が使えない
-          skip: 'dependabot/**'
+          skip: "dependabot/**"
