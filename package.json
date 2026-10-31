@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "vercel-build": "if [ \"$VERCEL_ENV\" = production ]; then bun run d1:migrate:remote; fi && nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
