@@ -2,10 +2,11 @@
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 // URL を series と event に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
-const [{ data: event }, { data: players }] = await Promise.all([
+const [{ data: event }, playersResult] = await Promise.all([
   useEventInfo(),
   useApiFetch(`/api/${params.series}/${params.event}/players`),
 ])
+const players = requireApiData(playersResult)
 
 useHead({ title: () => event.value?.title })
 </script>
