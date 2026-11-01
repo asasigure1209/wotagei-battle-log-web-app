@@ -3,11 +3,12 @@ const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 const playerPath = `${eventPath}/players/${params.no}`
 // URL を series・event・no に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
-const [{ data: event }, { data: playerData }] = await Promise.all([
+const [{ data: event }, { data: playerData, error }] = await Promise.all([
   useEventInfo(),
   useApiFetch(`/api/${params.series}/${params.event}/players/${params.no}`),
 ])
-// いないプレイヤーは API が 404 を返し、data が空になる
+// いないプレイヤーは API が 404 を返す。それ以外の失敗は 500 にし、ISR でとっておかれないようにする
+throwIfApiFailed(error.value)
 const player = playerData.value
 if (!player) {
   throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })

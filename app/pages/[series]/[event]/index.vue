@@ -2,10 +2,12 @@
 const { params } = useRoute()
 const eventPath = `/${params.series}/${params.event}`
 // URL を series と event に分けて書くと、API (server/api/[series]/[event]/) の戻り値の型が付く
-const [{ data: event }, { data: players }] = await Promise.all([
+const [{ data: event }, { data: players, error }] = await Promise.all([
   useEventInfo(),
   useApiFetch(`/api/${params.series}/${params.event}/players`),
 ])
+// 取得に失敗したまま空の一覧を出すと、ISR でそれがとっておかれてしまう
+throwIfApiFailed(error.value)
 
 useHead({ title: () => event.value?.title })
 </script>
