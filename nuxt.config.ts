@@ -18,6 +18,25 @@ export default defineNuxtConfig({
       bucket: 'wotagei-battle-log',
     },
   },
+  // イベント・プレイヤーの画面は、Vercel の ISR で描画結果を 1 時間とっておく。
+  // 中身 (DB の値) は取り込み (db:import) のときにしか変わらないので、そのたびに API・D1 を引かなくてよい。
+  // 期限を過ぎると、古い結果を返しながら裏で描き直す。404 もとっておかれる。
+  // とっておいた結果はデプロイごとに別なので、取り込んだ内容をすぐ出したいときは再デプロイする。
+  // 画面には署名付き URL を載せず /download/** へのリンクだけを置くので、とっておいても期限切れにならない。
+  // /download/** (署名付き URL への転送) と /api/** は、ここに含めずリクエストのたびに動かす。
+  // allowQuery を空にして、クエリが違っても同じ結果を返す (クエリを変えて D1 を引かせられないように)
+  routeRules: {
+    '/:series/:event': { isr: { expiration: 3600, allowQuery: [] } },
+    '/:series/:event/players/:no': {
+      isr: { expiration: 3600, allowQuery: [] },
+    },
+  },
+  experimental: {
+    // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、
+    // ブラウザが読み込むたびに取りに来させる。_payload.json は ISR のルートに入らず毎回 D1 を引くので、HTML に埋め込んだままにする。
+    // 画面どうしは <a> の通常の遷移でつないでいて、クライアント側の遷移で payload を使うこともない
+    payloadExtraction: false,
+  },
   css: ['~/assets/css/main.css'],
   app: {
     head: {
