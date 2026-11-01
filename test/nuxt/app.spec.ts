@@ -1,5 +1,5 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '~/app.vue'
 
 // nuxt 環境のテストではサーバー (Nitro) も DB も動かないので、API の応答を差し替える
@@ -53,7 +53,18 @@ describe('イベントページ', () => {
 })
 
 describe('プレイヤーの動画一覧ページ', () => {
-  it('選択モードで選んだ動画を、画面下のバーとまとめてダウンロードのシートに出す', async () => {
+  // 保存は <a> の click で始まるので、実際には遷移させず、開こうとした URL を記録する
+  const downloads: (string | null)[] = []
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    downloads.push(this.getAttribute('href'))
+  })
+  afterEach(() => {
+    downloads.length = 0
+  })
+
+  async function mountPlayerPage() {
     const wrapper = await mountSuspended(App, {
       route: '/elnino/elnino_vol_5/players/05',
     })
@@ -62,6 +73,22 @@ describe('プレイヤーの動画一覧ページ', () => {
       if (!found) throw new Error(`「${label}」のボタンがない`)
       return found
     }
+    return { wrapper, button }
+  }
+
+  it('動画のダウンロードボタンで、その動画を保存し、保存済みにする', async () => {
+    const { wrapper } = await mountPlayerPage()
+    expect(wrapper.text()).not.toContain('保存済み')
+
+    await wrapper
+      .find('button[aria-label="video_06.mp4 をダウンロード"]')
+      .trigger('click')
+    expect(downloads).toEqual(['/download/elnino/elnino_vol_5/players/05/02'])
+    expect(wrapper.text()).toContain('保存済み')
+  })
+
+  it('選択モードで選んだ動画を、画面下のバーとまとめてダウンロードのシートに出し、1 本ずつ保存する', async () => {
+    const { wrapper, button } = await mountPlayerPage()
 
     await button('選択').trigger('click')
     const checkboxes = wrapper.findAll('input[type="checkbox"]')
@@ -76,8 +103,10 @@ describe('プレイヤーの動画一覧ページ', () => {
     expect(sheet.text()).toContain('2本 · 1.6 GB')
 
     await button('ダウンロードを開始').trigger('click')
-    expect(sheet.text()).toContain('ZIPを作成しています')
-    expect(sheet.text()).toContain('996 MB / 1.6 GB')
+    expect(sheet.text()).toContain('順番に保存しています')
+    expect(sheet.text()).toContain('1 / 2 本')
+    // 2 本目は間を空けてから始めるので、まだ 1 本目だけ
+    expect(downloads).toEqual(['/download/elnino/elnino_vol_5/players/05/01'])
 
     // 選択モードを抜ける「キャンセル」もあるので、シートの中から探す
     await sheet

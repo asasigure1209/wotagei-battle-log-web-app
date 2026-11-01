@@ -7,7 +7,7 @@ withDefaults(
     variant?: 'all' | 'selection'
     /** 動画の本数。all ではすべての動画、selection では選んだ動画の本数。selection で 0 本のときはダウンロードボタンを押せない */
     count: number
-    /** count 本の動画の合計の容量 */
+    /** count 本の動画の合計の容量。selection で 0 本のときは出さず「未選択」と出す */
     size: string
   }>(),
   { variant: 'all' },
@@ -33,7 +33,7 @@ defineEmits<{
     <div v-else class="selection">
       <div class="summary">
         <span class="sel-count">{{ count }}本を選択中</span>
-        <span class="sel-size">{{ size }}</span>
+        <span class="sel-size">{{ count === 0 ? '未選択' : size }}</span>
       </div>
       <AppButton
         label="ダウンロード"

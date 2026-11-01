@@ -34,8 +34,9 @@ export const All: Story = {
 
 /** 選択モードで、まだ 1 本も選んでいない。ダウンロードボタンは押せない。 */
 export const SelectionEmpty: Story = {
-  args: { variant: 'selection', count: 0, size: '未選択' },
+  args: { variant: 'selection', count: 0, size: '0 MB' },
   play: async ({ canvas }) => {
+    await expect(canvas.getByText('未選択')).toBeVisible()
     await expect(
       canvas.getByRole('button', { name: 'ダウンロード' }),
     ).toBeDisabled()

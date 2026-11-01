@@ -6,7 +6,8 @@ import BulkDownloadSheet from './BulkDownloadSheet.vue'
 /**
  * 動画をまとめてダウンロードするときに、画面の下から出すシート。
  *
- * - `choose` で保存のしかた (ZIP / 1 本ずつ) を選び、選んだ値を `v-model:method` でやり取りする。開始ボタンで `start` を発火する
+ * - `choose` で保存のしかた (ZIP / 1 本ずつ) を選び、選んだ値を `v-model:method` でやり取りする。開始ボタンで `start` を発火する。
+ *   `disabledMethods` に入れた保存のしかたは選べない
  * - `preparing` で準備の進み具合を示す。見出しと注意は保存のしかたによって変わる
  * - `v-model:open` で開け閉めする。dialog の showModal で開くので、背面の暗い幕・フォーカスの移動・Esc で閉じる、はブラウザが受け持つ。
  *   閉じるボタン・キャンセルボタン・Esc で閉じると `update:open` に false を渡す
@@ -79,6 +80,19 @@ export const ChooseZip: Story = {
 /** 1 本ずつ保存するほうを選んでいる。 */
 export const ChooseSeq: Story = {
   args: { method: 'seq' },
+}
+
+/** まだ使えない ZIP を `disabledMethods` で選べなくしている。 */
+export const ZipDisabled: Story = {
+  args: { method: 'seq', disabledMethods: ['zip'] },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('radio', { name: /ZIPでまとめて保存/ }),
+    ).toBeDisabled()
+    await expect(
+      canvas.getByRole('radio', { name: /1本ずつ続けて保存/ }),
+    ).toBeChecked()
+  },
 }
 
 /** ZIP を作っている。キャンセルボタンで `update:open` が発火する。 */
