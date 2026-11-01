@@ -7,12 +7,8 @@ definePageMeta({
   validate: ({ params }) => [params.series, params.event].every(isId),
 })
 
-// ないイベントは API が 404 を返す。ここで 404 (取得の失敗は 500) にすれば、イベント配下のページすべてに効く
-const { data: event, error } = await useEventInfo()
-throwIfApiFailed(error.value)
-if (!event.value) {
-  throw createError({ status: 404, statusText: 'Page Not Found', fatal: true })
-}
+// ないイベントは API が 404 を返す。ここでページのエラーにすれば、イベント配下のページすべてに効く
+requireApiData(await useEventInfo())
 </script>
 
 <template>

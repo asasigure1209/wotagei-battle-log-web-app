@@ -1,6 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { randomUUID } from 'node:crypto'
 
+// ISR で描画結果を 1 時間とっておく。allowQuery を空にして、クエリが違っても同じ結果を返す
+// (クエリを変えて D1 を引かせられないように)
+const isrHourly = { isr: { expiration: 3600, allowQuery: [] } }
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -24,16 +28,14 @@ export default defineNuxtConfig({
   // とっておいた結果はデプロイごとに別なので、取り込んだ内容をすぐ出したいときは再デプロイする。
   // 画面には署名付き URL を載せず /download/** へのリンクだけを置くので、とっておいても期限切れにならない。
   // /download/** (署名付き URL への転送) と /api/** は、ここに含めずリクエストのたびに動かす。
-  // allowQuery を空にして、クエリが違っても同じ結果を返す (クエリを変えて D1 を引かせられないように)
   routeRules: {
-    '/:series/:event': { isr: { expiration: 3600, allowQuery: [] } },
-    '/:series/:event/players/:no': {
-      isr: { expiration: 3600, allowQuery: [] },
-    },
+    '/:series/:event': isrHourly,
+    '/:series/:event/players/:no': isrHourly,
   },
   experimental: {
-    // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、
-    // ブラウザが読み込むたびに取りに来させる。_payload.json は ISR のルートに入らず毎回 D1 を引くので、HTML に埋め込んだままにする。
+    // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、ブラウザに取りに来させる。
+    // _payload.json も別に ISR でとっておかれるので、描き直し (D1 を引く) が HTML と合わせて 2 倍になり、
+    // ブラウザのリクエストも 1 本増える。HTML に埋め込んだままにする。
     // 画面どうしは <a> の通常の遷移でつないでいて、クライアント側の遷移で payload を使うこともない
     payloadExtraction: false,
   },
