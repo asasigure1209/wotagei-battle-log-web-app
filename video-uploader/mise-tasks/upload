@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="encoded_videos の動画を R2 バケットにアップロードする"
+#MISE description="videos の動画を R2 バケットにアップロードする"
 #USAGE flag "--series <id>" required=#true help="イベントシリーズID (例: elnino)"
 #USAGE flag "--event <id>" required=#true help="イベントID (例: elnino_vol_5)"
 #USAGE flag "--all" help="すべての動画をアップロードする"
@@ -35,11 +35,11 @@ if [[ ${usage_dry_run:-} == "true" ]]; then
   dry_run=(--dry-run)
 fi
 
-src_dir="encoded_videos"
+src_dir="videos"
 
-# encode と同じ規則 (bash の glob 照合、* は / もまたぐ) で対象を選ぶため、
-# rclone の --include ではなくファイル一覧を渡す
-# encode に合わせて大文字・小文字を区別せずに照合する
+# manifest と同じ規則 (bash の glob 照合、* は / もまたぐ) で対象を選ぶため、
+# rclone の --include ではなくファイル一覧を渡す。
+# カメラが書き出す .MP4 もそのまま送るので、拡張子もパターンも大文字・小文字を区別せずに照合する
 shopt -s nocasematch
 files=()
 while IFS= read -r -d '' path; do
@@ -47,7 +47,7 @@ while IFS= read -r -d '' path; do
   # shellcheck disable=SC2053 # pattern は glob として照合する
   [[ $rel == $pattern ]] || continue
   files+=("$rel")
-done < <(find "$src_dir" -type f -name '*.mp4' -print0)
+done < <(find "$src_dir" -type f -iname '*.mp4' -print0)
 
 if [[ ${#files[@]} -eq 0 ]]; then
   echo "warning: '$pattern' に一致する動画が $src_dir/ にありません" >&2

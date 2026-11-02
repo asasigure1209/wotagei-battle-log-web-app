@@ -1,9 +1,9 @@
 # 本番に動画をアップロードする手順
 
-1 つのイベントの動画をエンコードして R2 にアップロードし、Web アプリの本番の DB に取り込んで、本番ページで表示を確かめるまでの手順。
+1 つのイベントの動画を R2 にアップロードし、Web アプリの本番の DB に取り込んで、本番ページで表示を確かめるまでの手順。
 
 作業するディレクトリは、wotagei-battle-log-web-app リポジトリの中の 2 か所。
-- `video-uploader/`: エンコード・アップロード・manifest の書き出し (`mise encode` / `mise upload` / `mise manifest`)
+- `video-uploader/`: アップロード・manifest の書き出し (`mise upload` / `mise manifest`)
 - リポジトリのルート: manifest を DB に取り込む (`bun run db:import`)
 
 特に断りがなければ、コマンドは `video-uploader/` で実行する。
@@ -21,7 +21,7 @@
 ### ツール
 
 ```bash
-brew install ffmpeg rclone   # Homebrew の ffmpeg は libx264 入り
+brew install ffmpeg rclone   # ffmpeg は、mise manifest が動画の長さを調べる ffprobe のために入れる
 cd wotagei-battle-log-web-app && mise trust && mise install && bun install
 cd video-uploader && mise trust && mise install   # video-uploader/ の mise.toml も別に信頼させる
 ```
@@ -52,18 +52,20 @@ EOF
 
 トークンがわからなくなったときは、[トークンを作り直す](#トークンを作り直す) を見る。
 
-## 1. 元の動画を置く
+## 1. 動画を置く
 
-`source_videos/` と `encoded_videos/` は 1 つのイベント用の作業場所で、イベントごとの階層はない。**前のイベントの動画が残っていると、それも今回のイベントのキーでアップロードされてしまう**ので、始める前に空にする (`.gitkeep` は残す)。
+`videos/` は 1 つのイベント用の作業場所で、イベントごとの階層はない。**前のイベントの動画が残っていると、それも今回のイベントのキーでアップロードされてしまう**ので、始める前に空にする (`.gitkeep` は残す)。
 
 ```bash
-find source_videos encoded_videos -mindepth 1 -not -name .gitkeep   # 何も出なければ空
+find videos -mindepth 1 -not -name .gitkeep   # 何も出なければ空
 ```
 
-元の動画を、分類 (予選・本戦など) ごとのディレクトリに分けて置く。ファイル名は .mp4 にする (.MP4 のように大文字でもよい。エンコード後は .mp4 になる)。
+撮影した動画を、分類 (予選・本戦など) ごとのディレクトリに分けて置く。拡張子は .mp4 でも .MP4 でもよい。
+
+動画はエンコードし直さず、置いたファイルをそのままアップロードして配る。撮影するときに、圧縮率が高く、配る相手が再生できるフォーマットで撮っておく (HEVC (H.265) は、古い Windows や Android では再生できないことがある)。
 
 ```
-source_videos/
+videos/
   予選/
     M1256.mp4
     M1257.mp4
@@ -71,15 +73,7 @@ source_videos/
     M1268.mp4
 ```
 
-## 2. エンコードする
-
-```bash
-mise encode --all
-```
-
-`encoded_videos/` に、同じディレクトリ構成でエンコード済みの動画ができる。出力済みのファイルはスキップするので、途中で止まっても同じコマンドで続きから再開できる。
-
-## 3. R2 にアップロードする
+## 2. R2 にアップロードする
 
 まず `--dry-run` で、対象のファイルと送り先を確かめる。
 
@@ -94,9 +88,9 @@ mise upload --series elnino --event elnino_vol_5 --all
 rclone lsl r2-wotagei-battle-log:wotagei-battle-log/elnino/elnino_vol_5   # R2 に入ったファイルとサイズ
 ```
 
-R2 のキーは `elnino/elnino_vol_5/予選/M1256.mp4` のように、`<シリーズID>/<イベントID>/<encoded_videos からの相対パス>` になる。アップロード済みのファイルは rclone が飛ばすので、途中で止まっても同じコマンドで再開できる。
+R2 のキーは `elnino/elnino_vol_5/予選/M1256.mp4` のように、`<シリーズID>/<イベントID>/<videos からの相対パス>` になる。ファイル名は変えないので、`C1010S03.MP4` ならキーも `.MP4` で終わる。アップロード済みのファイルは rclone が飛ばすので、途中で止まっても同じコマンドで再開できる。
 
-## 4. manifest を書く
+## 3. manifest を書く
 
 ```bash
 mise manifest --series elnino --event elnino_vol_5
@@ -111,7 +105,7 @@ mise manifest --series elnino --event elnino_vol_5
 
 書き込んだ内容を消さないよう、YAML がすでにあると `mise manifest` は書き出さない。作り直すときだけ `--force` を付ける。書き込んだ YAML は、あとで直して取り込み直すときに使うので残しておく。
 
-## 5. 本番の DB に取り込む
+## 4. 本番の DB に取り込む
 
 リポジトリのルートで実行する。設定ファイルの環境変数がそのあとのコマンドに残らないよう、`( )` の中だけで読み込む。
 
@@ -135,7 +129,7 @@ manifest=video-uploader/manifests/elnino/elnino_vol_5.yaml
 
 取り込みは、そのイベントのエントリー・動画・出演者を入れ直す (同じシリーズのほかのイベントには触れない)。1 つのトランザクションで流すので、途中で失敗しても DB は変わらない。YAML を直したときは、同じコマンドでもう一度取り込めばよい。
 
-## 6. 本番ページで確かめる
+## 5. 本番ページで確かめる
 
 本番の Web アプリには Vercel のログインがかかっているので、Vercel にログインしたブラウザで開く。
 
@@ -150,9 +144,9 @@ manifest=video-uploader/manifests/elnino/elnino_vol_5.yaml
 
 本番の画面は Vercel の ISR で 1 時間とっておくので、取り込んでから画面に出るまで最大 1 時間かかる。すぐに確かめたいときは本番を再デプロイする (詳しくはリポジトリのルートの README.md の「イベントの取り込み」)。
 
-## 7. 後片付け
+## 6. 後片付け
 
-- `source_videos/` と `encoded_videos/` を空にする (次のイベントを始める前に、必ず空にする)
+- `videos/` を空にする (次のイベントを始める前に、必ず空にする)
 - `manifests/` の YAML は、取り込み直すときのために残しておく
 
 ## 困ったとき
