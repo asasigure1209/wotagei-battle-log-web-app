@@ -65,7 +65,7 @@ bun run dev
 
 ### イベントの取り込み
 
-イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダーのリポジトリ (wotagei-battle-log-video-uploader) の `mise manifest --series <シリーズID> --event <イベントID>` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。シリーズ名、イベント、エントリー、各動画の出演者を埋めてから取り込みます。
+イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダー (`video-uploader/`) の `mise manifest --series <シリーズID> --event <イベントID>` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。シリーズ名、イベント、エントリー、各動画の出演者を埋めてから取り込みます。
 
 ```bash
 bun run db:import <yaml> --dry-run   # ファイルを検査し、取り込まれる内容を表示するだけ
@@ -101,9 +101,21 @@ Vercel の本番ビルド (`bun run vercel-build`) は、`nuxt build` の前に 
 
 マイグレーションはビルド中、つまり新しい版に切り替わる前に適用されるので、切り替わるまでの間は古いコードが新しいスキーマで動きます。マイグレーションのあとに `nuxt build` が失敗したときや、Vercel の Instant Rollback で前の版に戻したときも、スキーマは新しいまま残ります。列の削除やリネームのように古いコードを壊す変更は、コード側で使うのをやめるデプロイと、スキーマを変えるデプロイの 2 回に分けてください。
 
+## 動画のアップロード
+
+動画のエンコード (ffmpeg)・R2 へのアップロード (rclone)・manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
+
+```bash
+cd video-uploader
+mise trust && mise install   # 初回だけ。ルートとは別に、このディレクトリの mise.toml を信頼させる
+mise encode --all
+mise upload --series <シリーズID> --event <イベントID> --all --dry-run
+mise manifest --series <シリーズID> --event <イベントID>
+```
+
 ## 動画のダウンロード
 
-動画は Cloudflare R2 のバケット `wotagei-battle-log` に置いています (アップロードは wotagei-battle-log-video-uploader で行う)。プレイヤー画面のダウンロードボタンは `/download/<series>/<event>/players/<エントリー No.>/<動画の No.>` を開き、サーバーが DB で動画の置き場所を引いて、R2 の署名付き URL (10 分有効) に転送します。ブラウザは R2 から直接ダウンロードするので、アプリのサーバーを動画が通ることはなく、R2 の CORS の設定も要りません。
+動画は Cloudflare R2 のバケット `wotagei-battle-log` に置いています (アップロードは `video-uploader/` の `mise upload` で行う)。プレイヤー画面のダウンロードボタンは `/download/<series>/<event>/players/<エントリー No.>/<動画の No.>` を開き、サーバーが DB で動画の置き場所を引いて、R2 の署名付き URL (10 分有効) に転送します。ブラウザは R2 から直接ダウンロードするので、アプリのサーバーを動画が通ることはなく、R2 の CORS の設定も要りません。
 
 署名付き URL を作るため、Vercel プロジェクトの環境変数に次を設定します (ローカルで試すときは `.env` に書く)。
 

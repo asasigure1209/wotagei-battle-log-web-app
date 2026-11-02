@@ -1,0 +1,34 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in the `video-uploader/` directory.
+
+## 概要
+
+ヲタ芸バトルログの動画を ffmpeg でエンコードし、rclone で Cloudflare R2 にアップロードするための mise タスク集。もとは別リポジトリ (wotagei-battle-log-video-uploader) だったものを、Web アプリのリポジトリの `video-uploader/` に移した。ビルド・テストはなく、実体は `mise-tasks/` 配下の bash スクリプト 3 本 (encode / upload / manifest) のみ。mise タスクは `video-uploader/` で実行する (ここに `mise.toml` があるので `MISE_PROJECT_ROOT` が `video-uploader/` になり、スクリプトはそこへ `cd` する。リポジトリのルートからはタスクが見えない)。前提ツールは mise / ffmpeg (libx264) / rclone で、rclone リモート `r2-wotagei-battle-log` が設定済みであること（詳細は README.md）。
+
+## コマンド
+
+```bash
+mise encode --all                      # source_videos/ → encoded_videos/ (出力済みはスキップ)
+mise encode --include "本戦/*.mp4"      # glob で絞り込み
+mise encode --all --force              # 出力済みも再エンコード
+mise upload --series elnino --event elnino_vol_5 --all --dry-run   # 転送せず対象だけ確認
+mise upload --series elnino --event elnino_vol_5 --include "本戦/*.mp4"
+mise manifest --series elnino --event elnino_vol_5   # DB に取り込む YAML の雛形を manifests/ に書き出す
+shellcheck mise-tasks/*                # スクリプト変更時の静的チェック (shellcheck は mise.toml の [tools] で入る)
+```
+
+## 構成と仕組み
+
+- **データの流れ**: `source_videos/<分類>/*.mp4` → `mise encode` → `encoded_videos/<分類>/*.mp4`（同じディレクトリ構成）→ `mise upload` → R2。オブジェクトキーは `<シリーズID>/<イベントID>/<encoded_videos/ からの相対パス>`（例: `elnino/elnino_vol_5/予選/M1256.mp4`）。シリーズID・イベントIDは `upload` の必須フラグ `--series` / `--event` で指定し、英数字と `_` `-` だけを許可している。ローカルの `source_videos/` / `encoded_videos/` はイベント単位の作業場所で、イベントの階層は持たない。動画本体は `.gitignore` で除外し、`.gitkeep` だけ管理している。
+- **mise のファイルタスク**: `mise-tasks/` 内の実行可能ファイルがそのままタスクになる。`#MISE description=...` と `#USAGE flag ...` コメントがタスク定義で、フラグは `usage_<name>` 環境変数（`--dry-run` → `usage_dry_run`、値は `"true"`）としてスクリプトに渡る。タスクを追加する際はファイルに実行権限を付けること。
+- **設定値**: R2 のリモート名とバケット名は `mise.toml` の `[env]` (`R2_REMOTE`, `R2_BUCKET`) で定義し、`upload` が参照する。
+- **エンコード設定**: H.264 (libx264, CRF 20, preset slow, yuv420p) + AAC 192k + `faststart`。中断時に不完全なファイルが「済み」扱いされないよう、`<out>.part` に書き出してから `mv` している。拡張子が `.mp4` でないので、コンテナ形式は `-f mp4` で明示している。
+- **対象ファイルの選び方**: `encode` と `upload` は同じ方法で対象を選ぶ。`find ... -name '*.mp4'` で列挙し、相対パスを bash の `[[ $rel == $pattern ]]` で glob 照合する（`*` は `/` もまたぐので、`本戦/*.mp4` はサブディレクトリにもマッチする）。照合は `shopt -s nocasematch` で大文字・小文字を区別しない。`encode` はカメラが書き出す `.MP4` も拾うため `find -iname` で列挙し、出力の拡張子は `.mp4` にそろえる（`upload` / `manifest` は `.mp4` だけを見る）。`upload` は rclone の `--include` を使わず、選んだ一覧を `--files-from-raw` で渡している。照合方法を変えるときは両方のスクリプトを揃えること。
+
+- **DB に取り込むデータ (manifest)**: `mise manifest` は `encoded_videos/` の .mp4 を `find | sort` でパス順に並べ、`ffprobe` の長さ (秒に丸める) と `wc -c` のサイズを、Web アプリ (リポジトリのルートの `bun run db:import`、実装は `server/db/manifest.ts` / `server/db/import.ts`) が読む YAML の雛形として `manifests/<シリーズID>/<イベントID>.yaml` に書く。並び順がイベントの中での動画の No. になる。イベント情報・`entries`・`performers` は人が書くので、既存の YAML は `--force` なしでは上書きしない。キーはダブルクオートで書き、`\` と `"` をエスケープしている。YAML の形を変えるときは `db:import` 側も揃えること。
+
+## 注意点
+
+- `upload` は `rclone copy` なので、ローカルで削除したファイルは R2 側から消えない。
+- スクリプトは `#!/usr/bin/env bash` で、macOS では標準の bash 3.2 で動く。`set -u` の下で空の配列を `"${arr[@]}"` と展開するとエラーになるので、空になりうる配列は `${arr[@]+"${arr[@]}"}` と書く（`upload` の `dry_run`）。
