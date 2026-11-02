@@ -2,18 +2,19 @@
 
 1 つのイベントの動画をエンコードして R2 にアップロードし、Web アプリの本番の DB に取り込んで、本番ページで表示を確かめるまでの手順。
 
-使うリポジトリは 2 つ。どちらも同じ親ディレクトリに置いている前提で書く。
+作業するディレクトリは、wotagei-battle-log-web-app リポジトリの中の 2 か所。
+- `video-uploader/`: エンコード・アップロード・manifest の書き出し (`mise encode` / `mise upload` / `mise manifest`)
+- リポジトリのルート: manifest を DB に取り込む (`bun run db:import`)
 
-- このリポジトリ (wotagei-battle-log-video-uploader): エンコード・アップロード・manifest の書き出し
-- wotagei-battle-log-web-app: manifest を DB に取り込む (`db:import`)
+特に断りがなければ、コマンドは `video-uploader/` で実行する。
 
 以下、例としてシリーズID `elnino`・イベントID `elnino_vol_5` を使う。ID は英数字と `_` `-` だけで書く。
 
-| 項目 | 本番の値 |
-| --- | --- |
-| Web アプリ | https://wotagei-battle-log-web-app.vercel.app |
-| D1 の中継 Worker | https://wotagei-battle-log-d1-proxy.mkmokymh.workers.dev |
-| R2 | リモート `r2-wotagei-battle-log`、バケット `wotagei-battle-log` |
+| 項目             | 本番の値                                                        |
+| ---------------- | --------------------------------------------------------------- |
+| Web アプリ       | https://wotagei-battle-log-web-app.vercel.app                   |
+| D1 の中継 Worker | https://wotagei-battle-log-d1-proxy.mkmokymh.workers.dev        |
+| R2               | リモート `r2-wotagei-battle-log`、バケット `wotagei-battle-log` |
 
 ## 0. 準備 (初回だけ)
 
@@ -21,8 +22,8 @@
 
 ```bash
 brew install ffmpeg rclone   # Homebrew の ffmpeg は libx264 入り
-cd wotagei-battle-log-video-uploader && mise trust && mise install
-cd ../wotagei-battle-log-web-app && mise trust && mise install && bun install
+cd wotagei-battle-log-web-app && mise trust && mise install && bun install
+cd video-uploader && mise trust && mise install   # video-uploader/ の mise.toml も別に信頼させる
 ```
 
 ### rclone のリモート
@@ -102,7 +103,6 @@ mise manifest --series elnino --event elnino_vol_5
 ```
 
 `manifests/elnino/elnino_vol_5.yaml` に、動画ごとのキー・長さ・サイズが入った雛形ができる。これに次を書き込む。
-
 - `series.name`・`event.name`・`event.date` (`YYYY-MM-DD`)・`event.contact`
 - `entries`: エントリー No. と名前を 1 行に 1 人 (例: `1: BLAZE`)
 - 動画ごとの `performers`: 出ているエントリー No. (予選は `[1]`、本戦は `[1, 2]` のように)
@@ -113,18 +113,17 @@ mise manifest --series elnino --event elnino_vol_5
 
 ## 5. 本番の DB に取り込む
 
-Web アプリのリポジトリで実行する。設定ファイルの環境変数がそのあとのコマンドに残らないよう、`( )` の中だけで読み込む。
+リポジトリのルートで実行する。設定ファイルの環境変数がそのあとのコマンドに残らないよう、`( )` の中だけで読み込む。
 
 ```bash
-cd ../wotagei-battle-log-web-app
-manifest=../wotagei-battle-log-video-uploader/manifests/elnino/elnino_vol_5.yaml
+cd ..   # video-uploader/ からリポジトリのルートへ
+manifest=video-uploader/manifests/elnino/elnino_vol_5.yaml
 
 # 確かめるだけ (DB には書かない)
 (set -a; . ~/.config/wotagei/prod.env; set +a; bun run db:import "$manifest" --dry-run)
 ```
 
 次の 2 点を確かめる。
-
 - `取り込み先:` が本番の Worker の URL (`https://wotagei-battle-log-d1-proxy.mkmokymh.workers.dev`) になっている。`file:.data/db.sqlite` と出たら、設定ファイルを読めていない
 - エントリー・動画・出演の件数が manifest と合っている。書き漏れなどがあれば、取り込む前にまとめて一覧が出るので、YAML を直してやり直す
 
@@ -140,14 +139,16 @@ manifest=../wotagei-battle-log-video-uploader/manifests/elnino/elnino_vol_5.yaml
 
 本番の Web アプリには Vercel のログインがかかっているので、Vercel にログインしたブラウザで開く。
 
-| ページ | 確かめること |
-| --- | --- |
-| https://wotagei-battle-log-web-app.vercel.app/elnino/elnino_vol_5 | イベント名と、エントリーの全員が並んでいる |
+| ページ                                                                       | 確かめること                                                                      |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| https://wotagei-battle-log-web-app.vercel.app/elnino/elnino_vol_5            | イベント名と、エントリーの全員が並んでいる                                        |
 | https://wotagei-battle-log-web-app.vercel.app/elnino/elnino_vol_5/players/01 | そのエントリーが出ている動画のファイル名・長さ・サイズ。No. は 2 桁 (`01`) で書く |
 
 何人か選んで、出ている動画が manifest の `performers` どおりか確かめる。
 
-動画の再生・ダウンロードは、まだ Web アプリ側にない。今はダウンロードボタンを押しても保存済みの見た目になるだけで、R2 の動画は読まない。
+1 本はダウンロードボタンを押して、R2 の動画が保存できることも確かめる。
+
+本番の画面は Vercel の ISR で 1 時間とっておくので、取り込んでから画面に出るまで最大 1 時間かかる。すぐに確かめたいときは本番を再デプロイする (詳しくはリポジトリのルートの README.md の「イベントの取り込み」)。
 
 ## 7. 後片付け
 
@@ -193,7 +194,6 @@ rclone purge r2-wotagei-battle-log:wotagei-battle-log/elnino/elnino_vol_5
 ### トークンを作り直す
 
 トークンは Worker の `PROXY_TOKEN` と Vercel の `NUXT_D1_PROXY_TOKEN` に同じ値を入れる。本番のアプリが DB を読めなくなる時間を短くするため、Vercel を先に書き換えておき、Worker を変えたらすぐ再デプロイする。
-
 1. 新しい値を作って `~/.config/wotagei/prod.env` に書く
 
    ```bash
@@ -208,7 +208,7 @@ rclone purge r2-wotagei-battle-log:wotagei-battle-log/elnino/elnino_vol_5
 3. Worker の `PROXY_TOKEN` を書き換える。ここから 4 が終わるまで、本番のアプリは DB を読めない
 
    ```bash
-   cd wotagei-battle-log-web-app
+   cd ..   # リポジトリのルートで実行する
    bunx wrangler login
    grep TOKEN ~/.config/wotagei/prod.env | cut -d= -f2 \
      | bunx wrangler secret put PROXY_TOKEN -c workers/d1-proxy/wrangler.toml

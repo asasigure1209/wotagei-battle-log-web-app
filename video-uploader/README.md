@@ -1,5 +1,9 @@
 # ヲタ芸バトルログの動画ファイルアップロード
 
+動画をエンコードして Cloudflare R2 にアップロードし、Web アプリの DB に取り込むデータ (manifest) を書き出す mise タスク集。もとは wotagei-battle-log-video-uploader という別のリポジトリだったものを、Web アプリのリポジトリの `video-uploader/` に移した。
+
+`mise encode` / `mise upload` / `mise manifest` は、このディレクトリ (`video-uploader/`) で実行する。リポジトリのルートでは実行できない。
+
 本番に動画をアップロードして、Web アプリで表示を確かめるまでの通しの手順は [docs/production-upload.md](docs/production-upload.md) にまとめている。
 
 ## 前提
@@ -14,18 +18,17 @@
     ```
 
   - 接続は `rclone lsf r2-wotagei-battle-log:wotagei-battle-log` で確かめられる (バケットを絞ったトークンでは、全バケットを一覧する `rclone lsd r2-wotagei-battle-log:` は 403 になるが問題ない)
-- 初回は `mise trust` でこのディレクトリの設定を信頼させる
+- 初回は `video-uploader/` で `mise trust` を実行し、このディレクトリの設定を信頼させる (リポジトリのルートの `mise.toml` とは別に信頼させる必要がある)
 
 ## 手順
 
 ### 1. 元の動画ファイルを分類してディレクトリに分けて保存する
 
 以下のように、`source_videos`配下に保存する
-
 - source_videos/
   - 予選
     - M1256.mp4
-	- M1267.mp4
+    - M1267.mp4
   - 本戦
     - M1268.mp4
 
@@ -72,14 +75,13 @@ mise manifest --series elnino --event elnino_vol_5
 `encoded_videos`配下の動画を調べ、`manifests/<イベントシリーズID>/<イベントID>.yaml`に、Web アプリの DB に取り込むデータの雛形を書き出す。動画ごとのオブジェクトキー・長さ（秒）・サイズ（バイト）は自動で入る。
 
 書き出した YAML に、次を書き込む。
-
 - `series.name` / `event.name` / `event.date`（`YYYY-MM-DD`）/ `event.contact`
 - `entries`: エントリー No. と名前（1 行に 1 人。例: `1: BLAZE`）
 - 動画ごとの `performers`: 出ているエントリー No.（予選は 1 人で`[1]`、本戦は 2 人で`[1, 2]`）
 
 `videos`の並び順が、イベントの中での動画の No. になる。書き出した直後は分類のディレクトリ順・ファイル名順なので、必要なら並べ替える。
 
-書き込んだ内容を消さないよう、YAML がすでにあるときは書き出さない。作り直すときは`--force`を付ける。書き終えた YAML は、Web アプリの`db:import`で DB に取り込む。
+書き込んだ内容を消さないよう、YAML がすでにあるときは書き出さない。作り直すときは`--force`を付ける。書き終えた YAML は、リポジトリのルートで`bun run db:import video-uploader/manifests/<イベントシリーズID>/<イベントID>.yaml`を実行して DB に取り込む（ルートの README.md の「イベントの取り込み」）。
 
 ## 開発
 

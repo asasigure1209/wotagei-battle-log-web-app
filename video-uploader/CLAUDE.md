@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in the `video-uploader/` directory.
 
 ## 概要
 
-ヲタ芸バトルログの動画を ffmpeg でエンコードし、rclone で Cloudflare R2 にアップロードするための mise タスク集。ビルド・テストはなく、実体は `mise-tasks/` 配下の bash スクリプト 2 本のみ。前提ツールは mise / ffmpeg (libx264) / rclone で、rclone リモート `r2-wotagei-battle-log` が設定済みであること（詳細は README.md）。
+ヲタ芸バトルログの動画を ffmpeg でエンコードし、rclone で Cloudflare R2 にアップロードするための mise タスク集。もとは別リポジトリ (wotagei-battle-log-video-uploader) だったものを、Web アプリのリポジトリの `video-uploader/` に移した。ビルド・テストはなく、実体は `mise-tasks/` 配下の bash スクリプト 3 本 (encode / upload / manifest) のみ。mise タスクは `video-uploader/` で実行する (ここに `mise.toml` があるので `MISE_PROJECT_ROOT` が `video-uploader/` になり、スクリプトはそこへ `cd` する。リポジトリのルートからはタスクが見えない)。前提ツールは mise / ffmpeg (libx264) / rclone で、rclone リモート `r2-wotagei-battle-log` が設定済みであること（詳細は README.md）。
 
 ## コマンド
 
@@ -26,7 +26,7 @@ shellcheck mise-tasks/*                # スクリプト変更時の静的チェ
 - **エンコード設定**: H.264 (libx264, CRF 20, preset slow, yuv420p) + AAC 192k + `faststart`。中断時に不完全なファイルが「済み」扱いされないよう、`<out>.part` に書き出してから `mv` している。拡張子が `.mp4` でないので、コンテナ形式は `-f mp4` で明示している。
 - **対象ファイルの選び方**: `encode` と `upload` は同じ方法で対象を選ぶ。`find ... -name '*.mp4'` で列挙し、相対パスを bash の `[[ $rel == $pattern ]]` で glob 照合する（`*` は `/` もまたぐので、`本戦/*.mp4` はサブディレクトリにもマッチする）。照合は `shopt -s nocasematch` で大文字・小文字を区別しない。`encode` はカメラが書き出す `.MP4` も拾うため `find -iname` で列挙し、出力の拡張子は `.mp4` にそろえる（`upload` / `manifest` は `.mp4` だけを見る）。`upload` は rclone の `--include` を使わず、選んだ一覧を `--files-from-raw` で渡している。照合方法を変えるときは両方のスクリプトを揃えること。
 
-- **DB に取り込むデータ (manifest)**: `mise manifest` は `encoded_videos/` の .mp4 を `find | sort` でパス順に並べ、`ffprobe` の長さ (秒に丸める) と `wc -c` のサイズを、Web アプリ (wotagei-battle-log-web-app の `db:import`) が読む YAML の雛形として `manifests/<シリーズID>/<イベントID>.yaml` に書く。並び順がイベントの中での動画の No. になる。イベント情報・`entries`・`performers` は人が書くので、既存の YAML は `--force` なしでは上書きしない。キーはダブルクオートで書き、`\` と `"` をエスケープしている。YAML の形を変えるときは `db:import` 側も揃えること。
+- **DB に取り込むデータ (manifest)**: `mise manifest` は `encoded_videos/` の .mp4 を `find | sort` でパス順に並べ、`ffprobe` の長さ (秒に丸める) と `wc -c` のサイズを、Web アプリ (リポジトリのルートの `bun run db:import`、実装は `server/db/manifest.ts` / `server/db/import.ts`) が読む YAML の雛形として `manifests/<シリーズID>/<イベントID>.yaml` に書く。並び順がイベントの中での動画の No. になる。イベント情報・`entries`・`performers` は人が書くので、既存の YAML は `--force` なしでは上書きしない。キーはダブルクオートで書き、`\` と `"` をエスケープしている。YAML の形を変えるときは `db:import` 側も揃えること。
 
 ## 注意点
 
