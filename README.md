@@ -103,12 +103,11 @@ Vercel の本番ビルド (`bun run vercel-build`) は、`nuxt build` の前に 
 
 ## 動画のアップロード
 
-動画のエンコード (ffmpeg)・R2 へのアップロード (rclone)・manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
+撮影した動画の R2 へのアップロード (rclone) と manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
 
 ```bash
 cd video-uploader
 mise trust && mise install   # 初回だけ。ルートとは別に、このディレクトリの mise.toml を信頼させる
-mise encode --all
 mise upload --series <シリーズID> --event <イベントID> --all --dry-run
 mise manifest --series <シリーズID> --event <イベントID>
 ```

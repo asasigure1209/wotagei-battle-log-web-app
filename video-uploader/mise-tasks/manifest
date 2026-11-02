@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="encoded_videos の動画の一覧を、Web アプリの DB に取り込む YAML の雛形として書き出す"
+#MISE description="videos の動画の一覧を、Web アプリの DB に取り込む YAML の雛形として書き出す"
 #USAGE flag "--series <id>" required=#true help="イベントシリーズID (例: elnino)"
 #USAGE flag "--event <id>" required=#true help="イベントID (例: elnino_vol_5)"
 #USAGE flag "--force" help="書き出し先の YAML がすでにあっても上書きする"
@@ -23,7 +23,7 @@ if ! command -v ffprobe >/dev/null; then
   exit 1
 fi
 
-src_dir="encoded_videos"
+src_dir="videos"
 out="manifests/$series/$event.yaml"
 
 # イベント情報・エントリー・出演者は人が書き込むので、うっかり上書きしない
@@ -38,15 +38,15 @@ quote() {
   printf '"%s"' "${s//\"/\\\"}"
 }
 
-# upload と同じく encoded_videos 配下の .mp4 を対象にする。
+# upload と同じく videos 配下の .mp4 (.MP4 も) を対象にする。キーの拡張子はファイル名のまま。
 # 並び順がイベントの中での動画の No. になるので、パスの順 (分類のディレクトリごと、その中はファイル名順) に並べる
 videos=()
 while IFS= read -r -d '' path; do
   videos+=("$path")
-done < <(find "$src_dir" -type f -name '*.mp4' -print0 | LC_ALL=C sort -z)
+done < <(find "$src_dir" -type f -iname '*.mp4' -print0 | LC_ALL=C sort -z)
 
 if [[ ${#videos[@]} -eq 0 ]]; then
-  echo "error: $src_dir/ に動画がありません。先に mise encode を実行してください" >&2
+  echo "error: $src_dir/ に動画がありません。動画を置いてから実行してください" >&2
   exit 1
 fi
 
