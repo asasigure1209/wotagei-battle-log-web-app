@@ -20,6 +20,12 @@ export default defineNuxtConfig({
       accessKeyId: '',
       secretAccessKey: '',
       bucket: 'wotagei-battle-log',
+      // 管理画面からアップロードするための、書き込みのできる API トークン。
+      // NUXT_R2_UPLOAD_ACCESS_KEY_ID・NUXT_R2_UPLOAD_SECRET_ACCESS_KEY で指定する
+      uploadAccessKeyId: '',
+      uploadSecretAccessKey: '',
+      // R2 の代わりに使う S3 互換の API の URL。ローカルで試すときだけ NUXT_R2_ENDPOINT で指定する
+      endpoint: '',
     },
   },
   // イベント・プレイヤーの画面は、Vercel の ISR で描画結果を 1 時間とっておく。
