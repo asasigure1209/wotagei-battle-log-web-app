@@ -1,0 +1,93 @@
+/* 管理画面 (/admin) の各セクションで共通に使う見た目。admin ページでだけ読み込む */
+
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+}
+
+.admin-heading {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.admin-input {
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.admin-input:disabled {
+  color: var(--color-muted);
+}
+
+.admin-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.admin-warn {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #ffb36b;
+}
+
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.admin-btn.primary {
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 700;
+}
+
+.admin-btn.danger {
+  border-color: #ff7a7a;
+  color: #ff7a7a;
+}

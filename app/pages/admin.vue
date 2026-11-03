@@ -3,6 +3,7 @@
 // (video-uploader の mise upload / mise manifest と bun run db:import を、ブラウザでできるようにしたもの)。
 // ログインしているかで中身が変わるので、サーバーでは描画しない (nuxt.config.ts の routeRules)
 import { onMounted, ref } from 'vue'
+import '~/assets/css/admin.css'
 
 useHead({
   title: '管理画面',
