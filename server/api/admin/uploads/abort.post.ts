@@ -2,7 +2,7 @@
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ key?: unknown; uploadId?: unknown }>(event)
   await abortMultipartUpload(
-    requireR2Upload(event),
+    requireR2Upload(useRuntimeConfig(event).r2),
     requireVideoKey(body?.key),
     requireUploadId(body?.uploadId),
   )

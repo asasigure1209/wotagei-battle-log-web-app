@@ -160,47 +160,6 @@ describe('R2 の応答 (XML) の読み取り', () => {
   })
 })
 
-describe('listObjects', () => {
-  afterEach(() => vi.unstubAllGlobals())
-
-  it('続きがある間は continuation-token を付けて取り続ける', async () => {
-    const urls: URL[] = []
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (request: Request) => {
-        const url = new URL(request.url)
-        urls.push(url)
-        const first = !url.searchParams.get('continuation-token')
-        return new Response(
-          first
-            ? '<R><IsTruncated>true</IsTruncated><NextContinuationToken>t&amp;2</NextContinuationToken><Contents><Key>s/e/a.mp4</Key><Size>1</Size></Contents></R>'
-            : '<R><IsTruncated>false</IsTruncated><Contents><Key>s/e/b.mp4</Key><Size>2</Size></Contents></R>',
-        )
-      }),
-    )
-    expect(await listObjects(config, 's/e/')).toEqual([
-      { key: 's/e/a.mp4', size: 1 },
-      { key: 's/e/b.mp4', size: 2 },
-    ])
-    expect(urls.map((u) => u.searchParams.get('prefix'))).toEqual([
-      's/e/',
-      's/e/',
-    ])
-    expect(urls[1]?.searchParams.get('continuation-token')).toBe('t&2')
-  })
-
-  it('R2 がエラーを返したら例外にする', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(
-        async () =>
-          new Response('<Error>AccessDenied</Error>', { status: 403 }),
-      ),
-    )
-    await expect(listObjects(config, 's/e/')).rejects.toThrow('403')
-  })
-})
-
 /** fetch の偽物。R2 に送ったリクエスト (メソッド・URL・本文) を requests に残し、respond の返す本文を返す */
 function stubR2(respond: (request: Request) => Response | string) {
   const requests: { method: string; url: URL; body: string }[] = []
@@ -223,6 +182,32 @@ const partsXml = (nos: number[], next?: number) =>
   `<ListPartsResult><IsTruncated>${next ? 'true' : 'false'}</IsTruncated>${
     next ? `<NextPartNumberMarker>${next}</NextPartNumberMarker>` : ''
   }${nos.map((n) => `<Part><PartNumber>${n}</PartNumber><ETag>&quot;e${n}&quot;</ETag></Part>`).join('')}</ListPartsResult>`
+
+describe('listObjects', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('続きがある間は continuation-token を付けて取り続ける', async () => {
+    const requests = stubR2((request) =>
+      new URL(request.url).searchParams.get('continuation-token')
+        ? '<R><IsTruncated>false</IsTruncated><Contents><Key>s/e/b.mp4</Key><Size>2</Size></Contents></R>'
+        : '<R><IsTruncated>true</IsTruncated><NextContinuationToken>t&amp;2</NextContinuationToken><Contents><Key>s/e/a.mp4</Key><Size>1</Size></Contents></R>',
+    )
+    expect(await listObjects(config, 's/e/')).toEqual([
+      { key: 's/e/a.mp4', size: 1 },
+      { key: 's/e/b.mp4', size: 2 },
+    ])
+    expect(requests.map((r) => r.url.searchParams.get('prefix'))).toEqual([
+      's/e/',
+      's/e/',
+    ])
+    expect(requests[1]?.url.searchParams.get('continuation-token')).toBe('t&2')
+  })
+
+  it('R2 がエラーを返したら例外にする', async () => {
+    stubR2(() => new Response('<Error>AccessDenied</Error>', { status: 403 }))
+    await expect(listObjects(config, 's/e/')).rejects.toThrow('403')
+  })
+})
 
 describe('マルチパートアップロード', () => {
   afterEach(() => vi.unstubAllGlobals())

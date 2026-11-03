@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     uploadId?: unknown
     partNumbers?: unknown
   }>(event)
-  const config = requireR2Upload(event)
+  const config = requireR2Upload(useRuntimeConfig(event).r2)
   const key = requireVideoKey(body?.key)
   const uploadId = requireUploadId(body?.uploadId)
   const partNumbers = requirePartNumbers(body?.partNumbers)

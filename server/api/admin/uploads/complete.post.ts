@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     partCount?: unknown
   }>(event)
   await completeMultipartUpload(
-    requireR2Upload(event),
+    requireR2Upload(useRuntimeConfig(event).r2),
     requireVideoKey(body?.key),
     requireUploadId(body?.uploadId),
     requirePositiveInt(body?.partCount, 'partCount'),

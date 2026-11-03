@@ -2,5 +2,8 @@
 export default defineEventHandler((event) => {
   const query = getQuery(event)
   const { series, event: eventId } = requireEventIds(query.series, query.event)
-  return listObjects(requireR2Upload(event), `${series}/${eventId}/`)
+  return listObjects(
+    requireR2Upload(useRuntimeConfig(event).r2),
+    `${series}/${eventId}/`,
+  )
 })

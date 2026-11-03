@@ -9,7 +9,7 @@ import {
 
 export default defineEventHandler(async (event) => {
   const manifest = parseOrFail(await readBody(event))
-  const r2 = requireR2Upload(event)
+  const r2 = requireR2Upload(useRuntimeConfig(event).r2)
   const objects = await listObjects(
     r2,
     `${manifest.series.id}/${manifest.event.id}/`,

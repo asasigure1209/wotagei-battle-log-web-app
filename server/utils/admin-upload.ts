@@ -1,13 +1,14 @@
 // 管理画面の API で共通に使う、リクエストの確かめ
 // テスト (node 環境) からも呼べるよう、Nitro の自動 import に頼らず明示する
-import { createError, type H3Event } from 'h3'
+import { createError } from 'h3'
+import type { RuntimeConfig } from 'nuxt/schema'
 import { isId } from '../../shared/utils/id'
 import { isVideoKey } from '../../shared/utils/video-key'
 import { isR2Configured, type R2Object, r2UploadConfig } from './r2'
 
-/** 書き込みのできる R2 の値。設定されていなければ 500 にする */
-export function requireR2Upload(event: H3Event) {
-  const config = r2UploadConfig(useRuntimeConfig(event).r2)
+/** 書き込みのできる R2 の値 (r2 は runtimeConfig.r2)。設定されていなければ 500 にする */
+export function requireR2Upload(r2: RuntimeConfig['r2']) {
+  const config = r2UploadConfig(r2)
   if (!isR2Configured(config)) {
     throw createError({
       status: 500,
