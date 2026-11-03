@@ -31,17 +31,22 @@ async function submit() {
     <p class="lead">
       動画のアップロードとイベントの登録をします。合言葉を入れてください。
     </p>
-    <label class="field">
+    <label class="admin-field">
       <span>合言葉</span>
       <input
         v-model="password"
+        class="admin-input"
         type="password"
         autocomplete="current-password"
         required
       >
     </label>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
-    <button class="submit" type="submit" :disabled="pending || !password">
+    <button
+      class="admin-btn primary submit"
+      type="submit"
+      :disabled="pending || !password"
+    >
       {{ pending ? '確認中…' : 'ログイン' }}
     </button>
   </form>
@@ -70,25 +75,6 @@ async function submit() {
   color: var(--color-muted);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--color-muted);
-}
-
-.field input {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
-  background: var(--color-surface-sunken);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 16px;
-}
-
 .error {
   margin: 0;
   font-size: 13px;
@@ -97,19 +83,8 @@ async function submit() {
 }
 
 .submit {
+  justify-content: center;
   min-height: 48px;
-  border: none;
   border-radius: 12px;
-  background: var(--color-accent);
-  color: var(--color-bg);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.submit:disabled {
-  background: var(--color-border);
-  color: #8a8a96;
-  cursor: default;
 }
 </style>

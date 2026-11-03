@@ -34,7 +34,9 @@ async function logout() {
     <template v-else-if="loggedIn">
       <header class="bar">
         <h1 class="title">管理画面</h1>
-        <button type="button" class="logout" @click="logout">ログアウト</button>
+        <button type="button" class="admin-btn" @click="logout">
+          ログアウト
+        </button>
       </header>
       <AdminEventEditor @unauthorized="loggedIn = false" />
     </template>
@@ -60,17 +62,5 @@ async function logout() {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-}
-
-.logout {
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
 }
 </style>
