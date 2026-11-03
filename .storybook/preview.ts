@@ -11,12 +11,33 @@ const preview: Preview = {
   initialGlobals: {
     backgrounds: { value: 'dark' },
   },
-  // モックはスマホの幅 (390px) で作られているので、その幅に収める。
+  // モックはスマホの幅 (390px) で作られているので、その幅に収める。管理画面のように広い画面で使うものは、
+  // parameters.maxWidth で幅を変える。
   // docs ページでは Storybook の文字色とフォントが継承されるので、アプリの body と同じものを付け直す
+  // Storybook は Nuxt なしで動き $fetch がないので、ストーリーごとに parameters.fetch の値を返す (Error なら投げる)
+  // $fetch を置き、終わったら元に戻す。指定のないストーリーで API を呼ぶと失敗する
+  beforeEach: ({ parameters }) => {
+    const g = globalThis as { $fetch?: unknown }
+    const previous = g.$fetch
+    g.$fetch = async () => {
+      const result: unknown = parameters.fetch
+      if (result === undefined) {
+        throw new Error(
+          'parameters.fetch を指定していないストーリーで API を呼びました',
+        )
+      }
+      if (result instanceof Error) throw result
+      return result
+    }
+    return () => {
+      g.$fetch = previous
+    }
+  },
   decorators: [
-    () => ({
+    (_story, { parameters }) => ({
+      setup: () => ({ maxWidth: parameters.maxWidth ?? '390px' }),
       template:
-        '<div style="max-width: 390px; color: var(--color-text); font-family: var(--font-body)"><story /></div>',
+        "<div :style=\"{ maxWidth, color: 'var(--color-text)', fontFamily: 'var(--font-body)' }\"><story /></div>",
     }),
   ],
 }

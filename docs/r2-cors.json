@@ -1,0 +1,11 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://wotagei-battle-log-web-app.vercel.app",
+      "http://localhost:3000"
+    ],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3600
+  }
+]

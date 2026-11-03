@@ -13,6 +13,9 @@ export default defineNuxtConfig({
     // サーバー側にしか渡らない非公開の値。本番では NUXT_API_SECRET で指定し、
     // 指定がなければビルドごと (dev では起動ごと) にランダムな値にする
     apiSecret: randomUUID(),
+    // 管理画面 (/admin) にログインするための合言葉。本番では NUXT_ADMIN_PASSWORD で指定する。
+    // 空のままなら、だれもログインできず、管理画面から動画のアップロードや登録はできない
+    adminPassword: '',
     // 動画を置いている R2 のバケットと、読み出し用の API トークン (S3 互換のアクセスキー)。
     // 本番では NUXT_R2_ACCOUNT_ID・NUXT_R2_ACCESS_KEY_ID・NUXT_R2_SECRET_ACCESS_KEY で指定する
     r2: {
@@ -20,6 +23,12 @@ export default defineNuxtConfig({
       accessKeyId: '',
       secretAccessKey: '',
       bucket: 'wotagei-battle-log',
+      // 管理画面からアップロードするための、書き込みのできる API トークン。
+      // NUXT_R2_UPLOAD_ACCESS_KEY_ID・NUXT_R2_UPLOAD_SECRET_ACCESS_KEY で指定する
+      uploadAccessKeyId: '',
+      uploadSecretAccessKey: '',
+      // R2 の代わりに使う S3 互換の API の URL。ローカルで試すときだけ NUXT_R2_ENDPOINT で指定する
+      endpoint: '',
     },
   },
   // イベント・プレイヤーの画面は、Vercel の ISR で描画結果を 1 時間とっておく。
@@ -31,6 +40,14 @@ export default defineNuxtConfig({
   routeRules: {
     '/:series/:event': isrHourly,
     '/:series/:event/players/:no': isrHourly,
+    // 管理画面はログインしているかで中身が変わるので、サーバーで描画せず、とっておきもしない
+    '/admin': {
+      ssr: false,
+      headers: {
+        'x-robots-tag': 'noindex, nofollow',
+        'cache-control': 'no-store',
+      },
+    },
   },
   experimental: {
     // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、ブラウザに取りに来させる。

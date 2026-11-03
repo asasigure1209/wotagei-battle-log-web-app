@@ -101,9 +101,51 @@ Vercel の本番ビルド (`bun run vercel-build`) は、`nuxt build` の前に 
 
 マイグレーションはビルド中、つまり新しい版に切り替わる前に適用されるので、切り替わるまでの間は古いコードが新しいスキーマで動きます。マイグレーションのあとに `nuxt build` が失敗したときや、Vercel の Instant Rollback で前の版に戻したときも、スキーマは新しいまま残ります。列の削除やリネームのように古いコードを壊す変更は、コード側で使うのをやめるデプロイと、スキーマを変えるデプロイの 2 回に分けてください。
 
-## 動画のアップロード
+## 管理画面 (動画のアップロードとイベントの登録)
 
-撮影した動画の R2 へのアップロード (rclone) と manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
+`/admin` の管理画面で、ブラウザから動画を R2 にアップロードし、イベント・エントリー・各動画の出演者を DB に登録できます。`video-uploader/` の `mise upload` / `mise manifest` と `bun run db:import` をまとめて画面にしたもので、rclone・ffmpeg・D1 のトークンは要りません。
+1. `/admin` を開き、合言葉 (`NUXT_ADMIN_PASSWORD`) でログインする
+2. イベントの情報を書く (登録済みのイベントを選ぶと、その内容を読み込んで直せる)
+3. エントリーを「`1: BLAZE`」の形で 1 行に 1 人ずつ書く
+4. 動画を選ぶ。「フォルダを選ぶ」で `videos/` のようなフォルダを選ぶと、その下の `予選/M1256.mp4` のようなパスがキーの後ろになる (mise upload と同じ)。ファイルだけを選ぶときは、横の欄に分類 (予選など) を書いておく。動画の長さはファイル (MP4 の moov) から読む
+5. 「R2 にアップロード」で、R2 にない (またはサイズの違う) 動画を送る。動画はブラウザから R2 にマルチパートアップロードで直接送り、アプリのサーバーは通らない
+6. 各動画の出演 No. (`1, 2` のように) を書き、「確認だけ」で誤りがないか見てから「登録する」。登録は `db:import` と同じく、そのイベントの分を入れ直す。登録の前に、すべての動画が R2 に同じサイズで置かれているかも確かめる
+
+画面に出るまでの時間は `db:import` と同じです (ISR で最大 1 時間。すぐ出すには再デプロイ)。
+
+### 認証
+
+簡易的な合言葉の認証です。合言葉が合うと、合言葉を鍵に署名した Cookie (`HttpOnly`・`SameSite=Strict`・12 時間) を渡し、`/api/admin/**` はこの Cookie がないと 401 を返します。合言葉を変えると、それまでのログインはすべて切れます。`NUXT_ADMIN_PASSWORD` が空なら、だれもログインできません (管理画面は使えない)。間違えたときは 1 秒待たせて総当たりを遅らせているだけなので、合言葉は長いランダムな値 (`openssl rand -base64 24` など) にしてください。
+
+### 設定
+
+| 環境変数                           | 意味                                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NUXT_ADMIN_PASSWORD`              | 管理画面の合言葉。空なら管理画面は使えない                                                      |
+| `NUXT_R2_UPLOAD_ACCESS_KEY_ID`     | 書き込み用の R2 の API トークンのアクセスキー ID (ダウンロード用の読み出し専用のトークンとは別) |
+| `NUXT_R2_UPLOAD_SECRET_ACCESS_KEY` | 同じトークンのシークレットアクセスキー                                                          |
+| `NUXT_R2_ENDPOINT`                 | R2 の代わりに使う S3 互換の API の URL。ローカルで試すときだけ使う (ふだんは空)                 |
+
+書き込み用の R2 の API トークンは、権限を「Object Read & Write」にし、対象をこのバケットだけに絞って作ってください (`NUXT_R2_ACCOUNT_ID`・`NUXT_R2_BUCKET` はダウンロードと共通)。
+
+ブラウザから R2 に直接 PUT するので、バケットの CORS に、アプリのオリジンからの `PUT` を許す設定が要ります。Cloudflare のダッシュボードで R2 → バケット → Settings → CORS Policy に [docs/r2-cors.json](docs/r2-cors.json) の内容を入れてください (オリジンは実際の URL に合わせる)。設定がないと、アップロードで「R2 に送れませんでした」と出ます。
+
+### ローカルで試す
+
+rclone の `serve s3` で、ローカルのディレクトリを R2 の代わりにできます。
+
+```bash
+mkdir -p /tmp/fake-r2/wotagei-battle-log
+rclone serve s3 --auth-key testkey,testsecret --addr 127.0.0.1:9100 --allow-origin http://localhost:3000 /tmp/fake-r2
+
+NUXT_ADMIN_PASSWORD=local-admin NUXT_R2_ENDPOINT=http://127.0.0.1:9100 NUXT_R2_ACCOUNT_ID=local \
+NUXT_R2_ACCESS_KEY_ID=testkey NUXT_R2_SECRET_ACCESS_KEY=testsecret \
+NUXT_R2_UPLOAD_ACCESS_KEY_ID=testkey NUXT_R2_UPLOAD_SECRET_ACCESS_KEY=testsecret bun run dev
+```
+
+## 動画のアップロード (コマンド)
+
+管理画面を使わず、コマンドでアップロード・登録することもできます。撮影した動画の R2 へのアップロード (rclone) と manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
 
 ```bash
 cd video-uploader

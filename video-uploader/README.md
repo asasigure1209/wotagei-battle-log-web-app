@@ -4,6 +4,8 @@
 
 `mise upload` / `mise manifest` は、このディレクトリ (`video-uploader/`) で実行する。リポジトリのルートでは実行できない。
 
+Web アプリの管理画面 (`/admin`) からも、ブラウザだけで同じこと (アップロードと DB への登録) ができる。使い方はリポジトリのルートの README.md の「管理画面」を見る。
+
 本番に動画をアップロードして、Web アプリで表示を確かめるまでの通しの手順は [docs/production-upload.md](docs/production-upload.md) にまとめている。
 
 ## 前提

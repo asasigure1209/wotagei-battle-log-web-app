@@ -34,6 +34,17 @@ const yaml = () => ({
 })
 
 describe('parseManifest', () => {
+  it('動画のキーは、管理画面のアップロードと同じ規則 (.mp4 で終わり、. や .. を含まない) で確かめる', () => {
+    const data = yaml()
+    data.videos = [
+      { ...qualifier(), key: 's/e/a.mov' },
+      { ...battle(), key: 's/e/../M2.mp4' },
+    ]
+    expect(() => parseManifest(data)).toThrow(
+      /videos\[0\]\.key は \.mp4 で終わり[\s\S]*videos\[1\]\.key は \.mp4 で終わり/,
+    )
+  })
+
   it('エントリー No. を数に直し、No. 順に並べる', () => {
     expect(parseManifest(yaml()).entries).toEqual([
       { entryNo: 1, name: 'A' },
