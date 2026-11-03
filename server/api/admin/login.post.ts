@@ -1,6 +1,6 @@
 // 管理画面にログインする。合言葉 (NUXT_ADMIN_PASSWORD) が合えば、ログインの Cookie を渡す
 export default defineEventHandler(async (event) => {
-  const { adminPassword } = useRuntimeConfig(event)
+  const adminPassword = configSecret(useRuntimeConfig(event).adminPassword)
   if (!adminPassword) {
     throw createError({
       status: 503,

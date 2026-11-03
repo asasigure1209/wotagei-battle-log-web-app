@@ -3,7 +3,7 @@
 export default defineEventHandler((event) => {
   if (!isAdminApiPath(event.path) || isAdminLoginPath(event.path)) return
 
-  const { adminPassword } = useRuntimeConfig(event)
+  const adminPassword = configSecret(useRuntimeConfig(event).adminPassword)
   const token = getCookie(event, ADMIN_SESSION_COOKIE)
   if (!isValidAdminSession(token, adminPassword)) {
     throw createError({ status: 401, statusText: 'Unauthorized' })
