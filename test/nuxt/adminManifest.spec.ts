@@ -3,6 +3,7 @@ import {
   compareRelPath,
   formatBytes,
   formatEntriesText,
+  formatSeconds,
   parseEntriesText,
   parsePerformers,
   relPathOf,
@@ -74,5 +75,13 @@ describe('formatBytes', () => {
   it('1000 ごとに単位を上げる', () => {
     expect(formatBytes(999)).toBe('999 B')
     expect(formatBytes(1_234_567_890)).toBe('1.23 GB')
+  })
+})
+
+describe('formatSeconds', () => {
+  it('分:秒 (秒は 2 桁) にする', () => {
+    expect(formatSeconds(0)).toBe('0:00')
+    expect(formatSeconds(192)).toBe('3:12')
+    expect(formatSeconds(3605)).toBe('60:05')
   })
 })

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   PART_SIZE,
   partCountOf,
+  putWithXhr,
   runPool,
   type UploadDeps,
   uploadMultipart,
@@ -131,5 +132,97 @@ describe('runPool', () => {
       }),
     ).rejects.toThrow('boom')
     expect(started).toEqual([0, 1, 2])
+  })
+})
+
+/** XMLHttpRequest の偽物。send されたら、決めた status で終わる (status が null なら通信エラー) */
+class FakeXhr {
+  static status: number | null = 200
+  static last: FakeXhr | undefined
+  status = 0
+  method = ''
+  url = ''
+  upload: { onprogress?: (e: { loaded: number }) => void } = {}
+  onload?: () => void
+  onerror?: () => void
+  onabort?: () => void
+  onloadend?: () => void
+  aborted = false
+
+  constructor() {
+    FakeXhr.last = this
+  }
+
+  open(method: string, url: string) {
+    this.method = method
+    this.url = url
+  }
+
+  send(blob: Blob) {
+    queueMicrotask(() => {
+      if (this.aborted) return
+      this.upload.onprogress?.({ loaded: Math.floor(blob.size / 2) })
+      if (FakeXhr.status === null) this.onerror?.()
+      else {
+        this.status = FakeXhr.status
+        this.onload?.()
+      }
+      this.onloadend?.()
+    })
+  }
+
+  abort() {
+    this.aborted = true
+    this.onabort?.()
+    this.onloadend?.()
+  }
+}
+
+describe('putWithXhr', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    FakeXhr.status = 200
+  })
+
+  it('PUT し、送れたバイト数を途中と最後に知らせる', async () => {
+    vi.stubGlobal('XMLHttpRequest', FakeXhr)
+    const progress: number[] = []
+    await putWithXhr('https://r2/p1', new Blob(['0123456789']), (n) =>
+      progress.push(n),
+    )
+    expect([FakeXhr.last?.method, FakeXhr.last?.url]).toEqual([
+      'PUT',
+      'https://r2/p1',
+    ])
+    expect(progress).toEqual([5, 10])
+  })
+
+  it('2xx 以外や通信エラーは、理由のわかる文で失敗する', async () => {
+    vi.stubGlobal('XMLHttpRequest', FakeXhr)
+    FakeXhr.status = 403
+    await expect(putWithXhr('u', new Blob(['x']), () => {})).rejects.toThrow(
+      'R2 への送信に失敗しました (403)',
+    )
+    FakeXhr.status = null
+    await expect(putWithXhr('u', new Blob(['x']), () => {})).rejects.toThrow(
+      'CORS',
+    )
+  })
+
+  it('signal で中止でき、終わった XHR の中止の listener は外す', async () => {
+    vi.stubGlobal('XMLHttpRequest', FakeXhr)
+    const controller = new AbortController()
+    const remove = vi.spyOn(controller.signal, 'removeEventListener')
+    await putWithXhr('u', new Blob(['x']), () => {}, controller.signal)
+    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function))
+
+    const pending = putWithXhr(
+      'u',
+      new Blob(['x']),
+      () => {},
+      controller.signal,
+    )
+    controller.abort()
+    await expect(pending).rejects.toThrow('中止しました')
   })
 })

@@ -41,26 +41,28 @@ import {
 } from '~/utils/adminEditor/upload'
 import { parseEntriesText } from '~/utils/adminManifest'
 
-type AdminEditor = ReturnType<typeof createAdminEditor>
+export type AdminEditor = ReturnType<typeof createAdminEditor>
 
-const editorKey: InjectionKey<AdminEditor> = Symbol('adminEditor')
+/** エディターを provide / inject するキー。Storybook では、状態を作り込んだエディターをこれで渡す */
+export const adminEditorKey: InjectionKey<AdminEditor> = Symbol('adminEditor')
 
 /** エディターを作り、子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ */
 export function provideAdminEditor(onUnauthorized: () => void) {
   const editor = createAdminEditor(onUnauthorized)
-  provide(editorKey, editor)
+  provide(adminEditorKey, editor)
   onMounted(editor.events.reload)
   return editor
 }
 
 /** 親 (provideAdminEditor) が作ったエディターを受け取る */
 export function useAdminEditor() {
-  const editor = inject(editorKey)
+  const editor = inject(adminEditorKey)
   if (!editor) throw new Error('provideAdminEditor の中で使ってください')
   return editor
 }
 
-function createAdminEditor(onUnauthorized: () => void) {
+/** エディターを作る。画面からは provideAdminEditor を使い、これはテストと Storybook から使う */
+export function createAdminEditor(onUnauthorized: () => void) {
   const state: EditorState = reactive(createEditorState(onUnauthorized))
   const events = useRegisteredEvents(state)
 
