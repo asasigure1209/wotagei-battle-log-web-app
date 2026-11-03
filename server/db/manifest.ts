@@ -6,6 +6,7 @@ import { and, eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { parse } from 'yaml'
 import { isId } from '../../shared/utils/id'
+import { isVideoRelPath } from '../../shared/utils/video-key'
 import type { Db } from './client'
 import { entries, eventSeries, events, performers, videos } from './schema'
 
@@ -164,6 +165,10 @@ function videoKey(
   const key = check.text(value, path)
   if (key && !key.startsWith(prefix)) {
     check.push(`${path} は ${prefix} で始まるはずです: ${key}`)
+  } else if (key && !isVideoRelPath(key.slice(prefix.length))) {
+    check.push(
+      `${path} は .mp4 で終わり、空の階層や . .. を含まないパスにしてください: ${key}`,
+    )
   }
   if (keys.has(key)) check.push(`${path} が重なっています: ${key}`)
   keys.add(key)

@@ -16,9 +16,9 @@ export function isVideoRelPath(value: unknown): value is string {
   )
 }
 
-/** シリーズ・イベントの動画のキーとして使えるか (管理画面からアップロードするときに確かめる) */
-export function isVideoKey(key: unknown, series: unknown, event: unknown) {
-  if (typeof key !== 'string' || !isId(series) || !isId(event)) return false
-  const prefix = `${series}/${event}/`
-  return key.startsWith(prefix) && isVideoRelPath(key.slice(prefix.length))
+/** `<シリーズID>/<イベントID>/<相対パス>` の形の、動画のキーとして使えるか */
+export function isVideoKey(key: unknown): key is string {
+  if (typeof key !== 'string') return false
+  const [series, event, ...rest] = key.split('/')
+  return isId(series) && isId(event) && isVideoRelPath(rest.join('/'))
 }

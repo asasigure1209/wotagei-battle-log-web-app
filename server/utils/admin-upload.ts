@@ -34,11 +34,10 @@ export function requireEventIds(series: unknown, event: unknown) {
 
 /** アップロードするキー。`<シリーズID>/<イベントID>/<相対パス>.mp4` の形でなければ 400 */
 export function requireVideoKey(key: unknown) {
-  const [series, event] = typeof key === 'string' ? key.split('/') : []
-  if (!isVideoKey(key, series, event)) {
+  if (!isVideoKey(key)) {
     throw badRequest(`動画のキーとして使えません: ${String(key)}`)
   }
-  return key as string
+  return key
 }
 
 export function requireUploadId(uploadId: unknown) {

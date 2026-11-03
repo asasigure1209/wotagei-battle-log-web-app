@@ -25,9 +25,11 @@ describe('isVideoRelPath', () => {
 
 describe('isVideoKey', () => {
   it('シリーズ ID/イベント ID/相対パス の形だけを通す', () => {
-    expect(isVideoKey('s/e/予選/a.mp4', 's', 'e')).toBe(true)
-    expect(isVideoKey('s/x/a.mp4', 's', 'e')).toBe(false)
-    expect(isVideoKey('s/e/a.mp4', 's', 'e/f')).toBe(false)
-    expect(isVideoKey('s/e/../a.mp4', 's', 'e')).toBe(false)
+    expect(isVideoKey('s/e/予選/a.mp4')).toBe(true)
+    expect(isVideoKey('s/e/a.MP4')).toBe(true)
+    expect(isVideoKey('s/a.mp4')).toBe(false)
+    expect(isVideoKey('s!/e/a.mp4')).toBe(false)
+    expect(isVideoKey('s/e/../a.mp4')).toBe(false)
+    expect(isVideoKey(1)).toBe(false)
   })
 })
