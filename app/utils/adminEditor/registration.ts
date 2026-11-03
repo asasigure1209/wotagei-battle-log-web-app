@@ -1,5 +1,6 @@
 // 書いた内容を manifest の形にして DB に登録し、登録済みのイベントを読み込み・消す
 
+import { adminApi, type EventIds } from '~/utils/adminApi'
 import {
   formatEntriesText,
   parseEntriesText,
@@ -9,7 +10,6 @@ import type { Manifest } from '~~/server/db/manifest'
 import {
   type EditorState,
   emptyForm,
-  eventKey,
   eventPrefix,
   info,
   newRow,
@@ -43,7 +43,7 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
 /** 送る内容 (manifest の YAML を読んだ値と同じ形) と、送る前に見つかった誤り */
 export function buildManifest(state: EditorState) {
   const { entries, problems } = parseEntriesText(state.entriesText)
-  const prefix = eventPrefix(state)
+  const prefix = eventPrefix(state.form)
   const videos = state.rows.map((row) => manifestVideo(row, prefix, problems))
   const { form } = state
   const manifest = {
@@ -68,32 +68,27 @@ export async function register(state: EditorState, dryRun: boolean) {
     return false
   }
   const ok = await run(state, async () => {
-    await $fetch('/api/admin/events', {
-      method: 'POST',
-      body: manifest,
-      query: dryRun ? { dryRun: 1 } : {},
-    })
+    await adminApi.saveEvent(manifest, dryRun)
   })
   if (!ok) return false
   info(state, dryRun ? DRY_RUN_OK : REGISTERED)
-  if (!dryRun) state.loadedKey = eventKey(state.form)
+  if (!dryRun) state.loaded = true
   return true
 }
 
 /** 登録済みのイベントと、その R2 の動画を読み込む */
-export async function loadEvent(state: EditorState, key: string) {
-  const [series = '', event = ''] = key.split('/')
+export async function loadEvent(state: EditorState, ids: EventIds) {
   state.messages = null
   state.remote = null
   await run(state, async () => {
     // 2 つは別々に引けるので、待ち合わせずに並べて引く
     const [data, remote] = await Promise.all([
-      $fetch<Manifest>(`/api/admin/events/${series}/${event}`),
-      fetchRemote(series, event),
+      adminApi.getEvent(ids),
+      fetchRemote(ids),
     ])
     fill(state, data)
     state.remote = remote
-    state.loadedKey = key
+    state.loaded = true
   })
 }
 
@@ -108,7 +103,7 @@ export function fill(state: EditorState, data: Manifest) {
     contact: data.event.contact,
   }
   state.entriesText = formatEntriesText(data.entries)
-  const prefix = eventPrefix(state)
+  const prefix = eventPrefix(state.form)
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
@@ -124,21 +119,19 @@ export function reset(state: EditorState) {
   state.entriesText = ''
   state.rows = []
   state.remote = null
-  state.loadedKey = null
+  state.loaded = false
   state.messages = null
 }
 
 /** 読み込んだイベントを DB から消す。書いた内容は画面に残すので、そのまま登録し直せる */
 export async function deleteEvent(state: EditorState) {
-  const key = state.loadedKey
-  if (!key) return false
-  // URL を series と event に分けて書くと、Nitro が DELETE のルートの型を見つけられる
-  const [series = '', event = ''] = key.split('/')
+  if (!state.loaded) return false
+  const ids = { ...state.form }
   const ok = await run(state, async () => {
-    await $fetch(`/api/admin/events/${series}/${event}`, { method: 'DELETE' })
+    await adminApi.deleteEvent(ids)
   })
   if (!ok) return false
-  state.loadedKey = null
+  state.loaded = false
   info(state, 'DB からイベントを消しました (R2 の動画は残っています)')
   return true
 }

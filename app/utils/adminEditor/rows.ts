@@ -5,7 +5,7 @@ import { readMp4Duration } from '~/utils/mp4Duration'
 import { isVideoRelPath } from '~~/shared/utils/video-key'
 import { type EditorState, info, newRow, type VideoRow } from './state'
 
-export type RowState = {
+type RowState = {
   kind: 'ok' | 'pending' | 'uploading' | 'error' | 'unknown'
   label: string
 }
@@ -44,6 +44,16 @@ function upsertRow(
   if (!found) state.rows.push(row)
 }
 
+/** 行の長さ・出演者を書き換える */
+export function updateRow(
+  state: EditorState,
+  id: number,
+  patch: Partial<Pick<VideoRow, 'durationSec' | 'performersText'>>,
+) {
+  const row = state.rows.find((r) => r.id === id)
+  if (row) Object.assign(row, patch)
+}
+
 export function removeRow(state: EditorState, id: number) {
   state.rows = state.rows.filter((r) => r.id !== id)
 }
@@ -76,10 +86,15 @@ export function rowState(
     : { kind: 'unknown', label: '未確認' }
 }
 
+/** この画面で選んだファイルで、R2 にまだない、またはサイズが違う (アップロードが要る) か */
+export function needsUpload(row: VideoRow, remote: Map<string, number> | null) {
+  return !!row.file && remote?.get(row.relPath) !== row.sizeBytes
+}
+
 function remoteState(row: VideoRow, remote: Map<string, number>): RowState {
   const size = remote.get(row.relPath)
   if (size === row.sizeBytes) return { kind: 'ok', label: 'R2 にあり' }
-  if (!row.file) return { kind: 'error', label: 'R2 にない' }
+  if (!needsUpload(row, remote)) return { kind: 'error', label: 'R2 にない' }
   if (size === undefined) return { kind: 'pending', label: '未アップロード' }
   return { kind: 'pending', label: 'R2 と違う (上書き)' }
 }

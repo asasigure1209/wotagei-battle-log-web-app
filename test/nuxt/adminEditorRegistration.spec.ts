@@ -90,12 +90,12 @@ describe('manifest の組み立て', () => {
 describe('登録・読み込み・削除', () => {
   it('loadEvent はイベントと R2 の一覧を読み込み、読み込んだイベントとして覚える', async () => {
     const state = createEditorState(() => {})
-    await loadEvent(state, 's/e')
+    await loadEvent(state, { seriesId: 's', eventId: 'e' })
     expect(calls.sort()).toEqual([
       'GET /api/admin/events/s/e',
       'GET /api/admin/objects',
     ])
-    expect(state.loadedKey).toBe('s/e')
+    expect(state.loaded).toBe(true)
     expect(state.remote).toEqual(new Map([['予選/1.mp4', 10]]))
   })
 
@@ -103,9 +103,9 @@ describe('登録・読み込み・削除', () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
     expect(await register(state, true)).toBe(true)
-    expect(state.loadedKey).toBeNull()
+    expect(state.loaded).toBe(false)
     expect(await register(state, false)).toBe(true)
-    expect(state.loadedKey).toBe('s/e')
+    expect(state.loaded).toBe(true)
   })
 
   it('ログインが切れていたら onUnauthorized を呼び、エラーを出す', async () => {
@@ -122,10 +122,10 @@ describe('登録・読み込み・削除', () => {
   it('deleteEvent は読み込んだイベントを消し、書いた内容は残す。reset で空に戻す', async () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
-    state.loadedKey = 's/e'
+    state.loaded = true
     expect(await deleteEvent(state)).toBe(true)
     expect(calls).toEqual(['DELETE /api/admin/events/s/e'])
-    expect(state.loadedKey).toBeNull()
+    expect(state.loaded).toBe(false)
     expect(state.rows).toHaveLength(2)
     reset(state)
     expect(state.rows).toEqual([])

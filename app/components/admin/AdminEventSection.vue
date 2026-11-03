@@ -3,11 +3,12 @@
 import { computed } from 'vue'
 import { eventKey } from '~/utils/adminEditor/state'
 
-const { state, events, idsValid, open, refreshRemote } = useAdminEditor()
+const { state, events, idsValid, currentKey, open, refreshRemote } =
+  useAdminEditor()
 
 /** 選んでいる登録済みのイベント。新しく作るときは空 */
 const selected = computed({
-  get: () => state.loadedKey ?? '',
+  get: () => (state.loaded ? currentKey.value : ''),
   set: (key: string) => open(key),
 })
 const showIdWarning = computed(
@@ -40,7 +41,7 @@ const showIdWarning = computed(
           v-model.trim="state.form.seriesId"
           class="admin-input"
           placeholder="elnino"
-          :disabled="!!state.loadedKey"
+          :disabled="state.loaded"
           @change="refreshRemote"
         >
       </label>
@@ -58,7 +59,7 @@ const showIdWarning = computed(
           v-model.trim="state.form.eventId"
           class="admin-input"
           placeholder="elnino_vol_5"
-          :disabled="!!state.loadedKey"
+          :disabled="state.loaded"
           @change="refreshRemote"
         >
       </label>

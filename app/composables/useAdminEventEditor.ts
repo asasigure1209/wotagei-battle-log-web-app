@@ -27,6 +27,7 @@ import {
   type EditorState,
   eventKey,
   idsValid,
+  parseEventKey,
 } from '~/utils/adminEditor/state'
 import {
   cancelUpload,
@@ -94,7 +95,8 @@ function createAdminEditor(onUnauthorized: () => void) {
     currentKey,
     canRegister,
     /** 登録済みのイベントを開く。key が空なら新しいイベントを書き始める */
-    open: (key: string) => (key ? loadEvent(state, key) : reset(state)),
+    open: (key: string) =>
+      key ? loadEvent(state, parseEventKey(key)) : reset(state),
     addFiles: (files: File[], category: string) =>
       addFiles(state, files, category),
     removeRow: (id: number) => removeRow(state, id),

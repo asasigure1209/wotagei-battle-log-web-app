@@ -2,22 +2,19 @@
 // 4. DB に登録: 書いた内容を確かめて登録する。読み込んだイベントは消すこともできる
 import { ref, watch } from 'vue'
 
-const editor = useAdminEditor()
-const { state, canRegister, currentKey, events } = editor
+const { state, canRegister, currentKey, events, register, deleteEvent } =
+  useAdminEditor()
 
 /** 消すボタンを 1 度押したか。もう一度押すと消す */
 const confirmDelete = ref(false)
 // ほかのイベントに切り替えたら、1 度押したことは忘れる
-watch(
-  () => state.loadedKey,
-  () => {
-    confirmDelete.value = false
-  },
-)
+watch(currentKey, () => {
+  confirmDelete.value = false
+})
 
 async function onDelete() {
   confirmDelete.value = !confirmDelete.value
-  if (!confirmDelete.value) await editor.deleteEvent()
+  if (!confirmDelete.value) await deleteEvent()
 }
 </script>
 
@@ -34,7 +31,7 @@ async function onDelete() {
         type="button"
         class="admin-btn"
         :disabled="!canRegister"
-        @click="editor.register(true)"
+        @click="register(true)"
       >
         確認だけ
       </button>
@@ -42,7 +39,7 @@ async function onDelete() {
         type="button"
         class="admin-btn primary"
         :disabled="!canRegister"
-        @click="editor.register(false)"
+        @click="register(false)"
       >
         登録する
       </button>
@@ -55,7 +52,7 @@ async function onDelete() {
         >公開ページを開く</a
       >
       <button
-        v-if="state.loadedKey"
+        v-if="state.loaded"
         type="button"
         class="admin-btn danger"
         :disabled="state.busy"

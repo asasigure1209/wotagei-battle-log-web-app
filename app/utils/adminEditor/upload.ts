@@ -1,6 +1,7 @@
 // R2 にある動画の確認と、この画面で選んだ動画のアップロード
-import { adminUploadDeps } from '~/composables/useAdminApi'
+import { adminApi, adminUploadDeps, type EventIds } from '~/utils/adminApi'
 import { uploadMultipart } from '~/utils/multipartUpload'
+import { needsUpload } from './rows'
 import {
   type EditorState,
   eventPrefix,
@@ -14,29 +15,24 @@ import {
 const PROGRESS_INTERVAL_MS = 200
 
 /** イベントの R2 にある動画 (相対パス → サイズ) */
-export async function fetchRemote(series: string, event: string) {
-  const objects = await $fetch<{ key: string; size: number }[]>(
-    '/api/admin/objects',
-    { query: { series, event } },
-  )
-  const prefix = `${series}/${event}/`
+export async function fetchRemote(ids: EventIds) {
+  const objects = await adminApi.listObjects(ids)
+  const prefix = eventPrefix(ids)
   return new Map(objects.map((o) => [o.key.slice(prefix.length), o.size]))
 }
 
 export async function refreshRemote(state: EditorState) {
   state.remote = null
   if (!idsValid(state)) return
-  const { seriesId, eventId } = state.form
+  const ids = { ...state.form }
   await run(state, async () => {
-    state.remote = await fetchRemote(seriesId, eventId)
+    state.remote = await fetchRemote(ids)
   })
 }
 
-/** この画面で選んだファイルのうち、R2 にまだない、またはサイズが違うもの */
+/** アップロードが要る行 */
 export function uploadTargets(state: EditorState) {
-  return state.rows.filter(
-    (r) => r.file && state.remote?.get(r.relPath) !== r.sizeBytes,
-  )
+  return state.rows.filter((r) => needsUpload(r, state.remote))
 }
 
 export async function uploadAll(state: EditorState) {
@@ -64,7 +60,7 @@ async function uploadRow(
   try {
     await uploadMultipart(
       file,
-      eventPrefix(state) + row.relPath,
+      eventPrefix(state.form) + row.relPath,
       throttledProgress(row),
       adminUploadDeps,
       signal,

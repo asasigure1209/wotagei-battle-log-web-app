@@ -1,7 +1,11 @@
 // 管理画面のエディターの状態と、どの操作からも使う共通の処理。
 // Vue に依存しない関数として書き、画面 (composables/useAdminEventEditor.ts) は状態を reactive にして渡す
 
-import { adminErrorMessages, isUnauthorized } from '~/composables/useAdminApi'
+import {
+  adminErrorMessages,
+  type EventIds,
+  isUnauthorized,
+} from '~/utils/adminApi'
 import { isId } from '~~/shared/utils/id'
 
 /** 動画の 1 行。file はこの画面で選んだファイル (DB から読んだだけの行にはない) */
@@ -18,7 +22,7 @@ export type VideoRow = {
   error: string
 }
 
-export type EventForm = {
+type EventForm = {
   seriesId: string
   seriesName: string
   eventId: string
@@ -35,8 +39,11 @@ export type EditorState = {
   rows: VideoRow[]
   /** R2 にある動画 (相対パス → サイズ)。まだ調べていなければ null */
   remote: Map<string, number> | null
-  /** 読み込んだ登録済みのイベント (`シリーズID/イベントID`)。新しく作っているときは null */
-  loadedKey: string | null
+  /**
+   * 登録済みのイベントを読み込んでいるか (または登録したか)。そのあいだは ID を変えられないので、
+   * どのイベントかはフォームの ID でわかる
+   */
+  loaded: boolean
   messages: EditorMessages | null
   /** API を待っているか */
   busy: boolean
@@ -63,7 +70,7 @@ export function createEditorState(onUnauthorized: () => void): EditorState {
     entriesText: '',
     rows: [],
     remote: null,
-    loadedKey: null,
+    loaded: false,
     messages: null,
     busy: false,
     uploadAbort: null,
@@ -89,14 +96,20 @@ export function newRow(
   }
 }
 
-/** `シリーズID/イベントID`。登録済みのイベントを見分けるのに使う */
-export function eventKey(ids: { seriesId: string; eventId: string }) {
+/** `シリーズID/イベントID`。登録済みのイベントの選択肢の値などに使う */
+export function eventKey(ids: EventIds) {
   return `${ids.seriesId}/${ids.eventId}`
 }
 
+/** eventKey の逆 */
+export function parseEventKey(key: string): EventIds {
+  const [seriesId = '', eventId = ''] = key.split('/')
+  return { seriesId, eventId }
+}
+
 /** 動画のキーの、相対パスの前に付く部分 (`シリーズID/イベントID/`) */
-export function eventPrefix(state: EditorState) {
-  return `${eventKey(state.form)}/`
+export function eventPrefix(ids: EventIds) {
+  return `${eventKey(ids)}/`
 }
 
 export function idsValid(state: EditorState) {

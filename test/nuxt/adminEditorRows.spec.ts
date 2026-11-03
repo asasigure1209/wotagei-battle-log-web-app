@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   addFiles,
   moveRow,
+  needsUpload,
   removeRow,
   rowState,
+  updateRow,
 } from '~/utils/adminEditor/rows'
 import { createEditorState, newRow } from '~/utils/adminEditor/state'
 
@@ -24,6 +26,16 @@ describe('動画の行の操作', () => {
     expect(paths(state)).toEqual(['a.mp4', 'c.mp4', 'b.mp4'])
     moveRow(state, a?.id ?? 0, -1)
     expect(paths(state)).toEqual(['a.mp4', 'c.mp4', 'b.mp4'])
+  })
+
+  it('updateRow は長さと出演者を書き換える', () => {
+    const state = stateWith('a.mp4')
+    const id = state.rows[0]?.id ?? 0
+    updateRow(state, id, { durationSec: 12, performersText: '1, 2' })
+    expect(state.rows[0]).toMatchObject({
+      durationSec: 12,
+      performersText: '1, 2',
+    })
   })
 
   it('removeRow は行を外す', () => {
@@ -71,5 +83,20 @@ describe('rowState', () => {
     expect(rowState(row({}), remote()).label).toBe('R2 にない')
     expect(rowState(row({ file }), remote()).label).toBe('未アップロード')
     expect(rowState(row({ file }), remote(9)).label).toBe('R2 と違う (上書き)')
+  })
+})
+
+describe('needsUpload', () => {
+  it('この画面で選んだファイルで、R2 にない、またはサイズが違うものだけ', () => {
+    const file = new File([], 'a.mp4')
+    const remote = new Map([['a.mp4', 10]])
+    expect(needsUpload(newRow('a.mp4', { file, sizeBytes: 10 }), remote)).toBe(
+      false,
+    )
+    expect(needsUpload(newRow('a.mp4', { file, sizeBytes: 9 }), remote)).toBe(
+      true,
+    )
+    expect(needsUpload(newRow('b.mp4', { file }), remote)).toBe(true)
+    expect(needsUpload(newRow('b.mp4', {}), remote)).toBe(false)
   })
 })
