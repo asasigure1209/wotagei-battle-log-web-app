@@ -97,8 +97,7 @@ async function r2Fetch(config: R2Config, url: URL, init: RequestInit = {}) {
   })
   const res = await client.fetch(url.toString(), init)
   const text = await res.text()
-  // CompleteMultipartUpload は 200 のまま本文で Error を返すことがある
-  if (!res.ok || text.includes('<Error>')) {
+  if (!res.ok) {
     throw new Error(`R2 がエラーを返しました (${res.status}): ${text}`)
   }
   return text
@@ -176,11 +175,17 @@ export async function completeMultipartUpload(
   }
   const url = objectUrl(config, storageKey)
   url.searchParams.set('uploadId', uploadId)
-  await r2Fetch(config, url, {
+  const xml = await r2Fetch(config, url, {
     method: 'POST',
     headers: { 'content-type': 'application/xml' },
     body: completeBody(parts),
   })
+  // CompleteMultipartUpload は 200 のまま本文で Error を返すことがある
+  if (xml.includes('<Error>')) {
+    throw new Error(
+      `R2 がマルチパートアップロードを完了できませんでした: ${xml}`,
+    )
+  }
 }
 
 /** マルチパートアップロードを取りやめ、R2 に届いたパートを捨てる */
