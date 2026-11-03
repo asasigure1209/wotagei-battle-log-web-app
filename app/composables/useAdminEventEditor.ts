@@ -1,5 +1,6 @@
 // 管理画面で、1 つのイベントの情報・エントリー・動画を書き、動画を R2 に送り、DB に取り込むまでの状態
 import { computed, markRaw, reactive } from 'vue'
+import type { Manifest } from '~~/server/db/manifest'
 import { isId } from '~~/shared/utils/id'
 import { isVideoRelPath } from '~~/shared/utils/video-key'
 
@@ -22,20 +23,8 @@ export type RowState = {
   label: string
 }
 
-/** 登録済みのイベント (GET /api/admin/events/:series/:event) */
-export type AdminEvent = {
-  series: { id: string; name: string }
-  event: { id: string; name: string; date: string; contact: string }
-  entries: { entryNo: number; name: string }[]
-  videos: {
-    key: string
-    durationSec: number
-    sizeBytes: number
-    performers: number[]
-  }[]
-}
-
-type Busy = '' | 'remote' | 'upload' | 'register' | 'load'
+/** 登録済みのイベント (GET /api/admin/events/:series/:event)。manifest と同じ形 */
+type AdminEvent = Manifest
 
 export type EditorState = {
   form: ReturnType<typeof emptyForm>
@@ -44,7 +33,9 @@ export type EditorState = {
   /** R2 にある動画 (相対パス → サイズ)。まだ調べていなければ null */
   remote: Map<string, number> | null
   messages: { kind: 'error' | 'info'; lines: string[] } | null
-  busy: Busy
+  /** API を待っているか */
+  busy: boolean
+  /** アップロードしている間だけある (中止に使う) */
   uploadAbort: AbortController | null
   /** ログインが切れたときに呼ぶ */
   onUnauthorized: () => void
@@ -89,8 +80,8 @@ function info(state: EditorState, ...lines: string[]) {
 }
 
 /** busy にしてから fn を動かし、失敗したら画面にエラーを出す (ログインが切れていたらログインの画面に戻す) */
-async function run(state: EditorState, busy: Busy, fn: () => Promise<void>) {
-  state.busy = busy
+async function run(state: EditorState, fn: () => Promise<void>) {
+  state.busy = true
   try {
     await fn()
     return true
@@ -99,7 +90,7 @@ async function run(state: EditorState, busy: Busy, fn: () => Promise<void>) {
     state.messages = { kind: 'error', lines: adminErrorMessages(error) }
     return false
   } finally {
-    state.busy = ''
+    state.busy = false
   }
 }
 
@@ -108,16 +99,29 @@ async function addFiles(state: EditorState, files: File[], category: string) {
   const videos = files
     .map((file) => ({ file, relPath: relPathOf(file, category) }))
     .filter((v) => isVideoRelPath(v.relPath))
-  for (const { file, relPath } of videos) {
-    const durationSec = await readMp4Duration(file)
-    const found = state.rows.find((r) => r.relPath === relPath)
-    const row = found ?? newRow(relPath)
-    Object.assign(row, { file, durationSec, sizeBytes: file.size, error: '' })
-    if (!found) state.rows.push(row)
-  }
+  // 長さはファイルの頭と moov の先頭だけを読むので、まとめて読む
+  const withDurations = await Promise.all(
+    videos.map(async (v) => ({
+      ...v,
+      durationSec: await readMp4Duration(v.file),
+    })),
+  )
+  for (const video of withDurations) upsertRow(state, video)
   sortRows(state)
   const skipped = files.length - videos.length
   if (skipped) info(state, `.mp4 ではないファイルを ${skipped} 個とばしました`)
+}
+
+/** 同じ相対パスの行があればファイルを付け替え、なければ足す */
+function upsertRow(
+  state: EditorState,
+  video: { file: File; relPath: string; durationSec: number | null },
+) {
+  const { file, relPath, durationSec } = video
+  const found = state.rows.find((r) => r.relPath === relPath)
+  const row = found ?? newRow(relPath)
+  Object.assign(row, { file, durationSec, sizeBytes: file.size, error: '' })
+  if (!found) state.rows.push(row)
 }
 
 function removeRow(state: EditorState, id: number) {
@@ -136,18 +140,22 @@ function sortRows(state: EditorState) {
   state.rows.sort((a, b) => compareRelPath(a.relPath, b.relPath))
 }
 
+/** イベントの R2 にある動画 (相対パス → サイズ) */
+async function fetchRemote(series: string, event: string) {
+  const objects = await $fetch<{ key: string; size: number }[]>(
+    '/api/admin/objects',
+    { query: { series, event } },
+  )
+  const prefix = `${series}/${event}/`
+  return new Map(objects.map((o) => [o.key.slice(prefix.length), o.size]))
+}
+
 async function refreshRemote(state: EditorState) {
   state.remote = null
   if (!idsValid(state)) return
-  const prefix = eventPrefix(state)
-  await run(state, 'remote', async () => {
-    const objects = await $fetch<{ key: string; size: number }[]>(
-      '/api/admin/objects',
-      { query: { series: state.form.seriesId, event: state.form.eventId } },
-    )
-    state.remote = new Map(
-      objects.map((o) => [o.key.slice(prefix.length), o.size]),
-    )
+  const { seriesId, eventId } = state.form
+  await run(state, async () => {
+    state.remote = await fetchRemote(seriesId, eventId)
   })
 }
 
@@ -183,12 +191,15 @@ async function uploadAll(state: EditorState) {
   const abort = markRaw(new AbortController())
   state.uploadAbort = abort
   const targets = uploadTargets(state)
-  const ok = await run(state, 'upload', async () => {
+  const ok = await run(state, async () => {
     for (const row of targets) await uploadRow(state, row, abort.signal)
   })
   state.uploadAbort = null
   if (ok) info(state, `${targets.length} 本アップロードしました`)
 }
+
+/** 送信中の進み具合を画面に反映する間隔 */
+const PROGRESS_INTERVAL_MS = 200
 
 async function uploadRow(
   state: EditorState,
@@ -199,11 +210,16 @@ async function uploadRow(
   if (!file) return
   row.sentBytes = 0
   row.error = ''
+  // 送れたバイト数は XHR から細かく届くので、画面を描き直しすぎないよう間引いて反映する
+  let shownAt = 0
   try {
     await uploadMultipart(
       file,
       eventPrefix(state) + row.relPath,
       (bytes) => {
+        const now = Date.now()
+        if (now - shownAt < PROGRESS_INTERVAL_MS) return
+        shownAt = now
         row.sentBytes = bytes
       },
       adminUploadDeps,
@@ -265,7 +281,7 @@ async function register(state: EditorState, dryRun: boolean) {
     state.messages = { kind: 'error', lines: problems }
     return false
   }
-  const ok = await run(state, 'register', async () => {
+  const ok = await run(state, async () => {
     await $fetch('/api/admin/events', {
       method: 'POST',
       body: manifest,
@@ -282,13 +298,16 @@ const REGISTERED =
 
 async function loadEvent(state: EditorState, series: string, event: string) {
   state.messages = null
-  const ok = await run(state, 'load', async () => {
-    fill(
-      state,
-      await $fetch<AdminEvent>(`/api/admin/events/${series}/${event}`),
-    )
+  state.remote = null
+  await run(state, async () => {
+    // 2 つは別々に引けるので、待ち合わせずに並べて引く
+    const [data, remote] = await Promise.all([
+      $fetch<AdminEvent>(`/api/admin/events/${series}/${event}`),
+      fetchRemote(series, event),
+    ])
+    fill(state, data)
+    state.remote = remote
   })
-  if (ok) await refreshRemote(state)
 }
 
 /** 登録済みのイベントを、画面に書き写す */
@@ -322,7 +341,7 @@ function reset(state: EditorState) {
 
 async function deleteEvent(state: EditorState) {
   const { seriesId, eventId } = state.form
-  const ok = await run(state, 'register', async () => {
+  const ok = await run(state, async () => {
     await $fetch(`/api/admin/events/${seriesId}/${eventId}`, {
       method: 'DELETE',
     })
@@ -333,7 +352,6 @@ async function deleteEvent(state: EditorState) {
 
 /** 画面から使う操作。名前が一般的なので、自動 import に 1 つずつ出さずまとめる */
 export const adminEditor = {
-  eventPrefix,
   idsValid,
   addFiles,
   removeRow,
@@ -341,13 +359,10 @@ export const adminEditor = {
   sortRows,
   refreshRemote,
   rowState,
-  uploadTargets,
   uploadAll,
   cancelUpload,
-  buildManifest,
   register,
   loadEvent,
-  fill,
   reset,
   deleteEvent,
 }
@@ -359,11 +374,15 @@ export function useAdminEventEditor(onUnauthorized: () => void) {
     rows: [],
     remote: null,
     messages: null,
-    busy: '',
+    busy: false,
     uploadAbort: null,
     onUnauthorized,
   }) as EditorState
   const entries = computed(() => parseEntriesText(state.entriesText))
   const targets = computed(() => uploadTargets(state))
-  return { state, entries, targets }
+  /** 行ごとの状態 (行の id → 状態)。表の 1 行で何度も使うので、1 度だけ出す */
+  const rowStates = computed(
+    () => new Map(state.rows.map((r) => [r.id, rowState(r, state.remote)])),
+  )
+  return { state, entries, targets, rowStates }
 }

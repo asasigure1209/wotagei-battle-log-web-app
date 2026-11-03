@@ -5,19 +5,32 @@
 
 type Box = { type: string; start: number; end: number; headerSize: number }
 
+/**
+ * moov のうち、まず読む先頭の大きさ。moov には再生用の表が入っていて長い動画では数 MB になるが、
+ * mvhd はほぼ必ず moov の最初の子なので、先頭だけで見つかる。見つからないときだけ moov を全部読む
+ */
+const MOOV_HEAD_BYTES = 64 * 1024
+
 /** 長さ (秒、四捨五入)。MP4 として読めなければ null */
 export async function readMp4Duration(file: Blob): Promise<number | null> {
   try {
     const moov = await findTopLevelBox(file, 'moov')
     if (!moov) return null
-    const body = new DataView(
-      await file.slice(moov.start + moov.headerSize, moov.end).arrayBuffer(),
-    )
-    const mvhd = findChildBox(body, 'mvhd')
-    return mvhd ? mvhdDuration(body, mvhd) : null
+    const start = moov.start + moov.headerSize
+    const headEnd = Math.min(moov.end, start + MOOV_HEAD_BYTES)
+    const fromHead = await durationIn(file, start, headEnd)
+    if (fromHead !== null || headEnd === moov.end) return fromHead
+    return await durationIn(file, start, moov.end)
   } catch {
     return null
   }
+}
+
+/** file の start〜end (moov の中身) から mvhd を探して長さを出す */
+async function durationIn(file: Blob, start: number, end: number) {
+  const body = new DataView(await file.slice(start, end).arrayBuffer())
+  const mvhd = findChildBox(body, 'mvhd')
+  return mvhd ? mvhdDuration(body, mvhd) : null
 }
 
 async function findTopLevelBox(file: Blob, type: string) {
@@ -49,7 +62,7 @@ function findChildBox(view: DataView, type: string) {
  * view の at から始まるボックスの頭を読む。位置 (start・end) は base を起点にした値で返す。
  * size が 1 なら 64 ビットの大きさが続き、0 ならファイルの終わりまで
  */
-export function readBoxHeader(
+function readBoxHeader(
   view: DataView,
   at: number,
   base: number,

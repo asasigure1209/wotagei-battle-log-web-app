@@ -6,7 +6,7 @@ const emit = defineEmits<{
   unauthorized: []
 }>()
 
-const { state, entries, targets } = useAdminEventEditor(() =>
+const { state, entries, targets, rowStates } = useAdminEventEditor(() =>
   emit('unauthorized'),
 )
 const ed = adminEditor
@@ -19,6 +19,9 @@ type EventSummary = {
   date: string
 }
 const events = ref<EventSummary[]>([])
+/** `シリーズID/イベントID`。登録済みのイベントの選択肢の値に使う */
+const eventKey = (e: { seriesId: string; eventId: string }) =>
+  `${e.seriesId}/${e.eventId}`
 /** 選んでいる登録済みのイベント (`シリーズID/イベントID`)。新しく作るときは空 */
 const selected = ref('')
 const category = ref('')
@@ -51,7 +54,7 @@ async function onRegister(dryRun: boolean) {
   const ok = await ed.register(state, dryRun)
   if (ok && !dryRun) {
     await loadEvents()
-    selected.value = `${state.form.seriesId}/${state.form.eventId}`
+    selected.value = currentKey.value
   }
 }
 
@@ -65,22 +68,22 @@ async function onDelete() {
 }
 
 const idsValid = computed(() => ed.idsValid(state))
-const busy = computed(() => !!state.busy)
+const busy = computed(() => state.busy)
 const totalUploadBytes = computed(() =>
   targets.value.reduce((n, r) => n + r.sizeBytes, 0),
 )
-const currentKey = computed(
-  () => `${state.form.seriesId}/${state.form.eventId}`,
+const currentKey = computed(() =>
+  eventKey({ seriesId: state.form.seriesId, eventId: state.form.eventId }),
 )
 const isRegistered = computed(() =>
-  events.value.some((e) => `${e.seriesId}/${e.eventId}` === currentKey.value),
+  events.value.some((e) => eventKey(e) === currentKey.value),
 )
 const canRegister = computed(
   () =>
     idsValid.value &&
     state.rows.length > 0 &&
     !busy.value &&
-    state.rows.every((r) => ed.rowState(r, state.remote).kind === 'ok'),
+    state.rows.every((r) => rowStates.value.get(r.id)?.kind === 'ok'),
 )
 </script>
 
@@ -92,11 +95,7 @@ const canRegister = computed(
         <span>登録済みのイベントを直す</span>
         <select v-model="selected" :disabled="busy" @change="onSelectEvent">
           <option value="">新しいイベントを作る</option>
-          <option
-            v-for="e in events"
-            :key="`${e.seriesId}/${e.eventId}`"
-            :value="`${e.seriesId}/${e.eventId}`"
-          >
+          <option v-for="e in events" :key="eventKey(e)" :value="eventKey(e)">
             {{ e.date }} {{ e.seriesName }} / {{ e.eventName }} ({{
               e.seriesId
             }}/{{ e.eventId }})
@@ -263,8 +262,8 @@ const canRegister = computed(
                 >
               </td>
               <td>
-                <span :class="['state', ed.rowState(row, state.remote).kind]">
-                  {{ ed.rowState(row, state.remote).label }}
+                <span :class="['state', rowStates.get(row.id)?.kind]">
+                  {{ rowStates.get(row.id)?.label }}
                 </span>
               </td>
               <td class="ops">
@@ -301,10 +300,10 @@ const canRegister = computed(
 
       <div class="actions">
         <button
-          v-if="state.busy !== 'upload'"
+          v-if="!state.uploadAbort"
           type="button"
           class="primary"
-          :disabled="!idsValid || !state.remote || !targets.length || !!busy"
+          :disabled="!idsValid || !state.remote || !targets.length || busy"
           @click="ed.uploadAll(state)"
         >
           R2 にアップロード ({{ targets.length }} 本 /
@@ -354,7 +353,7 @@ const canRegister = computed(
           >公開ページを開く</a
         >
         <button
-          v-if="isRegistered && selected"
+          v-if="selected"
           type="button"
           class="danger"
           :disabled="busy"
