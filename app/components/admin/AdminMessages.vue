@@ -1,20 +1,16 @@
 <script setup lang="ts">
-import type { EditorMessages } from '~/utils/adminEditor/state'
-
-defineProps<{
-  /** 画面の下に出す知らせ。null なら何も出さない */
-  messages: EditorMessages | null
-}>()
+// 画面の下に出す知らせ (エラーや、終わったことの知らせ)
+const { state } = useAdminEditor()
 </script>
 
 <template>
   <div
-    v-if="messages"
-    :class="['messages', messages.kind]"
+    v-if="state.messages"
+    :class="['messages', state.messages.kind]"
     role="status"
     aria-live="polite"
   >
-    <p v-for="line in messages.lines" :key="line">{{ line }}</p>
+    <p v-for="line in state.messages.lines" :key="line">{{ line }}</p>
   </div>
 </template>
 
@@ -35,7 +31,7 @@ defineProps<{
 }
 
 .error {
-  border-color: #ff7a7a;
-  color: #ffb3b3;
+  border-color: var(--color-danger);
+  color: var(--color-danger-soft);
 }
 </style>

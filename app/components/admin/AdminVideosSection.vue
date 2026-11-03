@@ -1,27 +1,28 @@
 <script setup lang="ts">
 // 3. 動画: ファイルを選んで並べ、R2 にアップロードする
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
-const editor = useAdminEditor()
-const { state, idsValid, targets } = editor
+const {
+  state,
+  idsValid,
+  targets,
+  totalUploadBytes,
+  canUpload,
+  addFiles,
+  refreshRemote,
+  sortRows,
+  uploadAll,
+  cancelUpload,
+} = useAdminEditor()
 
 /** ファイルだけを選ぶときに置く分類 (予選など) */
 const category = ref('')
 
-const totalUploadBytes = computed(() =>
-  targets.value.reduce((n, r) => n + r.sizeBytes, 0),
-)
-const canUpload = computed(
-  () =>
-    idsValid.value && !!state.remote && targets.value.length > 0 && !state.busy,
-)
-
 async function onPickFiles(e: Event) {
   const input = e.target as HTMLInputElement
-  await editor.addFiles(Array.from(input.files ?? []), category.value)
+  await addFiles(Array.from(input.files ?? []), category.value)
   // 同じファイルを選び直しても change が起きるよう空にする
   input.value = ''
-  if (!state.remote) await editor.refreshRemote()
 }
 </script>
 
@@ -66,7 +67,7 @@ async function onPickFiles(e: Event) {
         type="button"
         class="admin-btn"
         :disabled="!idsValid || state.busy"
-        @click="editor.refreshRemote"
+        @click="refreshRemote"
       >
         R2 を確認
       </button>
@@ -74,7 +75,7 @@ async function onPickFiles(e: Event) {
         type="button"
         class="admin-btn"
         :disabled="state.busy"
-        @click="editor.sortRows"
+        @click="sortRows"
       >
         パス順に並べる
       </button>
@@ -89,17 +90,12 @@ async function onPickFiles(e: Event) {
         type="button"
         class="admin-btn primary"
         :disabled="!canUpload"
-        @click="editor.uploadAll"
+        @click="uploadAll"
       >
         R2 にアップロード ({{ targets.length }} 本 /
         {{ formatBytes(totalUploadBytes) }})
       </button>
-      <button
-        v-else
-        type="button"
-        class="admin-btn"
-        @click="editor.cancelUpload"
-      >
+      <button v-else type="button" class="admin-btn" @click="cancelUpload">
         アップロードを中止
       </button>
     </div>

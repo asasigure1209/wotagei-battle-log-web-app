@@ -1,14 +1,16 @@
 // 管理画面のエディター。1 つのイベントの情報・エントリー・動画を書き、動画を R2 に送り、DB に取り込むまで。
-// 処理は utils/adminEditor/ の関数に分け、ここでは状態を reactive にし、画面から呼べる形に束ねて
-// 各セクションのコンポーネントに provide する (useAdminEditor で受け取る)
+// 処理は utils/adminEditor/ の関数に分け、ここでは状態を reactive にし、画面から呼べる形に束ねる。
+// 親 (AdminEventEditor) が provideAdminEditor で作って渡し、各セクションは useAdminEditor で受け取る
 import {
   computed,
   type InjectionKey,
   inject,
+  onMounted,
   provide,
   reactive,
   ref,
 } from 'vue'
+import { adminApi, type EventSummary } from '~/utils/adminApi'
 import {
   deleteEvent,
   loadEvent,
@@ -21,6 +23,7 @@ import {
   removeRow,
   rowState,
   sortRows,
+  updateRow,
 } from '~/utils/adminEditor/rows'
 import {
   createEditorState,
@@ -28,6 +31,7 @@ import {
   eventKey,
   idsValid,
   parseEventKey,
+  run,
 } from '~/utils/adminEditor/state'
 import {
   cancelUpload,
@@ -37,52 +41,47 @@ import {
 } from '~/utils/adminEditor/upload'
 import { parseEntriesText } from '~/utils/adminManifest'
 
-/** 登録済みのイベントの一覧の 1 件 (GET /api/admin/events) */
-export type EventSummary = {
-  seriesId: string
-  seriesName: string
-  eventId: string
-  eventName: string
-  date: string
-}
-
-export type AdminEditor = ReturnType<typeof createAdminEditor>
+type AdminEditor = ReturnType<typeof createAdminEditor>
 
 const editorKey: InjectionKey<AdminEditor> = Symbol('adminEditor')
 
 /** エディターを作り、子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ */
-export function useAdminEventEditor(onUnauthorized: () => void) {
+export function provideAdminEditor(onUnauthorized: () => void) {
   const editor = createAdminEditor(onUnauthorized)
   provide(editorKey, editor)
+  onMounted(editor.events.reload)
   return editor
 }
 
-/** 親 (useAdminEventEditor) が作ったエディターを受け取る */
+/** 親 (provideAdminEditor) が作ったエディターを受け取る */
 export function useAdminEditor() {
   const editor = inject(editorKey)
-  if (!editor) throw new Error('useAdminEventEditor の中で使ってください')
+  if (!editor) throw new Error('provideAdminEditor の中で使ってください')
   return editor
 }
 
 function createAdminEditor(onUnauthorized: () => void) {
   const state: EditorState = reactive(createEditorState(onUnauthorized))
-  const events = useRegisteredEvents(onUnauthorized)
+  const events = useRegisteredEvents(state)
 
   const entries = computed(() => parseEntriesText(state.entriesText))
   const targets = computed(() => uploadTargets(state))
-  /** 行ごとの状態 (行の id → 状態)。表の 1 行で何度も使うので、1 度だけ出す */
-  const rowStates = computed(
-    () => new Map(state.rows.map((r) => [r.id, rowState(r, state.remote)])),
+  const totalUploadBytes = computed(() =>
+    targets.value.reduce((n, r) => n + r.sizeBytes, 0),
   )
   const valid = computed(() => idsValid(state))
   const currentKey = computed(() => eventKey(state.form))
+  const canUpload = computed(
+    () =>
+      valid.value && !!state.remote && targets.value.length > 0 && !state.busy,
+  )
   /** すべての動画が R2 にあり、登録できるか */
   const canRegister = computed(
     () =>
       valid.value &&
       state.rows.length > 0 &&
       !state.busy &&
-      state.rows.every((r) => rowStates.value.get(r.id)?.kind === 'ok'),
+      state.rows.every((r) => rowState(r, state.remote).kind === 'ok'),
   )
 
   return {
@@ -90,15 +89,21 @@ function createAdminEditor(onUnauthorized: () => void) {
     events,
     entries,
     targets,
-    rowStates,
+    totalUploadBytes,
     idsValid: valid,
     currentKey,
+    canUpload,
     canRegister,
     /** 登録済みのイベントを開く。key が空なら新しいイベントを書き始める */
     open: (key: string) =>
       key ? loadEvent(state, parseEventKey(key)) : reset(state),
-    addFiles: (files: File[], category: string) =>
-      addFiles(state, files, category),
+    /** ファイルを足し、R2 をまだ調べていなければ調べる */
+    addFiles: async (files: File[], category: string) => {
+      await addFiles(state, files, category)
+      if (!state.remote) await refreshRemote(state)
+    },
+    updateRow: (id: number, patch: Parameters<typeof updateRow>[2]) =>
+      updateRow(state, id, patch),
     removeRow: (id: number) => removeRow(state, id),
     moveRow: (id: number, delta: number) => moveRow(state, id, delta),
     sortRows: () => sortRows(state),
@@ -116,15 +121,13 @@ function createAdminEditor(onUnauthorized: () => void) {
   }
 }
 
-/** 登録済みのイベントの一覧 */
-function useRegisteredEvents(onUnauthorized: () => void) {
+/** 登録済みのイベントの一覧。読み込みに失敗したときは、ほかの操作と同じく画面にエラーを出す */
+function useRegisteredEvents(state: EditorState) {
   const list = ref<EventSummary[]>([])
-  async function reload() {
-    try {
-      list.value = await $fetch<EventSummary[]>('/api/admin/events')
-    } catch (error) {
-      if (isUnauthorized(error)) onUnauthorized()
-    }
+  const reload = async () => {
+    await run(state, async () => {
+      list.value = await adminApi.listEvents()
+    })
   }
   /** key (`シリーズID/イベントID`) のイベントが登録済みか */
   const has = (key: string) => list.value.some((e) => eventKey(e) === key)

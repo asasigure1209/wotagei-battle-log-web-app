@@ -1,24 +1,38 @@
 <script setup lang="ts">
 // 動画の一覧の 1 行。長さと出演 No. をその場で直し、並べ替えや取り外しをする
 import { computed } from 'vue'
+import { rowState } from '~/utils/adminEditor/rows'
 import type { VideoRow } from '~/utils/adminEditor/state'
 
 const props = defineProps<{
-  /** 動画の行 (エディターの状態の中の行。v-model で直接書き換える) */
+  /** 動画の行。書き換えはエディターの updateRow を通す */
   row: VideoRow
   /** 一覧の中での位置 (0 から) */
   index: number
-  /** 一覧の最後の行か */
-  last: boolean
 }>()
 
-const editor = useAdminEditor()
-const status = computed(() => editor.rowStates.value.get(props.row.id))
+const { state, updateRow, moveRow, removeRow } = useAdminEditor()
+// 行ごとに出すので、ほかの行が送信中でも、この行は描き直さない
+const status = computed(() => rowState(props.row, state.remote))
+const last = computed(() => props.index === state.rows.length - 1)
 const durationTitle = computed(() =>
   props.row.durationSec === null
     ? '長さが読めませんでした。秒で書いてください'
     : formatSeconds(props.row.durationSec),
 )
+
+function onDuration(e: Event) {
+  const input = e.target as HTMLInputElement
+  updateRow(props.row.id, {
+    durationSec: input.value === '' ? null : input.valueAsNumber,
+  })
+}
+
+function onPerformers(e: Event) {
+  updateRow(props.row.id, {
+    performersText: (e.target as HTMLInputElement).value,
+  })
+}
 </script>
 
 <template>
@@ -27,19 +41,21 @@ const durationTitle = computed(() =>
     <td class="mono">{{ row.relPath }}</td>
     <td>
       <input
-        v-model.number="row.durationSec"
+        :value="row.durationSec"
         class="admin-input num"
         type="number"
         min="0"
         :title="durationTitle"
+        @input="onDuration"
       >
     </td>
     <td class="mono">{{ formatBytes(row.sizeBytes) }}</td>
     <td>
       <input
-        v-model="row.performersText"
+        :value="row.performersText"
         class="admin-input performers"
         placeholder="1, 2"
+        @input="onPerformers"
       >
     </td>
     <td>
@@ -51,8 +67,8 @@ const durationTitle = computed(() =>
           type="button"
           class="admin-btn"
           aria-label="上へ"
-          :disabled="editor.state.busy || index === 0"
-          @click="editor.moveRow(row.id, -1)"
+          :disabled="state.busy || index === 0"
+          @click="moveRow(row.id, -1)"
         >
           ↑
         </button>
@@ -60,8 +76,8 @@ const durationTitle = computed(() =>
           type="button"
           class="admin-btn"
           aria-label="下へ"
-          :disabled="editor.state.busy || last"
-          @click="editor.moveRow(row.id, 1)"
+          :disabled="state.busy || last"
+          @click="moveRow(row.id, 1)"
         >
           ↓
         </button>
@@ -69,8 +85,8 @@ const durationTitle = computed(() =>
           type="button"
           class="admin-btn"
           aria-label="外す"
-          :disabled="editor.state.busy"
-          @click="editor.removeRow(row.id)"
+          :disabled="state.busy"
+          @click="removeRow(row.id)"
         >
           ✕
         </button>
@@ -123,10 +139,10 @@ td {
 }
 
 .uploading {
-  color: #7ad7ff;
+  color: var(--color-info);
 }
 
 .error {
-  color: #ff7a7a;
+  color: var(--color-danger);
 }
 </style>

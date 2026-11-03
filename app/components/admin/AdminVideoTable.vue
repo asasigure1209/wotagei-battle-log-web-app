@@ -23,7 +23,6 @@ const { state } = useAdminEditor()
           :key="row.id"
           :row="row"
           :index="i"
-          :last="i === state.rows.length - 1"
         />
       </tbody>
     </table>

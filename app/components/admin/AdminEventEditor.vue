@@ -1,14 +1,11 @@
 <script setup lang="ts">
-// 1 つのイベントを書いて登録するまでの画面。エディター (useAdminEventEditor) を作って各セクションに渡し、並べるだけにする
-import { onMounted } from 'vue'
-
+// 1 つのイベントを書いて登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
 const emit = defineEmits<{
   /** ログインが切れたとき */
   unauthorized: []
 }>()
 
-const editor = useAdminEventEditor(() => emit('unauthorized'))
-onMounted(editor.events.reload)
+provideAdminEditor(() => emit('unauthorized'))
 </script>
 
 <template>
@@ -17,7 +14,7 @@ onMounted(editor.events.reload)
     <AdminEntriesSection />
     <AdminVideosSection />
     <AdminRegisterSection />
-    <AdminMessages :messages="editor.state.messages" />
+    <AdminMessages />
   </div>
 </template>
 
