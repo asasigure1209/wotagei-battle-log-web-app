@@ -40,6 +40,14 @@ export default defineNuxtConfig({
   routeRules: {
     '/:series/:event': isrHourly,
     '/:series/:event/players/:no': isrHourly,
+    // 管理画面はログインしているかで中身が変わるので、サーバーで描画せず、とっておきもしない
+    '/admin': {
+      ssr: false,
+      headers: {
+        'x-robots-tag': 'noindex, nofollow',
+        'cache-control': 'no-store',
+      },
+    },
   },
   experimental: {
     // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、ブラウザに取りに来させる。
