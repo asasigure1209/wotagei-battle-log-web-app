@@ -3,19 +3,10 @@ import { expect } from 'storybook/test'
 import {
   adminParameters,
   fillEvent,
+  registeredEvent,
   withAdminEditor,
 } from '../../../.storybook/admin'
 import AdminEventSection from './AdminEventSection.vue'
-
-const events = [
-  {
-    seriesId: 'elnino',
-    seriesName: 'エルニーニョ',
-    eventId: 'elnino_vol_5',
-    eventName: 'エルニーニョ vol.5',
-    date: '2026-11-01',
-  },
-]
 
 /**
  * 1. イベント。登録済みのイベントを選んで読み込むか、新しいイベントの情報を書く。
@@ -34,7 +25,7 @@ type Story = StoryObj<typeof meta>
 export const New: Story = {
   decorators: [
     withAdminEditor((editor) => {
-      editor.events.list.value = events
+      editor.events.list.value = [registeredEvent]
     }),
   ],
   play: async ({ canvas }) => {
@@ -63,7 +54,7 @@ export const InvalidId: Story = {
 export const Loaded: Story = {
   decorators: [
     withAdminEditor((editor) => {
-      editor.events.list.value = events
+      editor.events.list.value = [registeredEvent]
       fillEvent(editor)
       editor.state.loaded = true
     }),

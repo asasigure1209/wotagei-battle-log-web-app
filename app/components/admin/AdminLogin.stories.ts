@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn } from 'storybook/test'
-import {
-  adminParameters,
-  fetchError,
-  stubFetch,
-} from '../../../.storybook/admin'
+import { adminParameters, fetchError } from '../../../.storybook/admin'
 import AdminLogin from './AdminLogin.vue'
 
 /**
@@ -32,7 +28,8 @@ export const Idle: Story = {
 
 /** 合言葉が合えば `login` が発火する。 */
 export const Succeeds: Story = {
-  beforeEach: () => stubFetch(() => ({ ok: true })),
+  // ストーリーの parameters は meta の parameters と合わせて使われる
+  parameters: { fetch: { ok: true } },
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText('合言葉'), 'secret')
     await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }))
@@ -42,7 +39,7 @@ export const Succeeds: Story = {
 
 /** 合言葉が違えば、サーバーの文を出し、`login` は発火しない。 */
 export const WrongPassword: Story = {
-  beforeEach: () => stubFetch(() => fetchError(401, '合言葉が違います')),
+  parameters: { fetch: fetchError(401, '合言葉が違います') },
   play: async ({ args, canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText('合言葉'), 'wrong')
     await userEvent.click(canvas.getByRole('button', { name: 'ログイン' }))

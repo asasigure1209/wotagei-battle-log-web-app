@@ -3,6 +3,7 @@ import { expect } from 'storybook/test'
 import {
   adminParameters,
   fillEvent,
+  registeredEvent,
   videoRow,
   withAdminEditor,
 } from '../../../.storybook/admin'
@@ -58,15 +59,7 @@ export const Loaded: Story = {
     withAdminEditor((editor) => {
       fillEvent(editor)
       editor.state.loaded = true
-      editor.events.list.value = [
-        {
-          seriesId: 'elnino',
-          seriesName: 'エルニーニョ',
-          eventId: 'elnino_vol_5',
-          eventName: 'エルニーニョ vol.5',
-          date: '2026-11-01',
-        },
-      ]
+      editor.events.list.value = [registeredEvent]
     }),
   ],
   play: async ({ canvas, userEvent }) => {

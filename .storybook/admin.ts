@@ -1,6 +1,6 @@
 // 管理画面のストーリーで使う道具。
 // 管理画面のコンポーネントはエディター (useAdminEditor) を inject するので、状態を作り込んだエディターを provide して描く。
-// Storybook は Nuxt なしで動き $fetch がないので、API を呼ぶストーリーは stubFetch で差し替える
+// API を呼ぶストーリーは、parameters.fetch に返す値を書く (preview.ts が $fetch として返す)
 import type { Decorator } from '@storybook/vue3-vite'
 import { provide } from 'vue'
 import '../app/assets/css/admin.css'
@@ -29,14 +29,18 @@ export function withAdminEditor(
   })
 }
 
-/** イベントの情報を書いたところ */
+/** 登録済みのイベント (一覧の 1 件)。fillEvent で書くイベントと同じもの */
+export const registeredEvent = {
+  seriesId: 'elnino',
+  seriesName: 'エルニーニョ',
+  eventId: 'elnino_vol_5',
+  eventName: 'エルニーニョ vol.5',
+  date: '2026-11-01',
+}
+
+/** イベントの情報とエントリーを書いたところ */
 export function fillEvent(editor: AdminEditor) {
-  Object.assign(editor.state.form, {
-    seriesId: 'elnino',
-    seriesName: 'エルニーニョ',
-    eventId: 'elnino_vol_5',
-    eventName: 'エルニーニョ vol.5',
-    date: '2026-11-01',
+  Object.assign(editor.state.form, registeredEvent, {
     contact: 'X: @elnino',
   })
   editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
@@ -55,18 +59,6 @@ export function videoRow(
     ...(withFile ? { file: new File([], relPath.split('/').pop() ?? '') } : {}),
     ...rest,
   })
-}
-
-/** $fetch を、URL ごとに決めた値を返す (エラーなら投げる) ものに差し替える */
-export function stubFetch(respond: (url: string, options?: object) => unknown) {
-  ;(globalThis as { $fetch?: unknown }).$fetch = async (
-    url: string,
-    options?: object,
-  ) => {
-    const result = respond(url, options)
-    if (result instanceof Error) throw result
-    return result
-  }
 }
 
 /** $fetch が投げる、API のエラーと同じ形の値 */

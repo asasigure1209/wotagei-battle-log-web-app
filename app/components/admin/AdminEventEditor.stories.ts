@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import { adminParameters, stubFetch } from '../../../.storybook/admin'
+import { adminParameters, registeredEvent } from '../../../.storybook/admin'
 import AdminEventEditor from './AdminEventEditor.vue'
 
 /**
@@ -10,17 +10,8 @@ import AdminEventEditor from './AdminEventEditor.vue'
 const meta = {
   component: AdminEventEditor,
   tags: ['autodocs'],
-  parameters: adminParameters,
-  beforeEach: () =>
-    stubFetch(() => [
-      {
-        seriesId: 'elnino',
-        seriesName: 'エルニーニョ',
-        eventId: 'elnino_vol_5',
-        eventName: 'エルニーニョ vol.5',
-        date: '2026-11-01',
-      },
-    ]),
+  // 開いたときに読み込む、登録済みのイベントの一覧
+  parameters: { ...adminParameters, fetch: [registeredEvent] },
 } satisfies Meta<typeof AdminEventEditor>
 
 export default meta
