@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { missingVideoProblems } from '../../server/utils/admin-upload'
 import {
   completeBody,
   hasAllParts,
@@ -161,5 +162,26 @@ describe('listObjects', () => {
       ),
     )
     await expect(listObjects(config, 's/e/')).rejects.toThrow('403')
+  })
+})
+
+describe('missingVideoProblems', () => {
+  it('R2 にない動画と、サイズが違う動画を挙げる', () => {
+    expect(
+      missingVideoProblems(
+        [
+          { key: 's/e/a.mp4', sizeBytes: 1 },
+          { key: 's/e/b.mp4', sizeBytes: 2 },
+          { key: 's/e/c.mp4', sizeBytes: 3 },
+        ],
+        [
+          { key: 's/e/a.mp4', size: 1 },
+          { key: 's/e/b.mp4', size: 5 },
+        ],
+      ),
+    ).toEqual([
+      'R2 の動画とサイズが違います (R2: 5, 登録: 2): s/e/b.mp4',
+      'R2 にまだアップロードされていません: s/e/c.mp4',
+    ])
   })
 })
