@@ -1,5 +1,5 @@
 // 管理画面のエディターの状態と、どの操作からも使う共通の処理。
-// Vue に依存しない関数として書き、画面 (composables/useAdminEventEditor.ts) は状態を reactive にして渡す
+// Vue に依存しない関数として書き、エディター (editor.ts) が状態を reactive にして渡す
 
 import {
   adminErrorMessages,

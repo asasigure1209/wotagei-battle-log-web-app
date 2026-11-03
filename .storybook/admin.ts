@@ -8,7 +8,7 @@ import {
   type AdminEditor,
   adminEditorKey,
   createAdminEditor,
-} from '../app/composables/useAdminEventEditor'
+} from '../app/utils/adminEditor/editor'
 import { newRow, type VideoRow } from '../app/utils/adminEditor/state'
 
 /** 管理画面は広い画面で使うので、スマホの幅に収めない */

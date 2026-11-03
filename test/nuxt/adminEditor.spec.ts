@@ -1,6 +1,6 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
-import { createAdminEditor } from '~/composables/useAdminEventEditor'
+import { createAdminEditor } from '~/utils/adminEditor/editor'
 import { newRow } from '~/utils/adminEditor/state'
 
 registerEndpoint('/api/admin/objects', () => [{ key: 's/e/a.mp4', size: 10 }])
