@@ -113,10 +113,10 @@ function playerVideos(db: Db, series: string, event: string, entryNo: number) {
 }
 
 /** イベントの中の表 (series_id・event_id を持つ表) */
-type EventScoped = { seriesId: Column; eventId: Column }
+export type EventScoped = { seriesId: Column; eventId: Column }
 
 /** その表の、指定したイベントの行だけ */
-function inEvent(table: EventScoped, series: string, event: string) {
+export function inEvent(table: EventScoped, series: string, event: string) {
   return and(eq(table.seriesId, series), eq(table.eventId, event))
 }
 
