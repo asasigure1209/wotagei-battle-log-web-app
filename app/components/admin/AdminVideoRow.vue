@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 // 動画の一覧の 1 行。長さと出演 No. をその場で直し、並べ替えや取り外しをする
+
+import { computed } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEventEditor'
 import { rowState } from '~/utils/adminEditor/rows'
 import type { VideoRow } from '~/utils/adminEditor/state'

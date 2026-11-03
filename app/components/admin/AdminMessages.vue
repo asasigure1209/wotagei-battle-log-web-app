@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // 画面の下に出す知らせ (エラーや、終わったことの知らせ)
+
 import { useAdminEditor } from '~/composables/useAdminEventEditor'
 
 const { state } = useAdminEditor()

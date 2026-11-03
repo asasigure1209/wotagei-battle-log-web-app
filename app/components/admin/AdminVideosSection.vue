@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 // 3. 動画: ファイルを選んで並べ、R2 にアップロードする
+
+import { ref } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEventEditor'
 import { formatBytes } from '~/utils/adminManifest'
 import AdminVideoTable from './AdminVideoTable.vue'

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 // 1. イベント: 登録済みのイベントを選んで読み込むか、新しいイベントの情報を書く
+
+import { computed } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEventEditor'
 import { eventKey } from '~/utils/adminEditor/state'
 
