@@ -40,14 +40,12 @@ export default defineNuxtConfig({
   routeRules: {
     '/:series/:event': isrHourly,
     '/:series/:event/players/:no': isrHourly,
-    // 管理画面はログインしているかで中身が変わるので、サーバーで描画せず、とっておきもしない
-    '/admin': {
-      ssr: false,
-      headers: {
-        'x-robots-tag': 'noindex, nofollow',
-        'cache-control': 'no-store',
-      },
-    },
+    // 管理画面はログインしているかで中身が変わるので、サーバーで描画せず、とっておかない。
+    // - isr: false は省けない。Nitro が routeRules を照合すると、1 階層の /admin も上の '/:series/:event' に
+    //   当たったことになり、Vercel 向けの出力で /admin を ISR とみなして関数を作らず、Vercel の 404 になる
+    // - headers も書かない。Vercel 向けの出力で、ヘッダーを付けるだけで行き先のないルートになり、同じく 404 になる。
+    //   検索エンジン向けの noindex は、ページの <meta> で付けている
+    '/admin': { ssr: false, isr: false },
   },
   experimental: {
     // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、ブラウザに取りに来させる。
