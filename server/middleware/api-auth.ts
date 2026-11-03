@@ -5,7 +5,8 @@ export default defineEventHandler((event) => {
   if (!event.path.startsWith('/api/') || isAdminApiPath(event.path)) return
 
   const provided = getRequestHeader(event, API_SECRET_HEADER)
-  if (!hasValidApiSecret(provided, useRuntimeConfig(event).apiSecret)) {
+  const secret = configSecret(useRuntimeConfig(event).apiSecret)
+  if (!hasValidApiSecret(provided, secret)) {
     throw createError({ status: 401, statusText: 'Unauthorized' })
   }
 })
