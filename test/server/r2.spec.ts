@@ -1,14 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { missingVideoProblems } from '../../server/utils/admin-upload'
 import {
+  abortMultipartUpload,
   completeBody,
+  completeMultipartUpload,
+  createMultipartUpload,
   hasAllParts,
   isR2Configured,
   listObjects,
+  listUploadedParts,
   parseObjects,
   parseParts,
   presignDownloadUrl,
   presignUploadPart,
+  r2UploadConfig,
   xmlValues,
 } from '../../server/utils/r2'
 
@@ -64,6 +69,37 @@ describe('presignDownloadUrl', () => {
   it('期限を指定しなければ 600 秒にする', async () => {
     const url = new URL(await presignDownloadUrl(config, 'a.mp4', 'a.mp4'))
     expect(url.searchParams.get('X-Amz-Expires')).toBe('600')
+  })
+})
+
+describe('R2 の接続先と書き込み用の値', () => {
+  it('endpoint を指定すると、R2 の代わりにその URL に送る (末尾の / は除く)', async () => {
+    const url = new URL(
+      await presignDownloadUrl(
+        { ...config, endpoint: 'http://127.0.0.1:9100/' },
+        's/e/a.mp4',
+        'a.mp4',
+      ),
+    )
+    expect(url.origin).toBe('http://127.0.0.1:9100')
+    expect(url.pathname).toBe('/bucket/s/e/a.mp4')
+  })
+
+  it('r2UploadConfig は、アカウント・バケット・接続先は共通のまま、書き込み用のトークンを使う', () => {
+    expect(
+      r2UploadConfig({
+        ...config,
+        endpoint: 'http://local',
+        uploadAccessKeyId: 'wkey',
+        uploadSecretAccessKey: 'wsecret',
+      }),
+    ).toEqual({
+      accountId: 'account',
+      bucket: 'bucket',
+      endpoint: 'http://local',
+      accessKeyId: 'wkey',
+      secretAccessKey: 'wsecret',
+    })
   })
 })
 
@@ -162,6 +198,110 @@ describe('listObjects', () => {
       ),
     )
     await expect(listObjects(config, 's/e/')).rejects.toThrow('403')
+  })
+})
+
+/** fetch の偽物。R2 に送ったリクエスト (メソッド・URL・本文) を requests に残し、respond の返す本文を返す */
+function stubR2(respond: (request: Request) => Response | string) {
+  const requests: { method: string; url: URL; body: string }[] = []
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (request: Request) => {
+      requests.push({
+        method: request.method,
+        url: new URL(request.url),
+        body: await request.text(),
+      })
+      const res = respond(request)
+      return typeof res === 'string' ? new Response(res) : res
+    }),
+  )
+  return requests
+}
+
+const partsXml = (nos: number[], next?: number) =>
+  `<ListPartsResult><IsTruncated>${next ? 'true' : 'false'}</IsTruncated>${
+    next ? `<NextPartNumberMarker>${next}</NextPartNumberMarker>` : ''
+  }${nos.map((n) => `<Part><PartNumber>${n}</PartNumber><ETag>&quot;e${n}&quot;</ETag></Part>`).join('')}</ListPartsResult>`
+
+describe('マルチパートアップロード', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('createMultipartUpload は ?uploads に POST し、UploadId を返す', async () => {
+    const requests = stubR2(
+      () =>
+        '<InitiateMultipartUploadResult><UploadId>u&amp;1</UploadId></InitiateMultipartUploadResult>',
+    )
+    expect(await createMultipartUpload(config, 's/e/a.mp4')).toBe('u&1')
+    expect(requests[0]?.method).toBe('POST')
+    expect(requests[0]?.url.pathname).toBe('/bucket/s/e/a.mp4')
+    expect(requests[0]?.url.search).toBe('?uploads')
+  })
+
+  it('createMultipartUpload は UploadId が返らなければ例外にする', async () => {
+    stubR2(() => '<InitiateMultipartUploadResult />')
+    await expect(createMultipartUpload(config, 's/e/a.mp4')).rejects.toThrow(
+      'UploadId',
+    )
+  })
+
+  it('listUploadedParts は、続きがある間は part-number-marker を付けて取り続ける', async () => {
+    const requests = stubR2((request) =>
+      new URL(request.url).searchParams.get('part-number-marker')
+        ? partsXml([3])
+        : partsXml([1, 2], 2),
+    )
+    expect(await listUploadedParts(config, 's/e/a.mp4', 'u1')).toEqual([
+      { partNumber: 1, etag: '"e1"' },
+      { partNumber: 2, etag: '"e2"' },
+      { partNumber: 3, etag: '"e3"' },
+    ])
+    expect(
+      requests.map((r) => r.url.searchParams.get('part-number-marker')),
+    ).toEqual([null, '2'])
+  })
+
+  it('completeMultipartUpload は、R2 に届いたパートの ETag で完了させる', async () => {
+    const requests = stubR2((request) =>
+      request.method === 'GET'
+        ? partsXml([2, 1])
+        : '<CompleteMultipartUploadResult />',
+    )
+    await completeMultipartUpload(config, 's/e/a.mp4', 'u1', 2)
+    const complete = requests.find((r) => r.method === 'POST')
+    expect(complete?.url.searchParams.get('uploadId')).toBe('u1')
+    expect(complete?.body).toBe(
+      completeBody([
+        { partNumber: 1, etag: '"e1"' },
+        { partNumber: 2, etag: '"e2"' },
+      ]),
+    )
+  })
+
+  it('completeMultipartUpload は、パートが足りなければ完了させずに例外にする', async () => {
+    const requests = stubR2(() => partsXml([1]))
+    await expect(
+      completeMultipartUpload(config, 's/e/a.mp4', 'u1', 2),
+    ).rejects.toThrow('1 / 2')
+    expect(requests.some((r) => r.method === 'POST')).toBe(false)
+  })
+
+  it('completeMultipartUpload は、200 のまま本文で Error が返ったら例外にする', async () => {
+    stubR2((request) =>
+      request.method === 'GET'
+        ? partsXml([1])
+        : '<Error><Code>InternalError</Code></Error>',
+    )
+    await expect(
+      completeMultipartUpload(config, 's/e/a.mp4', 'u1', 1),
+    ).rejects.toThrow('完了できませんでした')
+  })
+
+  it('abortMultipartUpload は uploadId を付けて DELETE する', async () => {
+    const requests = stubR2(() => new Response(null, { status: 204 }))
+    await abortMultipartUpload(config, 's/e/a.mp4', 'u1')
+    expect(requests[0]?.method).toBe('DELETE')
+    expect(requests[0]?.url.searchParams.get('uploadId')).toBe('u1')
   })
 })
 

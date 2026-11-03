@@ -1,5 +1,6 @@
 // 管理画面の API で共通に使う、リクエストの確かめ
-import type { H3Event } from 'h3'
+// テスト (node 環境) からも呼べるよう、Nitro の自動 import に頼らず明示する
+import { createError, type H3Event } from 'h3'
 import { isId } from '../../shared/utils/id'
 import { isVideoKey } from '../../shared/utils/video-key'
 import { isR2Configured, type R2Object, r2UploadConfig } from './r2'
