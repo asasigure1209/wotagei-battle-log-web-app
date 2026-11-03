@@ -59,6 +59,14 @@ export function requirePositiveInt(value: unknown, name: string, max = 10000) {
   return value as number
 }
 
+/** 1 度に署名するパートの番号 (1〜10000 の整数、1000 個まで)。そうでなければ 400 */
+export function requirePartNumbers(value: unknown) {
+  if (!Array.isArray(value) || !value.length || value.length > 1000) {
+    throw badRequest('partNumbers は 1〜1000 個の並びで書いてください')
+  }
+  return value.map((n) => requirePositiveInt(n, 'partNumbers'))
+}
+
 /** manifest の動画のうち、R2 にない、またはサイズが違うものを、誤りの文にして返す */
 export function missingVideoProblems(
   videos: { key: string; sizeBytes: number }[],

@@ -16,7 +16,11 @@ function fakeDeps(options: { failPut?: (n: number) => boolean } = {}) {
       calls.push(`${path} ${JSON.stringify(body)}`)
       if (path === '/api/admin/uploads') return { uploadId: 'u1' }
       if (path === '/api/admin/uploads/part')
-        return { url: `https://r2/part${body.partNumber}` }
+        return {
+          urls: (body.partNumbers as number[]).map(
+            (n) => `https://r2/part${n}`,
+          ),
+        }
       return { ok: true }
     }) as UploadDeps['post'],
     put: vi.fn(async (url: string, blob: Blob, onProgress) => {
@@ -68,12 +72,25 @@ describe('uploadMultipart', () => {
     expect(progress.at(-1)).toBe(PART_SIZE * 2 + 5)
   })
 
-  it('一時的に失敗したパートは、URL を取り直して送り直す', async () => {
+  it('署名付き URL は、パートごとではなくまとめて取る', async () => {
+    const { deps, calls } = fakeDeps()
+    await uploadMultipart(sized(PART_SIZE * 3), 's/e/a.mp4', () => {}, deps)
+    expect(
+      calls.filter((c) => c.startsWith('/api/admin/uploads/part')),
+    ).toEqual([
+      '/api/admin/uploads/part {"key":"s/e/a.mp4","uploadId":"u1","partNumbers":[1,2,3]}',
+    ])
+  })
+
+  it('一時的に失敗したパートは、そのパートの URL だけを取り直して送り直す', async () => {
     const { deps, calls } = fakeDeps({ failPut: (n) => n === 1 })
     await uploadMultipart(sized(10), 's/e/a.mp4', () => {}, deps)
     expect(
       calls.filter((c) => c.startsWith('/api/admin/uploads/part')),
-    ).toHaveLength(2)
+    ).toEqual([
+      '/api/admin/uploads/part {"key":"s/e/a.mp4","uploadId":"u1","partNumbers":[1]}',
+      '/api/admin/uploads/part {"key":"s/e/a.mp4","uploadId":"u1","partNumbers":[1]}',
+    ])
     expect(calls.at(-1)).toMatch(/^\/api\/admin\/uploads\/complete/)
   })
 

@@ -8,6 +8,8 @@ export const PART_SIZE = 32 * 1024 * 1024
 const CONCURRENCY = 4
 /** 1 パートを送り直す回数 */
 const RETRIES = 3
+/** 1 度に署名を頼むパートの数 (API の上限) */
+const SIGN_BATCH = 1000
 
 export type UploadDeps = {
   /** 管理画面の API に JSON を POST する */
@@ -39,14 +41,19 @@ export async function uploadMultipart(
   )
   const partCount = partCountOf(file.size)
   const loaded = new Array<number>(partCount).fill(0)
+  let total = 0
   const report = (index: number, bytes: number) => {
+    total += bytes - (loaded[index] ?? 0)
     loaded[index] = bytes
-    onProgress(loaded.reduce((a, b) => a + b, 0))
+    onProgress(total)
   }
   try {
+    const numbers = Array.from({ length: partCount }, (_, i) => i + 1)
+    const urls = await signParts(deps, key, uploadId, numbers)
     await runPool(partCount, CONCURRENCY, (index) =>
-      sendPart({ file, key, uploadId, index, deps, signal }, (bytes) =>
-        report(index, bytes),
+      sendPart(
+        { file, key, uploadId, index, url: urls[index] ?? '', deps, signal },
+        (bytes) => report(index, bytes),
       ),
     )
     await deps.post('/api/admin/uploads/complete', { key, uploadId, partCount })
@@ -59,11 +66,32 @@ export async function uploadMultipart(
   }
 }
 
+/** パートの署名付き URL をまとめて取る (API は 1 度に 1000 個まで) */
+async function signParts(
+  deps: UploadDeps,
+  key: string,
+  uploadId: string,
+  partNumbers: number[],
+) {
+  const urls: string[] = []
+  for (let i = 0; i < partNumbers.length; i += SIGN_BATCH) {
+    const res = await deps.post<{ urls: string[] }>('/api/admin/uploads/part', {
+      key,
+      uploadId,
+      partNumbers: partNumbers.slice(i, i + SIGN_BATCH),
+    })
+    urls.push(...res.urls)
+  }
+  return urls
+}
+
 type PartJob = {
   file: Blob
   key: string
   uploadId: string
   index: number
+  /** 最初に送るときに使う署名付き URL */
+  url: string
   deps: UploadDeps
   signal?: AbortSignal
 }
@@ -71,7 +99,7 @@ type PartJob = {
 async function sendPart(job: PartJob, onProgress: (loaded: number) => void) {
   let lastError: unknown
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
-    const result = await tryPart(job, onProgress)
+    const result = await tryPart(job, onProgress, attempt)
     if (result.ok) return
     onProgress(0)
     lastError = result.error
@@ -81,16 +109,20 @@ async function sendPart(job: PartJob, onProgress: (loaded: number) => void) {
 }
 
 /** パートを 1 回送ってみる */
-async function tryPart(job: PartJob, onProgress: (loaded: number) => void) {
+async function tryPart(
+  job: PartJob,
+  onProgress: (loaded: number) => void,
+  attempt: number,
+) {
   const { file, index, deps } = job
   const blob = file.slice(index * PART_SIZE, (index + 1) * PART_SIZE)
   try {
-    // 署名付き URL には期限があるので、送り直すたびに取り直す
-    const { url } = await deps.post<{ url: string }>(
-      '/api/admin/uploads/part',
-      { key: job.key, uploadId: job.uploadId, partNumber: index + 1 },
-    )
-    await deps.put(url, blob, onProgress, job.signal)
+    // 署名付き URL には期限があるので、送り直すときは取り直す
+    const [url] =
+      attempt === 1
+        ? [job.url]
+        : await signParts(deps, job.key, job.uploadId, [index + 1])
+    await deps.put(url ?? '', blob, onProgress, job.signal)
     return { ok: true } as const
   } catch (error) {
     return { ok: false, error } as const
@@ -150,7 +182,10 @@ export function putWithXhr(
         ),
       )
     xhr.onabort = () => reject(new DOMException('中止しました', 'AbortError'))
-    signal?.addEventListener('abort', () => xhr.abort(), { once: true })
+    // アップロード全体で 1 つの signal を使い回すので、終わった XHR の listener を残さない
+    const abort = () => xhr.abort()
+    signal?.addEventListener('abort', abort, { once: true })
+    xhr.onloadend = () => signal?.removeEventListener('abort', abort)
     xhr.send(blob)
   })
 }
