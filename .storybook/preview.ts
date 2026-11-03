@@ -11,12 +11,14 @@ const preview: Preview = {
   initialGlobals: {
     backgrounds: { value: 'dark' },
   },
-  // モックはスマホの幅 (390px) で作られているので、その幅に収める。
+  // モックはスマホの幅 (390px) で作られているので、その幅に収める。管理画面のように広い画面で使うものは、
+  // parameters.maxWidth で幅を変える。
   // docs ページでは Storybook の文字色とフォントが継承されるので、アプリの body と同じものを付け直す
   decorators: [
-    () => ({
+    (_story, { parameters }) => ({
+      setup: () => ({ maxWidth: parameters.maxWidth ?? '390px' }),
       template:
-        '<div style="max-width: 390px; color: var(--color-text); font-family: var(--font-body)"><story /></div>',
+        "<div :style=\"{ maxWidth, color: 'var(--color-text)', fontFamily: 'var(--font-body)' }\"><story /></div>",
     }),
   ],
 }

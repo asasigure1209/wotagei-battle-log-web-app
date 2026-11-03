@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { adminErrorMessages, adminPost } from '~/utils/adminApi'
 
 const emit = defineEmits<{
   /** ログインできたとき */

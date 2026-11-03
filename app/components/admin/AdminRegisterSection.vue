@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// 4. DB に登録: 書いた内容を確かめて登録する。読み込んだイベントは消すこともできる
 import { ref, watch } from 'vue'
+// 4. DB に登録: 書いた内容を確かめて登録する。読み込んだイベントは消すこともできる
+import { useAdminEditor } from '~/composables/useAdminEventEditor'
 
 const { state, canRegister, currentKey, events, register, deleteEvent } =
   useAdminEditor()

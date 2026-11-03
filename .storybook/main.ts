@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -18,10 +19,18 @@ const config: StorybookConfig = {
       },
     },
   },
-  // Nuxt プロジェクトには vite.config がないので、Vue プラグインをここで足す
+  // Nuxt プロジェクトには vite.config がないので、Vue プラグインと、Nuxt と同じパスの別名 (~ は app/、~~ はルート) をここで足す
   viteFinal: (config) => ({
     ...config,
     plugins: [...(config.plugins ?? []), vue()],
+    resolve: {
+      ...config.resolve,
+      alias: {
+        ...config.resolve?.alias,
+        '~~': fileURLToPath(new URL('..', import.meta.url)),
+        '~': fileURLToPath(new URL('../app', import.meta.url)),
+      },
+    },
   }),
 }
 

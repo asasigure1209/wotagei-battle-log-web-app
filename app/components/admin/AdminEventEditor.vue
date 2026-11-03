@@ -1,5 +1,12 @@
 <script setup lang="ts">
 // 1 つのイベントを書いて登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
+import { provideAdminEditor } from '~/composables/useAdminEventEditor'
+import AdminEntriesSection from './AdminEntriesSection.vue'
+import AdminEventSection from './AdminEventSection.vue'
+import AdminMessages from './AdminMessages.vue'
+import AdminRegisterSection from './AdminRegisterSection.vue'
+import AdminVideosSection from './AdminVideosSection.vue'
+
 const emit = defineEmits<{
   /** ログインが切れたとき */
   unauthorized: []
