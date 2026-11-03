@@ -1,5 +1,15 @@
 /* 管理画面 (/admin) の各セクションで共通に使う見た目。admin ページでだけ読み込む */
 
+:root {
+  /* 誤り・取り返しのつかない操作 */
+  --color-danger: #ff7a7a;
+  --color-danger-soft: #ffb3b3;
+  /* 直したほうがよいこと */
+  --color-warn: #ffb36b;
+  /* 進行中のこと */
+  --color-info: #7ad7ff;
+}
+
 .admin-card {
   display: flex;
   flex-direction: column;
@@ -51,7 +61,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.6;
-  color: #ffb36b;
+  color: var(--color-warn);
 }
 
 .admin-actions {
@@ -88,6 +98,6 @@
 }
 
 .admin-btn.danger {
-  border-color: #ff7a7a;
-  color: #ff7a7a;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }

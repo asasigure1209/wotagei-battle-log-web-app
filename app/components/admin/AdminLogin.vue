@@ -78,7 +78,7 @@ async function submit() {
 .error {
   margin: 0;
   font-size: 13px;
-  color: #ff7a7a;
+  color: var(--color-danger);
   white-space: pre-line;
 }
 
