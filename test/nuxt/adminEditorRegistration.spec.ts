@@ -1,4 +1,3 @@
-import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildManifest,
@@ -9,6 +8,7 @@ import {
   reset,
 } from '~/utils/adminEditor/registration'
 import { createEditorState } from '~/utils/adminEditor/state'
+import { fakeAdminApi } from './adminTestUtils'
 
 const manifest = () => ({
   series: { id: 's', name: 'シリーズ' },
@@ -28,37 +28,18 @@ const manifest = () => ({
   ],
 })
 
-/** 偽の API が受けたリクエスト (`METHOD パス`)。テストごとに空にする */
-const calls: string[] = []
-/** 偽の API が 401 を返すか */
-let unauthorized = false
+const api = fakeAdminApi([
+  { method: 'GET', path: '/api/admin/events/s/e', body: manifest() },
+  { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
+  {
+    method: 'GET',
+    path: '/api/admin/objects',
+    body: [{ key: 's/e/予選/1.mp4', size: 10 }],
+  },
+  { method: 'POST', path: '/api/admin/events', body: { ok: true } },
+])
 
-function endpoint(
-  path: string,
-  method: 'GET' | 'POST' | 'DELETE',
-  body: unknown,
-) {
-  registerEndpoint(path, {
-    method,
-    handler: () => {
-      calls.push(`${method} ${path}`)
-      if (unauthorized) {
-        throw createError({ status: 401, statusText: 'Unauthorized' })
-      }
-      return body
-    },
-  })
-}
-
-endpoint('/api/admin/events/s/e', 'GET', manifest())
-endpoint('/api/admin/events/s/e', 'DELETE', { ok: true })
-endpoint('/api/admin/objects', 'GET', [{ key: 's/e/予選/1.mp4', size: 10 }])
-endpoint('/api/admin/events', 'POST', { ok: true })
-
-beforeEach(() => {
-  calls.length = 0
-  unauthorized = false
-})
+beforeEach(() => api.reset())
 
 describe('manifest の組み立て', () => {
   it('fill で書き写した内容から、取り込みと同じ形の manifest を作る', () => {
@@ -91,9 +72,9 @@ describe('登録・読み込み・削除', () => {
   it('loadEvent はイベントと R2 の一覧を読み込み、読み込んだイベントとして覚える', async () => {
     const state = createEditorState(() => {})
     await loadEvent(state, { seriesId: 's', eventId: 'e' })
-    expect(calls.sort()).toEqual([
+    expect(api.calls.sort()).toEqual([
       'GET /api/admin/events/s/e',
-      'GET /api/admin/objects',
+      'GET /api/admin/objects?series=s&event=e',
     ])
     expect(state.loaded).toBe(true)
     expect(state.remote).toEqual(new Map([['予選/1.mp4', 10]]))
@@ -109,7 +90,7 @@ describe('登録・読み込み・削除', () => {
   })
 
   it('ログインが切れていたら onUnauthorized を呼び、エラーを出す', async () => {
-    unauthorized = true
+    api.unauthorized = true
     const onUnauthorized = vi.fn()
     const state = createEditorState(onUnauthorized)
     fill(state, manifest())
@@ -124,7 +105,7 @@ describe('登録・読み込み・削除', () => {
     fill(state, manifest())
     state.loaded = true
     expect(await deleteEvent(state)).toBe(true)
-    expect(calls).toEqual(['DELETE /api/admin/events/s/e'])
+    expect(api.calls).toEqual(['DELETE /api/admin/events/s/e'])
     expect(state.loaded).toBe(false)
     expect(state.rows).toHaveLength(2)
     reset(state)

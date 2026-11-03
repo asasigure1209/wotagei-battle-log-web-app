@@ -1,6 +1,6 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEditorState, newRow } from '~/utils/adminEditor/state'
+import { newRow } from '~/utils/adminEditor/state'
 import {
   cancelUpload,
   fetchRemote,
@@ -9,6 +9,7 @@ import {
   uploadTargets,
 } from '~/utils/adminEditor/upload'
 import { uploadMultipart } from '~/utils/multipartUpload'
+import { stateWithIds, videoFile } from './adminTestUtils'
 
 // R2 への実際の送信は multipartUpload.spec.ts で確かめるので、ここでは差し替える
 vi.mock('~/utils/multipartUpload', async (importOriginal) => ({
@@ -22,13 +23,9 @@ registerEndpoint('/api/admin/objects', () => [
   { key: 's/e/b.mp4', size: 20 },
 ])
 
-const file = (name: string, size: number) =>
-  new File([new Uint8Array(size)], name)
-
 /** ID を書き、R2 を調べ終えた状態 */
 function readyState() {
-  const state = createEditorState(() => {})
-  Object.assign(state.form, { seriesId: 's', eventId: 'e' })
+  const state = stateWithIds()
   state.remote = new Map([['予選/a.mp4', 10]])
   return state
 }
@@ -60,12 +57,11 @@ describe('R2 の確認', () => {
 })
 
 describe('アップロード', () => {
-  it('uploadTargets は、この画面で選んだファイルで R2 にない・サイズの違うものだけ', () => {
+  it('uploadTargets は、アップロードが要る (needsUpload) 行だけを返す', () => {
     const state = readyState()
     state.rows = [
-      newRow('予選/a.mp4', { file: file('a.mp4', 10), sizeBytes: 10 }),
-      newRow('予選/c.mp4', { file: file('c.mp4', 5), sizeBytes: 5 }),
-      newRow('予選/d.mp4', { sizeBytes: 5 }),
+      newRow('予選/a.mp4', { file: videoFile('a.mp4'), sizeBytes: 10 }),
+      newRow('予選/c.mp4', { file: videoFile('c.mp4'), sizeBytes: 5 }),
     ]
     expect(uploadTargets(state).map((r) => r.relPath)).toEqual(['予選/c.mp4'])
   })
@@ -76,8 +72,8 @@ describe('アップロード', () => {
     })
     const state = readyState()
     state.rows = [
-      newRow('予選/c.mp4', { file: file('c.mp4', 5), sizeBytes: 5 }),
-      newRow('d.mp4', { file: file('d.mp4', 7), sizeBytes: 7 }),
+      newRow('予選/c.mp4', { file: videoFile('c.mp4', 5), sizeBytes: 5 }),
+      newRow('d.mp4', { file: videoFile('d.mp4', 7), sizeBytes: 7 }),
     ]
     await uploadAll(state)
     expect(upload.mock.calls.map((c) => c[1])).toEqual([
@@ -94,8 +90,8 @@ describe('アップロード', () => {
     upload.mockRejectedValue(new Error('network'))
     const state = readyState()
     state.rows = [
-      newRow('c.mp4', { file: file('c.mp4', 5), sizeBytes: 5 }),
-      newRow('d.mp4', { file: file('d.mp4', 7), sizeBytes: 7 }),
+      newRow('c.mp4', { file: videoFile('c.mp4', 5), sizeBytes: 5 }),
+      newRow('d.mp4', { file: videoFile('d.mp4', 7), sizeBytes: 7 }),
     ]
     await uploadAll(state)
     expect(upload).toHaveBeenCalledOnce()
@@ -111,7 +107,9 @@ describe('アップロード', () => {
           signal?.addEventListener('abort', () => reject(new Error('aborted')))
         }),
     )
-    state.rows = [newRow('c.mp4', { file: file('c.mp4', 5), sizeBytes: 5 })]
+    state.rows = [
+      newRow('c.mp4', { file: videoFile('c.mp4', 5), sizeBytes: 5 }),
+    ]
     const running = uploadAll(state)
     await vi.waitFor(() => expect(state.uploadAbort).not.toBeNull())
     cancelUpload(state)
@@ -122,7 +120,9 @@ describe('アップロード', () => {
   it('R2 をまだ調べていなければ、何も送らない', async () => {
     const state = readyState()
     state.remote = null
-    state.rows = [newRow('c.mp4', { file: file('c.mp4', 5), sizeBytes: 5 })]
+    state.rows = [
+      newRow('c.mp4', { file: videoFile('c.mp4', 5), sizeBytes: 5 }),
+    ]
     await uploadAll(state)
     expect(upload).not.toHaveBeenCalled()
   })

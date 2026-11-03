@@ -8,6 +8,7 @@ import {
   updateRow,
 } from '~/utils/adminEditor/rows'
 import { createEditorState, newRow } from '~/utils/adminEditor/state'
+import { videoFile } from './adminTestUtils'
 
 const stateWith = (...paths: string[]) => {
   const state = createEditorState(() => {})
@@ -48,11 +49,13 @@ describe('動画の行の操作', () => {
     const state = stateWith('予選/M1.mp4')
     const [loaded] = state.rows
     if (loaded) loaded.performersText = '1'
-    const file = (name: string, size: number) =>
-      new File([new Uint8Array(size)], name)
     await addFiles(
       state,
-      [file('M1.mp4', 3), file('A.mp4', 2), file('.DS_Store', 1)],
+      [
+        videoFile('M1.mp4', 3),
+        videoFile('A.mp4', 2),
+        videoFile('.DS_Store', 1),
+      ],
       '予選',
     )
     expect(paths(state)).toEqual(['予選/A.mp4', '予選/M1.mp4'])
@@ -76,7 +79,7 @@ describe('rowState', () => {
   })
 
   it('R2 のサイズと比べて、あり・ない・未アップロード・違うを見分ける', () => {
-    const file = new File([], 'a.mp4')
+    const file = videoFile('a.mp4')
     const remote = (size?: number) =>
       new Map(size === undefined ? [] : [['a.mp4', size]])
     expect(rowState(row({}), remote(10)).label).toBe('R2 にあり')
@@ -88,7 +91,7 @@ describe('rowState', () => {
 
 describe('needsUpload', () => {
   it('この画面で選んだファイルで、R2 にない、またはサイズが違うものだけ', () => {
-    const file = new File([], 'a.mp4')
+    const file = videoFile('a.mp4')
     const remote = new Map([['a.mp4', 10]])
     expect(needsUpload(newRow('a.mp4', { file, sizeBytes: 10 }), remote)).toBe(
       false,

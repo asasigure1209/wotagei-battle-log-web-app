@@ -34,12 +34,10 @@ describe('run', () => {
     const ok = await run(state, async () => {
       busyInside = state.busy
     })
-    expect([ok, busyInside, state.busy, state.messages]).toEqual([
-      true,
-      true,
-      false,
-      null,
-    ])
+    expect(ok).toBe(true)
+    expect(busyInside).toBe(true)
+    expect(state.busy).toBe(false)
+    expect(state.messages).toBeNull()
   })
 
   it('失敗したらエラーを画面に出して false を返す。401 ならログインの画面に戻す', async () => {

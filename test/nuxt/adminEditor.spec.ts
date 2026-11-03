@@ -2,6 +2,7 @@ import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { createAdminEditor } from '~/utils/adminEditor/editor'
 import { newRow } from '~/utils/adminEditor/state'
+import { videoFile } from './adminTestUtils'
 
 registerEndpoint('/api/admin/objects', () => [{ key: 's/e/a.mp4', size: 10 }])
 registerEndpoint('/api/admin/events', () => [
@@ -25,7 +26,7 @@ describe('エディターの算出値', () => {
   it('canUpload は、ID が正しく、R2 を調べ終え、送る動画があり、待っていないときだけ true', () => {
     const editor = editorWithIds()
     editor.state.rows = [
-      newRow('b.mp4', { file: new File([], 'b.mp4'), sizeBytes: 5 }),
+      newRow('b.mp4', { file: videoFile('b.mp4'), sizeBytes: 5 }),
     ]
     expect(editor.canUpload.value).toBe(false)
     editor.state.remote = new Map()
@@ -53,7 +54,7 @@ describe('エディターの算出値', () => {
 describe('エディターの操作', () => {
   it('addFiles は、R2 をまだ調べていなければ、足したあとに調べる', async () => {
     const editor = editorWithIds()
-    await editor.addFiles([new File([new Uint8Array(10)], 'a.mp4')], '')
+    await editor.addFiles([videoFile('a.mp4', 10)], '')
     expect(editor.state.rows.map((r) => r.relPath)).toEqual(['a.mp4'])
     expect(editor.state.remote).toEqual(new Map([['a.mp4', 10]]))
   })

@@ -135,82 +135,75 @@ describe('runPool', () => {
   })
 })
 
-/** XMLHttpRequest の偽物。send されたら、決めた status で終わる (status が null なら通信エラー) */
-class FakeXhr {
-  static status: number | null = 200
-  static last: FakeXhr | undefined
-  status = 0
-  method = ''
-  url = ''
-  upload: { onprogress?: (e: { loaded: number }) => void } = {}
-  onload?: () => void
-  onerror?: () => void
-  onabort?: () => void
-  onloadend?: () => void
-  aborted = false
+/**
+ * XMLHttpRequest の偽物を stubGlobal する。send されたら status で終わる (null なら通信エラー)。
+ * open に渡されたメソッドと URL を返す opened で確かめる
+ */
+function stubXhr(status: number | null = 200) {
+  const open = vi.fn()
+  class FakeXhr {
+    status = 0
+    open = open
+    upload: { onprogress?: (e: { loaded: number }) => void } = {}
+    onload?: () => void
+    onerror?: () => void
+    onabort?: () => void
+    onloadend?: () => void
+    aborted = false
 
-  constructor() {
-    FakeXhr.last = this
-  }
+    send(blob: Blob) {
+      queueMicrotask(() => {
+        if (this.aborted) return
+        this.upload.onprogress?.({ loaded: Math.floor(blob.size / 2) })
+        this.finish()
+      })
+    }
 
-  open(method: string, url: string) {
-    this.method = method
-    this.url = url
-  }
-
-  send(blob: Blob) {
-    queueMicrotask(() => {
-      if (this.aborted) return
-      this.upload.onprogress?.({ loaded: Math.floor(blob.size / 2) })
-      if (FakeXhr.status === null) this.onerror?.()
+    finish() {
+      if (status === null) this.onerror?.()
       else {
-        this.status = FakeXhr.status
+        this.status = status
         this.onload?.()
       }
       this.onloadend?.()
-    })
-  }
+    }
 
-  abort() {
-    this.aborted = true
-    this.onabort?.()
-    this.onloadend?.()
+    abort() {
+      this.aborted = true
+      this.onabort?.()
+      this.onloadend?.()
+    }
   }
+  vi.stubGlobal('XMLHttpRequest', FakeXhr)
+  return open
 }
 
 describe('putWithXhr', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    FakeXhr.status = 200
-  })
+  afterEach(() => vi.unstubAllGlobals())
 
   it('PUT し、送れたバイト数を途中と最後に知らせる', async () => {
-    vi.stubGlobal('XMLHttpRequest', FakeXhr)
+    const open = stubXhr()
     const progress: number[] = []
     await putWithXhr('https://r2/p1', new Blob(['0123456789']), (n) =>
       progress.push(n),
     )
-    expect([FakeXhr.last?.method, FakeXhr.last?.url]).toEqual([
-      'PUT',
-      'https://r2/p1',
-    ])
+    expect(open).toHaveBeenCalledWith('PUT', 'https://r2/p1')
     expect(progress).toEqual([5, 10])
   })
 
   it('2xx 以外や通信エラーは、理由のわかる文で失敗する', async () => {
-    vi.stubGlobal('XMLHttpRequest', FakeXhr)
-    FakeXhr.status = 403
+    stubXhr(403)
     await expect(putWithXhr('u', new Blob(['x']), () => {})).rejects.toThrow(
       'R2 への送信に失敗しました (403)',
     )
-    FakeXhr.status = null
+    stubXhr(null)
     await expect(putWithXhr('u', new Blob(['x']), () => {})).rejects.toThrow(
       'CORS',
     )
   })
 
   it('signal で中止でき、終わった XHR の中止の listener は外す', async () => {
-    vi.stubGlobal('XMLHttpRequest', FakeXhr)
+    stubXhr()
     const controller = new AbortController()
     const remove = vi.spyOn(controller.signal, 'removeEventListener')
     await putWithXhr('u', new Blob(['x']), () => {}, controller.signal)

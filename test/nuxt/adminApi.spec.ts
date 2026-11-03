@@ -1,7 +1,6 @@
-import { registerEndpoint } from '@nuxt/test-utils/runtime'
-import { getQuery, type H3Event } from 'h3'
 import { describe, expect, it } from 'vitest'
 import { adminApi, adminErrorMessages, isUnauthorized } from '~/utils/adminApi'
+import { fakeAdminApi } from './adminTestUtils'
 
 describe('API のエラーの読み取り', () => {
   it('誤りの一覧 (data.problems) があれば 1 行ずつ返す', () => {
@@ -26,54 +25,30 @@ describe('API のエラーの読み取り', () => {
   })
 })
 
-/** 偽の API が受けたリクエスト */
-const received: string[] = []
-const record =
-  (label: string, body: unknown = { ok: true }) =>
-  (event: H3Event) => {
-    received.push(`${label} ${JSON.stringify(getQuery(event))}`)
-    return body
-  }
-
-registerEndpoint('/api/admin/events', {
-  method: 'GET',
-  handler: record('list', []),
-})
-registerEndpoint('/api/admin/events', {
-  method: 'POST',
-  handler: record('save'),
-})
-registerEndpoint('/api/admin/events/s/e', {
-  method: 'GET',
-  handler: record('get', {}),
-})
-registerEndpoint('/api/admin/events/s/e', {
-  method: 'DELETE',
-  handler: record('delete'),
-})
-registerEndpoint('/api/admin/objects', {
-  method: 'GET',
-  handler: record('objects', []),
-})
+const api = fakeAdminApi([
+  { method: 'GET', path: '/api/admin/events', body: [] },
+  { method: 'POST', path: '/api/admin/events', body: { ok: true } },
+  { method: 'GET', path: '/api/admin/events/s/e', body: {} },
+  { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
+  { method: 'GET', path: '/api/admin/objects', body: [] },
+])
 
 describe('adminApi', () => {
-  const ids = { seriesId: 's', eventId: 'e' }
-
   it('イベントの ID の組から、それぞれの URL とクエリを組み立てる', async () => {
-    received.length = 0
+    const ids = { seriesId: 's', eventId: 'e' }
     await adminApi.listEvents()
     await adminApi.getEvent(ids)
     await adminApi.deleteEvent(ids)
     await adminApi.listObjects(ids)
     await adminApi.saveEvent({}, true)
     await adminApi.saveEvent({}, false)
-    expect(received).toEqual([
-      'list {}',
-      'get {}',
-      'delete {}',
-      'objects {"series":"s","event":"e"}',
-      'save {"dryRun":"1"}',
-      'save {}',
+    expect(api.calls).toEqual([
+      'GET /api/admin/events',
+      'GET /api/admin/events/s/e',
+      'DELETE /api/admin/events/s/e',
+      'GET /api/admin/objects?series=s&event=e',
+      'POST /api/admin/events?dryRun=1',
+      'POST /api/admin/events',
     ])
   })
 })
