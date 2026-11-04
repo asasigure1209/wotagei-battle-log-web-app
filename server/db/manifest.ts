@@ -52,6 +52,21 @@ export function parseManifest(data: unknown): Manifest {
   return { series, event, entries, videos }
 }
 
+/**
+ * シリーズとイベントの情報だけを確かめる (管理画面のイベントの登録)。書き方は manifest と同じで、
+ * 誤りがあれば ManifestError を投げる
+ */
+export function parseEventInfo(
+  data: unknown,
+): Pick<Manifest, 'series' | 'event'> {
+  const check = new Checker()
+  const root = asRecord(data)
+  const series = parseSeries(root.series, check)
+  const event = parseEvent(root.event, check)
+  if (check.problems.length) throw new ManifestError(check.problems)
+  return { series, event }
+}
+
 /** 値を確かめ、誤りを problems に溜めていく。誤った値の代わりには空の値を返す */
 class Checker {
   readonly problems: string[] = []

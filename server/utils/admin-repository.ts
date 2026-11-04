@@ -1,4 +1,4 @@
-// 管理画面で使う DB の読み出し。画面の API (repository.ts) と違い、manifest と同じ形で返し、
+// 管理画面で使う DB の読み書き。画面の API (repository.ts) と違い、manifest と同じ形で返し、
 // 管理画面がそのまま手直しして取り込み直せるようにする
 import { and, asc, desc, eq } from 'drizzle-orm'
 import type { Manifest } from '../db/manifest'
@@ -22,10 +22,39 @@ export async function listAdminEvents() {
       eventId: events.id,
       eventName: events.name,
       date: events.date,
+      contact: events.contact,
     })
     .from(events)
     .innerJoin(eventSeries, eq(eventSeries.id, events.seriesId))
     .orderBy(desc(events.date))
+}
+
+/**
+ * シリーズとイベントの情報だけを登録する (あれば書き換える)。importManifest と違ってイベントを消さないので、
+ * 登録済みのエントリー・動画・出演者はそのまま残る。D1 で半端な状態を残さないよう 1 つの batch で流す
+ */
+export async function saveAdminEventInfo({
+  series,
+  event,
+}: Pick<Manifest, 'series' | 'event'>) {
+  const db = await useDb()
+  const { id, ...fields } = event
+  await db.batch([
+    db
+      .insert(eventSeries)
+      .values(series)
+      .onConflictDoUpdate({
+        target: eventSeries.id,
+        set: { name: series.name },
+      }),
+    db
+      .insert(events)
+      .values({ ...fields, id, seriesId: series.id })
+      .onConflictDoUpdate({
+        target: [events.seriesId, events.id],
+        set: fields,
+      }),
+  ])
 }
 
 /** 登録済みのイベントを、manifest と同じ形で。ないイベントは null */
