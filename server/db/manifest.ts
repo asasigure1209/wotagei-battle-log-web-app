@@ -40,8 +40,7 @@ export async function readManifest(file: string | URL) {
 export function parseManifest(data: unknown): Manifest {
   const check = new Checker()
   const root = asRecord(data)
-  const series = parseSeries(root.series, check)
-  const event = parseEvent(root.event, check)
+  const { series, event } = parseInfo(root, check)
   const entries = parseEntries(root.entries, check)
   const videos = parseVideos(root.videos, check, {
     prefix: `${series.id}/${event.id}/`,
@@ -60,11 +59,17 @@ export function parseEventInfo(
   data: unknown,
 ): Pick<Manifest, 'series' | 'event'> {
   const check = new Checker()
-  const root = asRecord(data)
-  const series = parseSeries(root.series, check)
-  const event = parseEvent(root.event, check)
+  const info = parseInfo(asRecord(data), check)
   if (check.problems.length) throw new ManifestError(check.problems)
-  return { series, event }
+  return info
+}
+
+/** シリーズとイベントの情報 (manifest とイベントの登録で共通の部分) */
+function parseInfo(root: Record<string, unknown>, check: Checker) {
+  return {
+    series: parseSeries(root.series, check),
+    event: parseEvent(root.event, check),
+  }
 }
 
 /** 値を確かめ、誤りを problems に溜めていく。誤った値の代わりには空の値を返す */
@@ -210,6 +215,14 @@ function performerList(
   return nos
 }
 
+/** シリーズを登録する (あれば名前を書き換える) 文。batch に入れて使う */
+export function upsertSeries(db: Db, series: Manifest['series']) {
+  return db
+    .insert(eventSeries)
+    .values(series)
+    .onConflictDoUpdate({ target: eventSeries.id, set: { name: series.name } })
+}
+
 /**
  * manifest のイベントを DB に入れ直す。そのイベントのエントリー・動画・出演者は ON DELETE CASCADE で消してから入れ、
  * 同じシリーズのほかのイベントには触れない。D1 は複数のリクエストにまたがるトランザクションを使えないので、
@@ -232,13 +245,7 @@ export async function importManifest(db: Db, manifest: Manifest) {
   )
 
   const statements: BatchItem<'sqlite'>[] = [
-    db
-      .insert(eventSeries)
-      .values(manifest.series)
-      .onConflictDoUpdate({
-        target: eventSeries.id,
-        set: { name: manifest.series.name },
-      }),
+    upsertSeries(db, manifest.series),
     db
       .delete(events)
       .where(and(eq(events.seriesId, seriesId), eq(events.id, eventId))),

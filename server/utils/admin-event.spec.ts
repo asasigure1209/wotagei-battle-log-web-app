@@ -12,15 +12,6 @@ const body = () => ({
   contact: '連絡先',
 })
 
-/** fn が投げた値 */
-function thrown(fn: () => unknown) {
-  try {
-    fn()
-  } catch (e) {
-    return e
-  }
-}
-
 describe('管理画面のイベントの登録のリクエスト', () => {
   it('invalidManifest は、誤りの一覧を data.problems に持つ 400', () => {
     expect(invalidManifest(['a', 'b'])).toEqual(
@@ -33,7 +24,7 @@ describe('管理画面のイベントの登録のリクエスト', () => {
   })
 
   it('parseManifestBody は、manifest の誤りを 400 にする', () => {
-    expect(thrown(() => parseManifestBody({}))).toEqual(
+    expect(() => parseManifestBody({})).toThrow(
       expect.objectContaining({ statusCode: 400 }),
     )
   })
@@ -51,9 +42,7 @@ describe('管理画面のイベントの登録のリクエスト', () => {
   })
 
   it('parseEventInfoBody は、誤りがあれば manifest の登録と同じ形の 400 にする', () => {
-    expect(
-      thrown(() => parseEventInfoBody('s', 'e', { ...body(), name: '' })),
-    ).toEqual(
+    expect(() => parseEventInfoBody('s', 'e', { ...body(), name: '' })).toThrow(
       expect.objectContaining({
         statusCode: 400,
         data: { problems: ['event.name を書いてください'] },

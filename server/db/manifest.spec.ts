@@ -105,22 +105,20 @@ describe('parseEventInfo', () => {
   })
 
   it('manifest と同じ書き方で、見つけた誤りをまとめて返す', () => {
-    const error = (() => {
-      try {
-        parseEventInfo({
-          series: { id: 'シリーズ', name: 'シリーズ' },
-          event: { id: 'e', name: '', date: '2026-02-30', contact: 'X' },
-        })
-      } catch (e) {
-        return e
-      }
-    })()
-    expect(error).toBeInstanceOf(ManifestError)
-    expect((error as ManifestError).problems).toEqual([
-      'series.id は英数字と _ - だけで書いてください',
-      'event.name を書いてください',
-      'event.date は YYYY-MM-DD で書いてください: 2026-02-30',
-    ])
+    expect(() =>
+      parseEventInfo({
+        series: { id: 'シリーズ', name: 'シリーズ' },
+        event: { id: 'e', name: '', date: '2026-02-30', contact: 'X' },
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'series.id は英数字と _ - だけで書いてください',
+          'event.name を書いてください',
+          'event.date は YYYY-MM-DD で書いてください: 2026-02-30',
+        ],
+      }),
+    )
   })
 })
 

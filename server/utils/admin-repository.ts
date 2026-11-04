@@ -1,7 +1,7 @@
 // 管理画面で使う DB の読み書き。画面の API (repository.ts) と違い、manifest と同じ形で返し、
 // 管理画面がそのまま手直しして取り込み直せるようにする
 import { and, asc, desc, eq } from 'drizzle-orm'
-import type { Manifest } from '../db/manifest'
+import { type Manifest, upsertSeries } from '../db/manifest'
 import { entries, eventSeries, events, performers, videos } from '../db/schema'
 // テスト (node 環境) からも読めるよう、Nitro の自動 import に頼らず明示する
 import { useDb } from './db'
@@ -38,22 +38,12 @@ export async function saveAdminEventInfo({
   event,
 }: Pick<Manifest, 'series' | 'event'>) {
   const db = await useDb()
-  const { id, ...fields } = event
   await db.batch([
-    db
-      .insert(eventSeries)
-      .values(series)
-      .onConflictDoUpdate({
-        target: eventSeries.id,
-        set: { name: series.name },
-      }),
+    upsertSeries(db, series),
     db
       .insert(events)
-      .values({ ...fields, id, seriesId: series.id })
-      .onConflictDoUpdate({
-        target: [events.seriesId, events.id],
-        set: fields,
-      }),
+      .values({ ...event, seriesId: series.id })
+      .onConflictDoUpdate({ target: [events.seriesId, events.id], set: event }),
   ])
 }
 
