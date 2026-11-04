@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// 管理画面。動画を R2 にアップロードし、イベント・エントリー・出演者を DB に登録する。
+// 管理画面の外枠。ログインを確かめ、ログインしていれば子のページ (pages/admin/) を出す。
 // ログインしているかで中身が変わるので、サーバーでは描画しない (nuxt.config.ts の routeRules)
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import '~/assets/css/admin.css'
 
 useHead({
@@ -9,8 +9,7 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex, nofollow' }],
 })
 
-/** ログインしているか。確かめるまでは null */
-const loggedIn = ref<boolean | null>(null)
+const loggedIn = useAdminLoggedIn()
 
 onMounted(async () => {
   try {
@@ -32,12 +31,14 @@ async function logout() {
     <AdminLogin v-if="loggedIn === false" @login="loggedIn = true" />
     <template v-else-if="loggedIn">
       <header class="bar">
-        <h1 class="title">管理画面</h1>
+        <h1 class="title">
+          <NuxtLink to="/admin" class="home">管理画面</NuxtLink>
+        </h1>
         <button type="button" class="admin-btn" @click="logout">
           ログアウト
         </button>
       </header>
-      <AdminEventEditor @unauthorized="loggedIn = false" />
+      <NuxtPage />
     </template>
   </div>
 </template>
@@ -61,5 +62,10 @@ async function logout() {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
+}
+
+.home {
+  color: inherit;
+  text-decoration: none;
 }
 </style>

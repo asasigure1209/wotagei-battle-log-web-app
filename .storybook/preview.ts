@@ -1,5 +1,20 @@
-import type { Preview } from '@storybook/vue3-vite'
+import { type Preview, setup } from '@storybook/vue3-vite'
+import { defineComponent, h } from 'vue'
 import '../app/assets/css/main.css'
+
+// Nuxt なしで動くので、NuxtLink はただの <a> に置き換える (遷移はしない)
+setup((app) => {
+  app.component(
+    'NuxtLink',
+    defineComponent({
+      props: { to: { type: String, required: true } },
+      setup:
+        (props, { slots }) =>
+        () =>
+          h('a', { href: props.to }, slots),
+    }),
+  )
+})
 
 const preview: Preview = {
   parameters: {
