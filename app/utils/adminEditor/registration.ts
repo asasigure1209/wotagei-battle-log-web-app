@@ -1,22 +1,15 @@
 // 書いた内容を manifest の形にして DB に登録し、登録済みのイベントを読み込み・消す
 
 import { adminApi, type EventIds } from '~/utils/adminApi'
+import { eventPrefix } from '~/utils/adminCommon/eventKey'
+import { info, run, showErrors } from '~/utils/adminCommon/operation'
 import {
   formatEntriesText,
   parseEntriesText,
   parsePerformers,
 } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
-import {
-  type EditorState,
-  emptyForm,
-  eventPrefix,
-  info,
-  newRow,
-  run,
-  showErrors,
-  type VideoRow,
-} from './state'
+import { type EditorState, emptyForm, newRow, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
 const DRY_RUN_OK = '問題ありません。このまま登録できます'

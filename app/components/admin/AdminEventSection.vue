@@ -3,7 +3,7 @@
 
 import { computed } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEventEditor'
-import { eventKey } from '~/utils/adminEditor/state'
+import { eventKey } from '~/utils/adminCommon/eventKey'
 
 const { state, events, idsValid, currentKey, open, refreshRemote } =
   useAdminEditor()

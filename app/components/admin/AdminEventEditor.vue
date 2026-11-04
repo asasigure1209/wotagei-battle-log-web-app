@@ -13,7 +13,7 @@ const emit = defineEmits<{
   unauthorized: []
 }>()
 
-provideAdminEditor(() => emit('unauthorized'))
+const { state } = provideAdminEditor(() => emit('unauthorized'))
 </script>
 
 <template>
@@ -22,7 +22,7 @@ provideAdminEditor(() => emit('unauthorized'))
     <AdminEntriesSection />
     <AdminVideosSection />
     <AdminRegisterSection />
-    <AdminMessages />
+    <AdminMessages :messages="state.messages" />
   </div>
 </template>
 

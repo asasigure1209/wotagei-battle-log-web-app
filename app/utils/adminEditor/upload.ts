@@ -1,15 +1,10 @@
 // R2 にある動画の確認と、この画面で選んだ動画のアップロード
 import { adminApi, adminUploadDeps, type EventIds } from '~/utils/adminApi'
+import { eventPrefix } from '~/utils/adminCommon/eventKey'
+import { info, run } from '~/utils/adminCommon/operation'
 import { uploadMultipart } from '~/utils/multipartUpload'
 import { needsUpload } from './rows'
-import {
-  type EditorState,
-  eventPrefix,
-  idsValid,
-  info,
-  run,
-  type VideoRow,
-} from './state'
+import { type EditorState, idsValid, type VideoRow } from './state'
 
 /** 送信中の進み具合を画面に反映する間隔 */
 const PROGRESS_INTERVAL_MS = 200

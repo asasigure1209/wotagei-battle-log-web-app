@@ -3,6 +3,8 @@
 // (テストと Storybook はここから直接作る)
 import { computed, type InjectionKey, reactive, ref } from 'vue'
 import { adminApi, type EventSummary } from '~/utils/adminApi'
+import { eventKey, parseEventKey } from '~/utils/adminCommon/eventKey'
+import { run } from '~/utils/adminCommon/operation'
 import { parseEntriesText } from '~/utils/adminManifest'
 import { deleteEvent, loadEvent, register, reset } from './registration'
 import {
@@ -13,14 +15,7 @@ import {
   sortRows,
   updateRow,
 } from './rows'
-import {
-  createEditorState,
-  type EditorState,
-  eventKey,
-  idsValid,
-  parseEventKey,
-  run,
-} from './state'
+import { createEditorState, type EditorState, idsValid } from './state'
 import { cancelUpload, refreshRemote, uploadAll, uploadTargets } from './upload'
 
 export type AdminEditor = ReturnType<typeof createAdminEditor>

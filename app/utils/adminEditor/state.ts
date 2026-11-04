@@ -1,11 +1,7 @@
-// 管理画面のエディターの状態と、どの操作からも使う共通の処理。
+// 管理画面のエディターの状態。
 // Vue に依存しない関数として書き、エディター (editor.ts) が状態を reactive にして渡す
 
-import {
-  adminErrorMessages,
-  type EventIds,
-  isUnauthorized,
-} from '~/utils/adminApi'
+import type { OperationState } from '~/utils/adminCommon/operation'
 import { isId } from '~~/shared/utils/id'
 
 /** 動画の 1 行。file はこの画面で選んだファイル (DB から読んだだけの行にはない) */
@@ -31,9 +27,7 @@ type EventForm = {
   contact: string
 }
 
-export type EditorMessages = { kind: 'error' | 'info'; lines: string[] }
-
-export type EditorState = {
+export type EditorState = OperationState & {
   form: EventForm
   entriesText: string
   rows: VideoRow[]
@@ -44,13 +38,8 @@ export type EditorState = {
    * どのイベントかはフォームの ID でわかる
    */
   loaded: boolean
-  messages: EditorMessages | null
-  /** API を待っているか */
-  busy: boolean
   /** アップロードしている間だけある (中止に使う) */
   uploadAbort: AbortController | null
-  /** ログインが切れたときに呼ぶ */
-  onUnauthorized: () => void
 }
 
 export function emptyForm(): EventForm {
@@ -96,45 +85,6 @@ export function newRow(
   }
 }
 
-/** `シリーズID/イベントID`。登録済みのイベントの選択肢の値などに使う */
-export function eventKey(ids: EventIds) {
-  return `${ids.seriesId}/${ids.eventId}`
-}
-
-/** eventKey の逆 */
-export function parseEventKey(key: string): EventIds {
-  const [seriesId = '', eventId = ''] = key.split('/')
-  return { seriesId, eventId }
-}
-
-/** 動画のキーの、相対パスの前に付く部分 (`シリーズID/イベントID/`) */
-export function eventPrefix(ids: EventIds) {
-  return `${eventKey(ids)}/`
-}
-
 export function idsValid(state: EditorState) {
   return isId(state.form.seriesId) && isId(state.form.eventId)
-}
-
-export function info(state: EditorState, ...lines: string[]) {
-  state.messages = { kind: 'info', lines }
-}
-
-export function showErrors(state: EditorState, lines: string[]) {
-  state.messages = { kind: 'error', lines }
-}
-
-/** busy にしてから fn を動かし、失敗したら画面にエラーを出す (ログインが切れていたらログインの画面に戻す) */
-export async function run(state: EditorState, fn: () => Promise<void>) {
-  state.busy = true
-  try {
-    await fn()
-    return true
-  } catch (error) {
-    if (isUnauthorized(error)) state.onUnauthorized()
-    showErrors(state, adminErrorMessages(error))
-    return false
-  } finally {
-    state.busy = false
-  }
 }
