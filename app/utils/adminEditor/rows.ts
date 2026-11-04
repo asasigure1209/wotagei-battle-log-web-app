@@ -1,9 +1,10 @@
 // 動画の行の操作 (ファイルを足す・外す・並べ替える) と、行の状態 (R2 にあるか、送信中か) の判定
 
+import { info } from '~/utils/adminCommon/operation'
 import { compareRelPath, relPathOf } from '~/utils/adminManifest'
 import { readMp4Duration } from '~/utils/mp4Duration'
 import { isVideoRelPath } from '~~/shared/utils/video-key'
-import { type EditorState, info, newRow, type VideoRow } from './state'
+import { type EditorState, newRow, type VideoRow } from './state'
 
 type RowState = {
   kind: 'ok' | 'pending' | 'uploading' | 'error' | 'unknown'

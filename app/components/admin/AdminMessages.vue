@@ -1,19 +1,19 @@
 <script setup lang="ts">
 // 画面の下に出す知らせ (エラーや、終わったことの知らせ)
 
-import { useAdminEditor } from '~/composables/useAdminEventEditor'
+import type { OperationMessages } from '~/utils/adminCommon/operation'
 
-const { state } = useAdminEditor()
+defineProps<{ messages: OperationMessages | null }>()
 </script>
 
 <template>
   <div
-    v-if="state.messages"
-    :class="['messages', state.messages.kind]"
+    v-if="messages"
+    :class="['messages', messages.kind]"
     role="status"
     aria-live="polite"
   >
-    <p v-for="line in state.messages.lines" :key="line">{{ line }}</p>
+    <p v-for="line in messages.lines" :key="line">{{ line }}</p>
   </div>
 </template>
 
