@@ -34,7 +34,7 @@ Biome の `noExcessiveCognitiveComplexity` は上限 5。
 - **manifest** (`server/db/manifest.ts`): イベント 1 つ分のデータ形式。`db:import` と管理画面の登録 (`server/api/admin/events/index.post.ts`) が同じ `parseManifest` / `importManifest` を使い、そのイベントの分を 1 バッチで入れ直す
 - **認証** (`server/middleware/`): `/api/**` は SSR からだけ呼ぶ前提で `x-api-secret` を確かめる (画面からは `useApiFetch`)。`/api/admin/**` はブラウザから呼ぶので、管理パスワードで署名した Cookie を確かめる。runtimeConfig の合言葉は数値になりうるので `configSecret()` で文字列にする
 - **R2** (`server/utils/r2.ts`): ダウンロードは `/download/**` から署名付き URL へリダイレクト。アップロードは Vercel の本文 4.5MB 制限のため、ブラウザから R2 へマルチパートで直接送る。読み出し用と書き込み用でトークンが別
-- **キャッシュ** (`nuxt.config.ts`): イベント・プレイヤー画面は ISR 1 時間。`/admin` の `isr: false` は外すと Vercel で 404 になる (headers も付けない)
+- **キャッシュ** (`nuxt.config.ts`): イベント・プレイヤー画面は ISR 1 時間。`/admin`・`/admin/**` の `isr: false` は外すと Vercel で 404 になる (headers も付けない)
 - **マイグレーション**: 本番ビルド (`vercel-build`) で `nuxt build` の前に流れる。列の削除・リネームはデプロイを 2 回に分ける
 
 ## テスト
