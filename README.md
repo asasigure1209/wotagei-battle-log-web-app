@@ -67,6 +67,13 @@ bun run dev
 
 ふだんは [管理画面](#管理画面-動画のアップロードとイベントの登録) で登録します。コマンドで取り込むときは、イベントごとのデータを 1 つの YAML ファイル (manifest) に書きます。形は `server/db/seed.yaml` (シリーズ・イベント・エントリー・各動画のキー・長さ・サイズ・出演者) と同じです。
 
+各動画の `durationSec` (長さ。秒に四捨五入) と `sizeBytes` (バイト数) は、R2 に置いたファイルと同じものを手元で調べて書きます。サイズが R2 のものと違うと、管理画面の登録の前の確認で止まります (`db:import` は R2 を見ないので、そのまま入ってしまう)。
+
+```bash
+stat -f %z 予選/M1256.mp4   # サイズ (macOS。Linux は stat -c %s)
+ffprobe -v error -show_entries format=duration -of csv=p=0 予選/M1256.mp4   # 長さ (秒。ffmpeg に入っている)
+```
+
 ```bash
 bun run db:import <yaml> --dry-run   # ファイルを検査し、取り込まれる内容を表示するだけ
 bun run db:import <yaml>             # 取り込む
