@@ -22,6 +22,9 @@ export type Manifest = {
   }[]
 }
 
+/** イベントの情報 (シリーズとイベント)。管理画面では、エントリー・動画より先にこれだけを登録する */
+export type EventInfo = Pick<Manifest, 'series' | 'event'>
+
 /** manifest の誤り。人が直せるよう、見つけた誤りをまとめて持つ */
 export class ManifestError extends Error {
   constructor(readonly problems: string[]) {
@@ -50,6 +53,16 @@ export function parseManifest(data: unknown): Manifest {
 
   if (check.problems.length) throw new ManifestError(check.problems)
   return { series, event, entries, videos }
+}
+
+/** イベントの情報だけを確かめる。誤りがあれば ManifestError を投げる */
+export function parseEventInfo(data: unknown): EventInfo {
+  const check = new Checker()
+  const root = asRecord(data)
+  const series = parseSeries(root.series, check)
+  const event = parseEvent(root.event, check)
+  if (check.problems.length) throw new ManifestError(check.problems)
+  return { series, event }
 }
 
 /** 値を確かめ、誤りを problems に溜めていく。誤った値の代わりには空の値を返す */
@@ -235,6 +248,29 @@ export async function importManifest(db: Db, manifest: Manifest) {
     ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
   ]
   await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
+}
+
+/**
+ * イベントの情報だけを登録する。なければ作り、あれば名前・開催日・連絡先を書き換える。
+ * 行を消さずに書き換えるので、登録済みのエントリー・動画・出演者はそのまま残る
+ */
+export async function saveEventInfo(db: Db, { series, event }: EventInfo) {
+  await db.batch([
+    db
+      .insert(eventSeries)
+      .values(series)
+      .onConflictDoUpdate({
+        target: eventSeries.id,
+        set: { name: series.name },
+      }),
+    db
+      .insert(events)
+      .values({ ...event, seriesId: series.id })
+      .onConflictDoUpdate({
+        target: [events.seriesId, events.id],
+        set: { name: event.name, date: event.date, contact: event.contact },
+      }),
+  ])
 }
 
 /** D1 は 1 つの SQL に渡せる値が 100 個までなので、insert する行をそれに収まるよう分ける */

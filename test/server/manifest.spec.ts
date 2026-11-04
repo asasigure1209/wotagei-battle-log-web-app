@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   importManifest,
   ManifestError,
+  parseEventInfo,
   parseManifest,
   readManifest,
+  saveEventInfo,
 } from '../../server/db/manifest'
 import { eventSeries } from '../../server/db/schema'
 import { getEvent, getPlayer, listPlayers } from '../../server/utils/repository'
@@ -94,6 +96,56 @@ describe('parseManifest', () => {
         ],
       }),
     ).toThrow(ManifestError)
+  })
+})
+
+describe('parseEventInfo', () => {
+  it('シリーズとイベントだけを確かめ、entries・videos は見ない', () => {
+    const { series, event } = yaml()
+    expect(parseEventInfo({ series, event })).toEqual({ series, event })
+  })
+
+  it('誤りをまとめて返す', () => {
+    expect(() =>
+      parseEventInfo({
+        series: { id: 'エル', name: '' },
+        event: { id: 'e', name: 'イベント', date: '2026-13-01', contact: 'x' },
+      }),
+    ).toThrow(
+      /series\.id は英数字[\s\S]*series\.name を書いて[\s\S]*event\.date は YYYY-MM-DD/,
+    )
+  })
+})
+
+describe('saveEventInfo', () => {
+  it('なければ作り、エントリー・動画はまだない', async () => {
+    const db = await resetTestDb()
+    const { series, event } = yaml()
+    await saveEventInfo(db, { series, event })
+    expect(await getEvent('s', 'e')).toEqual({
+      title: 'イベント',
+      date: '2026-01-01',
+      contact: '連絡先',
+    })
+    expect(await listPlayers('s', 'e')).toEqual([])
+  })
+
+  it('あれば情報だけを書き換え、登録済みのエントリー・動画は残す', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, parseManifest(yaml()))
+    await saveEventInfo(db, {
+      series: { id: 's', name: '新しいシリーズ名' },
+      event: { id: 'e', name: '新しい名前', date: '2026-02-01', contact: 'y' },
+    })
+    expect(await getEvent('s', 'e')).toEqual({
+      title: '新しい名前',
+      date: '2026-02-01',
+      contact: 'y',
+    })
+    expect(await listPlayers('s', 'e')).toHaveLength(3)
+    expect(await db.select().from(eventSeries)).toEqual([
+      { id: 's', name: '新しいシリーズ名' },
+    ])
   })
 })
 
