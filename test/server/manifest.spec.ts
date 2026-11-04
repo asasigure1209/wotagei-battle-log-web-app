@@ -83,7 +83,7 @@ describe('parseManifest', () => {
     ])
   })
 
-  it('mise manifest が書き出したままの雛形 (未記入) は通さない', () => {
+  it('未記入の欄が残った manifest は通さない', () => {
     expect(() =>
       parseManifest({
         series: { id: 's', name: '' },

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// 管理画面。動画を R2 にアップロードし、イベント・エントリー・出演者を DB に登録する
-// (video-uploader の mise upload / mise manifest と bun run db:import を、ブラウザでできるようにしたもの)。
+// 管理画面。動画を R2 にアップロードし、イベント・エントリー・出演者を DB に登録する。
 // ログインしているかで中身が変わるので、サーバーでは描画しない (nuxt.config.ts の routeRules)
 import { onMounted, ref } from 'vue'
 import '~/assets/css/admin.css'

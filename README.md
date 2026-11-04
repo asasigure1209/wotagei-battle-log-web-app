@@ -65,7 +65,14 @@ bun run dev
 
 ### イベントの取り込み
 
-イベントごとのデータは 1 つの YAML ファイル (manifest) です。動画アップローダー (`video-uploader/`) の `mise manifest --series <シリーズID> --event <イベントID>` で、各動画のキー・長さ・サイズが入ったひな形が書き出されます。シリーズ名、イベント、エントリー、各動画の出演者を埋めてから取り込みます。
+ふだんは [管理画面](#管理画面-動画のアップロードとイベントの登録) で登録します。コマンドで取り込むときは、イベントごとのデータを 1 つの YAML ファイル (manifest) に書きます。形は `server/db/seed.yaml` (シリーズ・イベント・エントリー・各動画のキー・長さ・サイズ・出演者) と同じです。
+
+各動画の `durationSec` (長さ。秒に四捨五入) と `sizeBytes` (バイト数) は、R2 に置いたファイルと同じものを手元で調べて書きます。サイズが R2 のものと違うと、管理画面の登録の前の確認で止まります (`db:import` は R2 を見ないので、そのまま入ってしまう)。
+
+```bash
+stat -f %z 予選/M1256.mp4   # サイズ (macOS。Linux は stat -c %s)
+ffprobe -v error -show_entries format=duration -of csv=p=0 予選/M1256.mp4   # 長さ (秒。ffmpeg に入っている)
+```
 
 ```bash
 bun run db:import <yaml> --dry-run   # ファイルを検査し、取り込まれる内容を表示するだけ
@@ -75,6 +82,8 @@ bun run db:import <yaml>             # 取り込む
 本番のイベント・プレイヤーの画面は Vercel の ISR で 1 時間とっておきます (`nuxt.config.ts` の `routeRules`。署名付き URL に転送する `/download/**` と `/api/**` はとっておきません)。そのため本番に取り込んでも、画面に出るまで最大 1 時間かかります。404 もとっておかれるので、取り込む前に開かれた画面も最大 1 時間 404 のままです。とっておいた画面はデプロイごとに別なので、すぐに出したいときは取り込んだあとに再デプロイしてください (Vercel のダッシュボードで本番のデプロイを Redeploy すれば、コードを変えなくてよい)。Instant Rollback で前のデプロイに戻すと、そのデプロイがとっておいた古い画面が出ることがあります。
 
 取り込み先はアプリと同じ環境変数に従います。`NUXT_D1_PROXY_URL` / `NUXT_D1_PROXY_TOKEN` が本番の Worker を指していれば本番に、そうでなければローカルの SQLite ファイルに取り込まれます。取り込むとそのイベントのエントリー・動画・出演者が置き換えられ、他のイベントには影響しません。すべてを 1 回のバッチで送るため、取り込みに失敗した場合は何も変更されません。ファイルの誤り (空欄、`performers` にある存在しないエントリー No.、重複したキーなど) は、何かを書き込む前にすべて一覧表示されます。
+
+本番の DB に取り込むときの設定の置き方や、間違えて取り込んだイベントの消し方、`PROXY_TOKEN` の作り直し方は [docs/production-db.md](docs/production-db.md) にあります。
 
 ### 本番 (初回)
 
@@ -103,15 +112,15 @@ Vercel の本番ビルド (`bun run vercel-build`) は、`nuxt build` の前に 
 
 ## 管理画面 (動画のアップロードとイベントの登録)
 
-`/admin` の管理画面で、ブラウザから動画を R2 にアップロードし、イベント・エントリー・各動画の出演者を DB に登録できます。`video-uploader/` の `mise upload` / `mise manifest` と `bun run db:import` をまとめて画面にしたもので、rclone・ffmpeg・D1 のトークンは要りません。
+`/admin` の管理画面で、ブラウザから動画を R2 にアップロードし、イベント・エントリー・各動画の出演者を DB に登録できます。登録は `bun run db:import` と同じ処理で、D1 のトークンは要りません。
 1. `/admin` を開き、合言葉 (`NUXT_ADMIN_PASSWORD`) でログインする
 2. イベントの情報を書く (登録済みのイベントを選ぶと、その内容を読み込んで直せる)
 3. エントリーを「`1: BLAZE`」の形で 1 行に 1 人ずつ書く
-4. 動画を選ぶ。「フォルダを選ぶ」で `videos/` のようなフォルダを選ぶと、その下の `予選/M1256.mp4` のようなパスがキーの後ろになる (mise upload と同じ)。ファイルだけを選ぶときは、横の欄に分類 (予選など) を書いておく。動画の長さはファイル (MP4 の moov) から読む
+4. 動画を選ぶ。「フォルダを選ぶ」で `videos/` のようなフォルダを選ぶと、その下の `予選/M1256.mp4` のようなパスがキーの後ろになる (キーは `<シリーズID>/<イベントID>/予選/M1256.mp4`)。ファイルだけを選ぶときは、横の欄に分類 (予選など) を書いておく。動画の長さはファイル (MP4 の moov) から読む
 5. 「R2 にアップロード」で、R2 にない (またはサイズの違う) 動画を送る。動画はブラウザから R2 にマルチパートアップロードで直接送り、アプリのサーバーは通らない
 6. 各動画の出演 No. (`1, 2` のように) を書き、「確認だけ」で誤りがないか見てから「登録する」。登録は `db:import` と同じく、そのイベントの分を入れ直す。登録の前に、すべての動画が R2 に同じサイズで置かれているかも確かめる
 
-画面に出るまでの時間は `db:import` と同じです (ISR で最大 1 時間。すぐ出すには再デプロイ)。
+画面に出るまでの時間は `db:import` と同じです (ISR で最大 1 時間。すぐ出すには再デプロイ)。登録したあとに本番ページで確かめることは [docs/production-db.md](docs/production-db.md#登録したあと本番ページで確かめる) にまとめています。
 
 ### 認証
 
@@ -143,20 +152,9 @@ NUXT_R2_ACCESS_KEY_ID=testkey NUXT_R2_SECRET_ACCESS_KEY=testsecret \
 NUXT_R2_UPLOAD_ACCESS_KEY_ID=testkey NUXT_R2_UPLOAD_SECRET_ACCESS_KEY=testsecret bun run dev
 ```
 
-## 動画のアップロード (コマンド)
-
-管理画面を使わず、コマンドでアップロード・登録することもできます。撮影した動画の R2 へのアップロード (rclone) と manifest の書き出しは、`video-uploader/` の mise タスクで行います (もとは別のリポジトリ wotagei-battle-log-video-uploader でした)。タスクは `video-uploader/` に移動してから実行します。使い方は [video-uploader/README.md](video-uploader/README.md)、本番に動画を入れて画面で確かめるまでの通しの手順は [video-uploader/docs/production-upload.md](video-uploader/docs/production-upload.md) にあります。
-
-```bash
-cd video-uploader
-mise trust && mise install   # 初回だけ。ルートとは別に、このディレクトリの mise.toml を信頼させる
-mise upload --series <シリーズID> --event <イベントID> --all --dry-run
-mise manifest --series <シリーズID> --event <イベントID>
-```
-
 ## 動画のダウンロード
 
-動画は Cloudflare R2 のバケット `wotagei-battle-log` に置いています (アップロードは `video-uploader/` の `mise upload` で行う)。プレイヤー画面のダウンロードボタンは `/download/<series>/<event>/players/<エントリー No.>/<動画の No.>` を開き、サーバーが DB で動画の置き場所を引いて、R2 の署名付き URL (10 分有効) に転送します。ブラウザは R2 から直接ダウンロードするので、アプリのサーバーを動画が通ることはなく、R2 の CORS の設定も要りません。
+動画は Cloudflare R2 のバケット `wotagei-battle-log` に置いています (アップロードは管理画面で行う)。プレイヤー画面のダウンロードボタンは `/download/<series>/<event>/players/<エントリー No.>/<動画の No.>` を開き、サーバーが DB で動画の置き場所を引いて、R2 の署名付き URL (10 分有効) に転送します。ブラウザは R2 から直接ダウンロードするので、アプリのサーバーを動画が通ることはなく、R2 の CORS の設定も要りません。
 
 署名付き URL を作るため、Vercel プロジェクトの環境変数に次を設定します (ローカルで試すときは `.env` に書く)。
 

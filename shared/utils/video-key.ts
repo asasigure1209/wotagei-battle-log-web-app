@@ -2,7 +2,7 @@ import { isId } from './id'
 
 /**
  * 動画の、イベントの中での相対パス (例: 予選/M1256.mp4) として使えるか。
- * video-uploader の mise upload と同じく、キーは `<シリーズID>/<イベントID>/<相対パス>` になる。
+ * キーは `<シリーズID>/<イベントID>/<相対パス>` になる。
  * 空の階層や . / .. を含むもの、.mp4 (大文字・小文字は問わない) で終わらないものは使わない
  */
 export function isVideoRelPath(value: unknown): value is string {

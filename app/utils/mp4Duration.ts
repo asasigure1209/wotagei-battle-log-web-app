@@ -1,6 +1,5 @@
 // MP4 (ISO BMFF) の動画の長さを、ファイルの moov/mvhd ボックスから読む。
-// video-uploader の mise manifest は ffprobe で調べていたが、ブラウザでは <video> で開くと
-// 再生できない形式 (古いブラウザの HEVC など) で長さが取れないので、コーデックに関係なく読めるようボックスを直接読む。
+// ブラウザでは <video> で開くと再生できない形式 (古いブラウザの HEVC など) で長さが取れないので、コーデックに関係なく読めるようボックスを直接読む。
 // moov は動画の後ろに置かれることも多いので、ボックスの頭 (16 バイト) だけを読んで飛ばしながら探す
 
 type Box = { type: string; start: number; end: number; headerSize: number }

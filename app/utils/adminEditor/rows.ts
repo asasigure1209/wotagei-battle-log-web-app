@@ -67,7 +67,7 @@ export function moveRow(state: EditorState, id: number, delta: number) {
   if (row) state.rows.splice(to, 0, row)
 }
 
-/** mise manifest と同じく、パスの順に並べる (並び順がイベントの中での動画の No. になる) */
+/** パスの順に並べる (並び順がイベントの中での動画の No. になる) */
 export function sortRows(state: EditorState) {
   state.rows.sort((a, b) => compareRelPath(a.relPath, b.relPath))
 }

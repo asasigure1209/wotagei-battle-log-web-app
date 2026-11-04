@@ -1,6 +1,6 @@
 // イベントごとのデータファイル (manifest) を確かめて、DB に取り込む。
-// manifest は動画アップロード用のリポジトリ (wotagei-battle-log-video-uploader) の mise manifest が雛形を書き出し、
-// イベント情報・エントリー・出演者を人が書き込んだ YAML。形を変えるときは mise manifest も揃える
+// manifest は、イベント情報・エントリー・各動画のキー・長さ・サイズ・出演者を書いた YAML。
+// 管理画面 (/admin) の登録も、画面の内容からこの形を組み立てて確かめる
 import { readFile } from 'node:fs/promises'
 import { and, eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
