@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   eventKey,
   eventPrefix,
+  idsValid,
   parseEventKey,
 } from '~/utils/adminCommon/eventKey'
 
@@ -12,5 +13,11 @@ describe('イベントのキー', () => {
     expect(parseEventKey('elnino/vol_5')).toEqual(ids)
     expect(parseEventKey('')).toEqual({ seriesId: '', eventId: '' })
     expect(eventPrefix(ids)).toBe('elnino/vol_5/')
+  })
+
+  it('idsValid は、どちらの ID も英数字と _ - だけのときだけ true', () => {
+    expect(idsValid({ seriesId: '', eventId: '' })).toBe(false)
+    expect(idsValid({ seriesId: 'elnino', eventId: 'vol_5' })).toBe(true)
+    expect(idsValid({ seriesId: 'elnino', eventId: 'vol 5' })).toBe(false)
   })
 })

@@ -1,8 +1,10 @@
 // 管理画面のエディターの状態。
 // Vue に依存しない関数として書き、エディター (editor.ts) が状態を reactive にして渡す
 
-import type { OperationState } from '~/utils/adminCommon/operation'
-import { isId } from '~~/shared/utils/id'
+import {
+  createOperationState,
+  type OperationState,
+} from '~/utils/adminCommon/operation'
 
 /** 動画の 1 行。file はこの画面で選んだファイル (DB から読んだだけの行にはない) */
 export type VideoRow = {
@@ -55,15 +57,13 @@ export function emptyForm(): EventForm {
 
 export function createEditorState(onUnauthorized: () => void): EditorState {
   return {
+    ...createOperationState(onUnauthorized),
     form: emptyForm(),
     entriesText: '',
     rows: [],
     remote: null,
     loaded: false,
-    messages: null,
-    busy: false,
     uploadAbort: null,
-    onUnauthorized,
   }
 }
 
@@ -83,8 +83,4 @@ export function newRow(
     error: '',
     ...init,
   }
-}
-
-export function idsValid(state: EditorState) {
-  return isId(state.form.seriesId) && isId(state.form.eventId)
 }

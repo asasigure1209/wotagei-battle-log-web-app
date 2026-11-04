@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
+import { adminParameters } from '../../../.storybook/admin'
 import AdminMessages from './AdminMessages.vue'
 
 /** 管理画面の下に出す知らせ。終わったことの知らせ (`info`) と、エラー (`error`) がある。 */
 const meta = {
   component: AdminMessages,
   tags: ['autodocs'],
+  parameters: adminParameters,
 } satisfies Meta<typeof AdminMessages>
 
 export default meta

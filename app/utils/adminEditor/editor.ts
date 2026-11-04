@@ -3,7 +3,7 @@
 // (テストと Storybook はここから直接作る)
 import { computed, type InjectionKey, reactive, ref } from 'vue'
 import { adminApi, type EventSummary } from '~/utils/adminApi'
-import { eventKey, parseEventKey } from '~/utils/adminCommon/eventKey'
+import { eventKey, idsValid, parseEventKey } from '~/utils/adminCommon/eventKey'
 import { run } from '~/utils/adminCommon/operation'
 import { parseEntriesText } from '~/utils/adminManifest'
 import { deleteEvent, loadEvent, register, reset } from './registration'
@@ -15,7 +15,7 @@ import {
   sortRows,
   updateRow,
 } from './rows'
-import { createEditorState, type EditorState, idsValid } from './state'
+import { createEditorState, type EditorState } from './state'
 import { cancelUpload, refreshRemote, uploadAll, uploadTargets } from './upload'
 
 export type AdminEditor = ReturnType<typeof createAdminEditor>
@@ -33,7 +33,7 @@ export function createAdminEditor(onUnauthorized: () => void) {
   const totalUploadBytes = computed(() =>
     targets.value.reduce((n, r) => n + r.sizeBytes, 0),
   )
-  const valid = computed(() => idsValid(state))
+  const valid = computed(() => idsValid(state.form))
   const currentKey = computed(() => eventKey(state.form))
   const canUpload = computed(
     () =>

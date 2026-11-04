@@ -1,14 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  createOperationState,
   info,
-  type OperationState,
   run,
   showErrors,
 } from '~/utils/adminCommon/operation'
 
-function createState(onUnauthorized = () => {}): OperationState {
-  return { busy: false, messages: null, onUnauthorized }
-}
+const createState = (onUnauthorized = () => {}) =>
+  createOperationState(onUnauthorized)
 
 describe('画面の知らせ', () => {
   it('info は知らせ、showErrors はエラーとして messages に入れる', () => {

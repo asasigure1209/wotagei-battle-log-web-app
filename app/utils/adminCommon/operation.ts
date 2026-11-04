@@ -3,15 +3,21 @@
 import { adminErrorMessages, isUnauthorized } from '~/utils/adminApi'
 
 /** 画面の下に出す知らせ */
-export type AdminMessages = { kind: 'error' | 'info'; lines: string[] }
+export type OperationMessages = { kind: 'error' | 'info'; lines: string[] }
 
 /** 操作を動かす画面の状態が持つもの */
 export type OperationState = {
-  messages: AdminMessages | null
+  messages: OperationMessages | null
   /** API を待っているか */
   busy: boolean
   /** ログインが切れたときに呼ぶ */
   onUnauthorized: () => void
+}
+
+export function createOperationState(
+  onUnauthorized: () => void,
+): OperationState {
+  return { messages: null, busy: false, onUnauthorized }
 }
 
 export function info(state: OperationState, ...lines: string[]) {

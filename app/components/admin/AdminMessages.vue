@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // 画面の下に出す知らせ (エラーや、終わったことの知らせ)
 
-import type { AdminMessages } from '~/utils/adminCommon/operation'
+import type { OperationMessages } from '~/utils/adminCommon/operation'
 
-defineProps<{ messages: AdminMessages | null }>()
+defineProps<{ messages: OperationMessages | null }>()
 </script>
 
 <template>
