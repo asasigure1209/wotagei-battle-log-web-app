@@ -71,10 +71,11 @@ DB から消しても R2 の動画は残る。R2 の動画も消すときは、C
 ## トークンを作り直す
 
 トークンは Worker の `PROXY_TOKEN` と Vercel の `NUXT_D1_PROXY_TOKEN` に同じ値を入れる。本番のアプリが DB を読めなくなる時間を短くするため、Vercel を先に書き換えておき、Worker を変えたらすぐ再デプロイする。
-1. 新しい値を作って `~/.config/wotagei/prod.env` に書く
+1. いまの設定ファイルを残してから、新しい値を作って `~/.config/wotagei/prod.env` に書く。途中で止まったときは、`prod.env.bak` を戻せば元のトークンで使える (Vercel と Worker をまだ書き換えていなければ)
 
    ```bash
    umask 077
+   cp ~/.config/wotagei/prod.env ~/.config/wotagei/prod.env.bak
    cat > ~/.config/wotagei/prod.env <<EOF
    NUXT_D1_PROXY_URL=https://wotagei-battle-log-d1-proxy.mkmokymh.workers.dev
    NUXT_D1_PROXY_TOKEN=$(openssl rand -hex 32)
@@ -92,3 +93,4 @@ DB から消しても R2 の動画は残る。R2 の動画も消すときは、C
 
 4. すぐに Vercel の Deployments から本番を Redeploy する
 5. [本番ページが 500 エラーになる](#本番ページが-500-エラーになる) のコマンドで、200 が返るか確かめる
+6. 200 が返ったら、古いトークンの入った `prod.env.bak` を消す (`rm ~/.config/wotagei/prod.env.bak`)
