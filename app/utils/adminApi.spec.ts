@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { adminApi, adminErrorMessages, isUnauthorized } from '~/utils/adminApi'
-import { fakeAdminApi } from './adminTestUtils'
+import { fakeAdminApi } from '~~/test/nuxt/adminTestUtils'
 
 describe('API のエラーの読み取り', () => {
   it('誤りの一覧 (data.problems) があれば 1 行ずつ返す', () => {

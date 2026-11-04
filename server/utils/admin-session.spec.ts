@@ -6,7 +6,7 @@ import {
   isAdminLoginPath,
   isValidAdminPassword,
   isValidAdminSession,
-} from '~~/server/utils/admin-session'
+} from './admin-session'
 
 const now = Date.UTC(2026, 0, 1)
 

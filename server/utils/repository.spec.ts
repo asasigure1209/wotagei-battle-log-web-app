@@ -1,18 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import {
-  entries,
-  eventSeries,
-  events,
-  performers,
-  videos,
-} from '../../server/db/schema'
-import {
-  getEvent,
-  getPlayer,
-  getPlayerVideo,
-  listPlayers,
-} from '../../server/utils/repository'
-import { resetTestDb } from './test-db'
+import { resetTestDb } from '../../test/server/test-db'
+import { entries, eventSeries, events, performers, videos } from '../db/schema'
+import { getEvent, getPlayer, getPlayerVideo, listPlayers } from './repository'
 
 const event = { seriesId: 's', eventId: 'e' }
 

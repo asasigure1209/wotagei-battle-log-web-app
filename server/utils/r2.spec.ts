@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { missingVideoProblems } from '../../server/utils/admin-upload'
+import { missingVideoProblems } from './admin-upload'
 import {
   abortMultipartUpload,
   completeBody,
@@ -15,7 +15,7 @@ import {
   presignUploadPart,
   r2UploadConfig,
   xmlValues,
-} from '../../server/utils/r2'
+} from './r2'
 
 const config = {
   accountId: 'account',

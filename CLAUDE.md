@@ -39,8 +39,9 @@ Biome の `noExcessiveCognitiveComplexity` は上限 5。
 
 ## テスト
 
-- `test/nuxt/`: Nuxt 環境。管理 API の偽物は `adminTestUtils.ts`
-- `test/server/`: node 環境で `.data/test.sqlite` を共有するので直列実行。`resetTestDb()` で空にする。`server/utils/` では Nitro の自動 import に頼らず明示的に import する
+- 単体テストは対象と同じディレクトリに `<対象>.spec.ts` で置く (`app/utils/videoSize.ts` → `app/utils/videoSize.spec.ts`)。`test/` には画面全体を通す結合テスト (`test/nuxt/app.spec.ts`) と共用の部品だけを置く
+- `app/**`・`shared/**` の spec は nuxt プロジェクト (Nuxt 環境)。管理 API の偽物は `test/nuxt/adminTestUtils.ts`
+- `server/**` の spec は server プロジェクト。node 環境で `.data/test.sqlite` を共有するので直列実行。`resetTestDb()` (`test/server/test-db.ts`) で空にする。`~~` の別名は使えないので相対パスで import し、`server/utils/` では Nitro の自動 import に頼らず明示的に import する
 - `*.stories.ts`: Playwright (chromium) で実行。操作は play 関数で確かめる
 
 ## 慣習

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { resetTestDb } from '../../test/server/test-db'
+import { getEvent, getPlayer, listPlayers } from '../utils/repository'
 import {
   importManifest,
   ManifestError,
   parseManifest,
   readManifest,
-} from '../../server/db/manifest'
-import { eventSeries } from '../../server/db/schema'
-import { getEvent, getPlayer, listPlayers } from '../../server/utils/repository'
-import { resetTestDb } from './test-db'
+} from './manifest'
+import { eventSeries } from './schema'
 
 /** 予選 (A が 1 人で出る) の動画 */
 const qualifier = () => ({

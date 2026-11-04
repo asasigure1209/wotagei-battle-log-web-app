@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configSecret, hasValidApiSecret } from '~~/server/utils/api-secret'
+import { configSecret, hasValidApiSecret } from './api-secret'
 
 describe('API の合言葉の確認', () => {
   it('runtimeConfig の apiSecret と同じ値だけを通す', () => {
