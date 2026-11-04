@@ -45,7 +45,10 @@ export default defineNuxtConfig({
     //   当たったことになり、Vercel 向けの出力で /admin を ISR とみなして関数を作らず、Vercel の 404 になる
     // - headers も書かない。Vercel 向けの出力で、ヘッダーを付けるだけで行き先のないルートになり、同じく 404 になる。
     //   検索エンジン向けの noindex は、ページの <meta> で付けている
+    // - 配下のページ (/admin/events など) も 2 階層なので '/:series/:event' に当たる。同じ理由で 1 つずつ書く
     '/admin': { ssr: false, isr: false },
+    '/admin/events': { ssr: false, isr: false },
+    '/admin/entries': { ssr: false, isr: false },
   },
   experimental: {
     // ISR のルートがあると、Nuxt は画面のデータ (payload) を HTML から _payload.json に切り出し、ブラウザに取りに来させる。

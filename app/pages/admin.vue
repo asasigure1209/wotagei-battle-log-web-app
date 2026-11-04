@@ -1,16 +1,24 @@
 <script setup lang="ts">
-// 管理画面。動画を R2 にアップロードし、イベント・エントリー・出演者を DB に登録する。
+// 管理画面の親のページ。ログインを確かめ、ログインしていれば配下のページ (pages/admin/) を出す。
+// - /admin: 登録操作の入り口
+// - /admin/events: イベントの登録
+// - /admin/entries: 登録済みのイベントに、エントリー・動画を登録する
 // ログインしているかで中身が変わるので、サーバーでは描画しない (nuxt.config.ts の routeRules)
 import { onMounted, ref } from 'vue'
+import { provideAdminUnauthorized } from '~/composables/useAdminSession'
 import '~/assets/css/admin.css'
 
 useHead({
-  title: '管理画面',
+  titleTemplate: (title) => (title ? `${title} | 管理画面` : '管理画面'),
   meta: [{ name: 'robots', content: 'noindex, nofollow' }],
 })
 
 /** ログインしているか。確かめるまでは null */
 const loggedIn = ref<boolean | null>(null)
+
+provideAdminUnauthorized(() => {
+  loggedIn.value = false
+})
 
 onMounted(async () => {
   try {
@@ -32,12 +40,12 @@ async function logout() {
     <AdminLogin v-if="loggedIn === false" @login="loggedIn = true" />
     <template v-else-if="loggedIn">
       <header class="bar">
-        <h1 class="title">管理画面</h1>
+        <a class="title" href="/admin">管理画面</a>
         <button type="button" class="admin-btn" @click="logout">
           ログアウト
         </button>
       </header>
-      <AdminContentsEditor @unauthorized="loggedIn = false" />
+      <NuxtPage />
     </template>
   </div>
 </template>
@@ -59,7 +67,9 @@ async function logout() {
 
 .title {
   margin: 0;
+  color: inherit;
   font-size: 22px;
   font-weight: 700;
+  text-decoration: none;
 }
 </style>
