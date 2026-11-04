@@ -63,11 +63,36 @@ Vercel から D1 に直接つなげないため、SQL を中継 Worker (`workers
 
 ## テスト
 
+### 実装は TDD で進める
+
+機能の追加・バグの修正は、テストを先に書いてから実装する。
+
+1. 期待する振る舞いを表すテストを書き、`bunx vitest run <ファイル>` で **失敗することを確かめる** (バグなら、まずそのバグを再現するテスト)
+2. テストが通る最小限の実装をする
+3. 通ったら、テストを緑に保ったままリファクタリングする (認知的複雑度の上限 5 に収まるよう関数を分けるのもここ)
+4. 最後に `bun run test` と `bunx biome check` で全体を確かめる
+
+テストの置き場所は、対象に合わせて下のプロジェクトから選ぶ。サーバーの処理は `test/server/`、画面のロジック (`app/utils/`・`app/composables/`) は `test/nuxt/`、コンポーネントの見た目と操作は `*.stories.ts` (play 関数)。
+
+### テストのプロジェクト
+
 `vitest.config.ts` に 3 プロジェクト:
 
 - `nuxt` (`test/nuxt/`): Nuxt 環境。管理 API の偽物は `test/nuxt/adminTestUtils.ts` (`registerEndpoint`)。
 - `server` (`test/server/`): node 環境で `.data/test.sqlite` に対して実行。全ファイルが同じ DB を使うので `fileParallelism: false`。各テストは `test/server/test-db.ts` の `resetTestDb()` で空にする。node 環境で読めるよう、`server/utils/` の中では Nitro の自動 import に頼らず明示的に import する (新しく書くときもそうする)。
 - `storybook`: `app/**/*.stories.ts` を Playwright の chromium で実行。Chromatic にも push ごとに上がる。
+
+## モジュールの分け方
+
+1 つのファイル (モジュール) が持つ責務は 1 つにとどめ、大きくなりそうなら分ける。ファイルの先頭のコメントで、そのファイルが何を受け持つかを一言で言えることを目安にする。言えないときや、「〜と〜」と並べないと書けないときは分けどき。
+
+- 新しい処理を、たまたま近くにある既存のファイルに足し続けない。別の責務なら、別のファイルを作る
+- いまのコードの分け方に合わせる。たとえば:
+  - API のハンドラ (`server/api/**`) は、リクエストを受けて返すだけにする。DB の読み出しは `server/utils/repository.ts`・`admin-repository.ts`、R2 とのやりとりは `server/utils/r2.ts`、リクエストの確かめは `server/utils/admin-upload.ts` のように、`server/utils/` に分けて置く
+  - 公開画面と管理画面のように、使う側によって返す形が違うものは、同じファイルにまとめずに分ける (`repository.ts` と `admin-repository.ts`)
+  - 画面の状態とロジックは、コンポーネントに書き込まず `app/utils/` に出す。大きくなったものは `app/utils/adminEditor/` のように、ディレクトリを作って関心ごと (state・rows・upload・registration) に分け、束ねる役 (`editor.ts`) を置く
+  - クライアントとサーバーの両方で使う検証は `shared/utils/` に置く
+- 分けたモジュールは、それぞれ単独でテストできる形にする (TDD のテストもモジュールごとに書く)
 
 ## 書き方の慣習
 
