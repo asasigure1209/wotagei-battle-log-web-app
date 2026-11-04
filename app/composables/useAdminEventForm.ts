@@ -3,11 +3,9 @@
 import { onMounted } from 'vue'
 import { createEventFormEditor } from '~/utils/adminEditor/eventForm'
 
-/** onUnauthorized はログインが切れたときに呼ぶ。initialKey (`シリーズID/イベントID`) があれば、読んだあとにそのイベントを選ぶ */
+/** onUnauthorized はログインが切れたときに呼ぶ。initialKey (`シリーズID/イベントID`) があれば、読んだあとにそのイベントを選ぶ (なければ、そう知らせる) */
 export function useAdminEventForm(onUnauthorized: () => void, initialKey = '') {
   const editor = createEventFormEditor(onUnauthorized)
-  onMounted(async () => {
-    if ((await editor.reload()) && initialKey) editor.open(initialKey)
-  })
+  onMounted(() => editor.openInitial(initialKey))
   return editor
 }

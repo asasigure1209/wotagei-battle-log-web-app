@@ -8,6 +8,7 @@ import {
   type EventForm,
   emptyForm,
   eventKey,
+  eventNotFoundMessage,
   info,
   type RunState,
   run,
@@ -54,6 +55,11 @@ export function createEventFormEditor(onUnauthorized: () => void) {
     seriesRename: computed(() => seriesRename(state)),
     reload: () => reload(state),
     open: (key: string) => open(state, key),
+    /**
+     * 画面を開いたときに、登録済みのイベントの一覧を読み、key (URL の ?event=) のイベントを選ぶ。
+     * 一覧にないイベントなら、そう知らせる (新しいイベントを作るつもりで同じ ID を書かないように)
+     */
+    openInitial: (key: string) => openInitial(state, key),
     save: () => save(state),
     remove: () => remove(state),
   }
@@ -91,6 +97,12 @@ export function open(state: EventFormState, key: string) {
   const found = state.list.find((e) => eventKey(e) === key)
   state.loaded = !!found
   state.form = found ? formOf(found) : emptyForm()
+}
+
+export async function openInitial(state: EventFormState, key: string) {
+  if (!(await reload(state)) || !key) return
+  open(state, key)
+  if (!state.loaded) showErrors(state, [eventNotFoundMessage(key)])
 }
 
 /** イベントの情報を登録する。新しいイベントなら作り、選んだイベントなら書き換える */

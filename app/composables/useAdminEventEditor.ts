@@ -5,7 +5,7 @@ import { adminEditorKey, createAdminEditor } from '~/utils/adminEditor/editor'
 
 /**
  * エディターを作り、子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ。
- * 開いたときに登録済みのイベントの一覧を読み、initialKey (`シリーズID/イベントID`) が一覧にあれば、そのイベントを読み込む
+ * 開いたときに登録済みのイベントの一覧を読み、initialKey (`シリーズID/イベントID`) が一覧にあれば、そのイベントを読み込む (なければ、そう知らせる)
  */
 export function provideAdminEditor(
   onUnauthorized: () => void,
@@ -13,12 +13,7 @@ export function provideAdminEditor(
 ) {
   const editor = createAdminEditor(onUnauthorized)
   provide(adminEditorKey, editor)
-  onMounted(async () => {
-    await editor.events.reload()
-    if (initialKey && editor.events.has(initialKey)) {
-      await editor.open(initialKey)
-    }
-  })
+  onMounted(() => editor.openInitial(initialKey))
   return editor
 }
 

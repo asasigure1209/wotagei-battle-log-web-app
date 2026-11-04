@@ -116,6 +116,11 @@ export function idsValid(state: EditorState) {
   return isId(state.form.seriesId) && isId(state.form.eventId)
 }
 
+/** URL (?event=) で指定されたイベントが、登録済みの一覧にないときの文 */
+export function eventNotFoundMessage(key: string) {
+  return `イベント ${key} は登録されていません (消されたか、リンクが古いかもしれません)`
+}
+
 /** 知らせ・待っているか・ログイン切れの扱いを持つ状態。イベントの登録の画面 (eventForm.ts) とも共通に使う */
 export type RunState = Pick<EditorState, 'messages' | 'busy' | 'onUnauthorized'>
 

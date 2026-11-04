@@ -17,9 +17,11 @@ import {
   createEditorState,
   type EditorState,
   eventKey,
+  eventNotFoundMessage,
   idsValid,
   parseEventKey,
   run,
+  showErrors,
 } from './state'
 import { cancelUpload, refreshRemote, uploadAll, uploadTargets } from './upload'
 
@@ -64,8 +66,12 @@ export function createAdminEditor(onUnauthorized: () => void) {
     canUpload,
     canRegister,
     /** 登録済みのイベントを選んで読み込む。key が空なら選んでいない状態に戻す */
-    open: (key: string) =>
-      key ? loadEvent(state, parseEventKey(key)) : reset(state),
+    open: (key: string) => open(state, key),
+    /**
+     * 画面を開いたときに、登録済みのイベントの一覧を読み、key (URL の ?event=) のイベントを読み込む。
+     * 一覧にないイベントなら、そう知らせる
+     */
+    openInitial: (key: string) => openInitial(state, events, key),
     /** ファイルを足し、R2 をまだ調べていなければ調べる */
     addFiles: async (files: File[], category: string) => {
       await addFiles(state, files, category)
@@ -84,14 +90,30 @@ export function createAdminEditor(onUnauthorized: () => void) {
   }
 }
 
+function open(state: EditorState, key: string) {
+  return key ? loadEvent(state, parseEventKey(key)) : reset(state)
+}
+
+async function openInitial(
+  state: EditorState,
+  events: RegisteredEvents,
+  key: string,
+) {
+  if (!(await events.reload()) || !key) return
+  if (events.has(key)) await open(state, key)
+  else showErrors(state, [eventNotFoundMessage(key)])
+}
+
+type RegisteredEvents = ReturnType<typeof useRegisteredEvents>
+
 /** 登録済みのイベントの一覧。読み込みに失敗したときは、ほかの操作と同じく画面にエラーを出す */
 function useRegisteredEvents(state: EditorState) {
   const list = ref<EventSummary[]>([])
-  const reload = async () => {
-    await run(state, async () => {
+  /** 読み直す。読めなければ false */
+  const reload = () =>
+    run(state, async () => {
       list.value = await adminApi.listEvents()
     })
-  }
   /** key (`シリーズID/イベントID`) のイベントが登録済みか */
   const has = (key: string) => list.value.some((e) => eventKey(e) === key)
   return { list, reload, has }

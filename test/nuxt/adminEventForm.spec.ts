@@ -45,6 +45,19 @@ describe('イベントの登録の画面', () => {
     expect(editor.state.form.seriesId).toBe('')
   })
 
+  it('openInitial は一覧を読んでから選び、一覧にないイベントならそう知らせる', async () => {
+    const editor = createEventFormEditor(() => {})
+    await editor.openInitial('s/e')
+    expect(editor.state.loaded).toBe(true)
+    expect(editor.state.messages).toBeNull()
+    await editor.openInitial('s/x')
+    expect(editor.state.loaded).toBe(false)
+    expect(editor.state.messages).toEqual({
+      kind: 'error',
+      lines: [expect.stringContaining('s/x は登録されていません')],
+    })
+  })
+
   it('新しいイベントを登録すると、一覧を読み直し、登録したイベントを選んだことにする', async () => {
     const editor = await loadedEditor()
     Object.assign(editor.state.form, { seriesId: 's', eventId: 'f' })

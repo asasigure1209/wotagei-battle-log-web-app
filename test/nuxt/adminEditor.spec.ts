@@ -68,6 +68,22 @@ describe('エディターの操作', () => {
     expect(editor.state.loaded).toBe(false)
   })
 
+  it('openInitial は、一覧にないイベントなら読み込まず、そう知らせる', async () => {
+    const editor = createAdminEditor(() => {})
+    await editor.openInitial('s/x')
+    expect(editor.state.loaded).toBe(false)
+    expect(editor.state.messages?.lines).toEqual([
+      expect.stringContaining('s/x は登録されていません'),
+    ])
+  })
+
+  it('openInitial に空を渡すと、一覧を読むだけで何も知らせない', async () => {
+    const editor = createAdminEditor(() => {})
+    await editor.openInitial('')
+    expect(editor.events.has('s/e')).toBe(true)
+    expect(editor.state.messages).toBeNull()
+  })
+
   it('events.reload で登録済みのイベントを読み、has で見分ける', async () => {
     const editor = createAdminEditor(() => {})
     await editor.events.reload()
