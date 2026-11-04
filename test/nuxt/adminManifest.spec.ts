@@ -64,7 +64,7 @@ describe('relPathOf', () => {
 })
 
 describe('compareRelPath', () => {
-  it('mise manifest (LC_ALL=C の sort) と同じく、文字コードの順に並べる', () => {
+  it('LC_ALL=C の sort と同じく、文字コードの順に並べる', () => {
     expect(
       ['本戦/a.mp4', '予選/b.mp4', 'B.mp4', 'a.mp4'].sort(compareRelPath),
     ).toEqual(['B.mp4', 'a.mp4', '予選/b.mp4', '本戦/a.mp4'])

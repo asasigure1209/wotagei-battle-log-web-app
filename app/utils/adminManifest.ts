@@ -62,7 +62,7 @@ export function relPathOf(
 }
 
 /**
- * mise manifest と同じく、パスの順に並べる (LC_ALL=C の sort と同じく、文字コードの順に比べる)。
+ * パスの順に並べる (LC_ALL=C の sort と同じく、文字コードの順に比べる)。
  * 並び順がイベントの中での動画の No. になる
  */
 export function compareRelPath(a: string, b: string) {
