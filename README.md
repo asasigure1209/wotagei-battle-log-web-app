@@ -21,7 +21,7 @@ bun run dev
 
 ## 静的チェック
 
-lint と整形は Biome で行います。関数の認知的複雑度 (`noExcessiveCognitiveComplexity`) が 15 を超えるとエラーになり、PR の `lint` ジョブが落ちます。
+lint と整形は Biome で行います。関数の認知的複雑度 (`noExcessiveCognitiveComplexity`) が 5 を超えるとエラーになり、PR の `lint` ジョブが落ちます。
 
 ```bash
 bunx biome check
