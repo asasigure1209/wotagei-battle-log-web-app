@@ -16,7 +16,8 @@ export default defineEventHandler(async (event) => {
 
   if (getQuery(event).dryRun) return { ok: true, dryRun: true }
   try {
-    await importManifest(await useDb(), manifest)
+    // イベントの情報は、読んだあとに書き換えられていても戻さないよう触れない
+    await importManifest(await useDb(), manifest, { keepEventInfo: true })
   } catch (error) {
     // ほかのイベントと動画のキーが重なるなど、DB に弾かれたとき
     throw invalidManifest([

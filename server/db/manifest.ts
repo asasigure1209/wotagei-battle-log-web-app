@@ -208,44 +208,30 @@ function performerList(
   return nos
 }
 
+/** importManifest のオプション */
+export type ImportOptions = {
+  /**
+   * true なら、シリーズ・イベントの行 (名前・開催日・連絡先) には触れず、エントリー・動画・出演者だけを入れ直す。
+   * 管理画面は、イベントの情報を DB から読んで manifest を組み立てるので、読んだあとに別の操作で
+   * 書き換えられた情報を、読んだときの値で戻してしまわないようにする
+   */
+  keepEventInfo?: boolean
+}
+
 /**
- * manifest のイベントを DB に入れ直す。そのイベントのエントリー・動画・出演者は ON DELETE CASCADE で消してから入れ、
+ * manifest のイベントを DB に入れ直す。シリーズ・イベントの行は書き換え (なければ作り)、
+ * そのイベントのエントリー・動画は消してから入れる (出演者は ON DELETE CASCADE で一緒に消える)。
  * 同じシリーズのほかのイベントには触れない。D1 は複数のリクエストにまたがるトランザクションを使えないので、
  * 1 つの batch (= 1 つのトランザクション) で流し、途中で失敗しても半端な状態を残さない
  */
-export async function importManifest(db: Db, manifest: Manifest) {
-  const seriesId = manifest.series.id
-  const eventId = manifest.event.id
-  const event = { seriesId, eventId }
-  const videoRows = manifest.videos.map((v, i) => ({
-    ...event,
-    no: i + 1,
-    fileName: v.key.slice(v.key.lastIndexOf('/') + 1),
-    storageKey: v.key,
-    durationSec: v.durationSec,
-    sizeBytes: v.sizeBytes,
-  }))
-  const performerRows = manifest.videos.flatMap((v, i) =>
-    v.performers.map((entryNo) => ({ ...event, entryNo, videoNo: i + 1 })),
-  )
-
+export async function importManifest(
+  db: Db,
+  manifest: Manifest,
+  { keepEventInfo = false }: ImportOptions = {},
+) {
   const statements: BatchItem<'sqlite'>[] = [
-    db
-      .insert(eventSeries)
-      .values(manifest.series)
-      .onConflictDoUpdate({
-        target: eventSeries.id,
-        set: { name: manifest.series.name },
-      }),
-    db
-      .delete(events)
-      .where(and(eq(events.seriesId, seriesId), eq(events.id, eventId))),
-    db.insert(events).values({ ...manifest.event, seriesId }),
-    ...chunks(manifest.entries.map((e) => ({ ...event, ...e }))).map((rows) =>
-      db.insert(entries).values(rows),
-    ),
-    ...chunks(videoRows).map((rows) => db.insert(videos).values(rows)),
-    ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
+    ...(keepEventInfo ? [] : eventInfoStatements(db, manifest)),
+    ...contentsStatements(db, manifest),
   ]
   await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
 }
@@ -254,8 +240,14 @@ export async function importManifest(db: Db, manifest: Manifest) {
  * イベントの情報だけを登録する。なければ作り、あれば名前・開催日・連絡先を書き換える。
  * 行を消さずに書き換えるので、登録済みのエントリー・動画・出演者はそのまま残る
  */
-export async function saveEventInfo(db: Db, { series, event }: EventInfo) {
-  await db.batch([
+export async function saveEventInfo(db: Db, info: EventInfo) {
+  const [series, event] = eventInfoStatements(db, info)
+  await db.batch([series, event])
+}
+
+/** シリーズとイベントの行を、なければ作り、あれば書き換える */
+function eventInfoStatements(db: Db, { series, event }: EventInfo) {
+  return [
     db
       .insert(eventSeries)
       .values(series)
@@ -270,7 +262,38 @@ export async function saveEventInfo(db: Db, { series, event }: EventInfo) {
         target: [events.seriesId, events.id],
         set: { name: event.name, date: event.date, contact: event.contact },
       }),
-  ])
+  ] as const
+}
+
+/** イベントのエントリー・動画・出演者を消してから入れる */
+function contentsStatements(db: Db, manifest: Manifest): BatchItem<'sqlite'>[] {
+  const seriesId = manifest.series.id
+  const eventId = manifest.event.id
+  const event = { seriesId, eventId }
+  const videoRows = manifest.videos.map((v, i) => ({
+    ...event,
+    no: i + 1,
+    fileName: v.key.slice(v.key.lastIndexOf('/') + 1),
+    storageKey: v.key,
+    durationSec: v.durationSec,
+    sizeBytes: v.sizeBytes,
+  }))
+  const performerRows = manifest.videos.flatMap((v, i) =>
+    v.performers.map((entryNo) => ({ ...event, entryNo, videoNo: i + 1 })),
+  )
+  return [
+    db
+      .delete(entries)
+      .where(and(eq(entries.seriesId, seriesId), eq(entries.eventId, eventId))),
+    db
+      .delete(videos)
+      .where(and(eq(videos.seriesId, seriesId), eq(videos.eventId, eventId))),
+    ...chunks(manifest.entries.map((e) => ({ ...event, ...e }))).map((rows) =>
+      db.insert(entries).values(rows),
+    ),
+    ...chunks(videoRows).map((rows) => db.insert(videos).values(rows)),
+    ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
+  ]
 }
 
 /** D1 は 1 つの SQL に渡せる値が 100 個までなので、insert する行をそれに収まるよう分ける */

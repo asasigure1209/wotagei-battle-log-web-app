@@ -201,6 +201,30 @@ describe('importManifest', () => {
     ])
   })
 
+  it('keepEventInfo なら、イベントの情報には触れず、エントリー・動画だけを入れ直す', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, parseManifest(yaml()))
+    // 管理画面で読んだあとに、別の操作でイベントの情報が書き換えられた
+    await saveEventInfo(db, {
+      series: { id: 's', name: '新しいシリーズ名' },
+      event: { id: 'e', name: '新しい名前', date: '2026-02-01', contact: 'y' },
+    })
+
+    const stale = yaml()
+    stale.entries = { '1': 'A' }
+    stale.videos = [qualifier()]
+    await importManifest(db, parseManifest(stale), { keepEventInfo: true })
+
+    expect(await getEvent('s', 'e')).toEqual({
+      title: '新しい名前',
+      date: '2026-02-01',
+      contact: 'y',
+    })
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A', count: 1 },
+    ])
+  })
+
   it('D1 の 1 つの SQL に渡せる値の上限を超える数の行も入れられる', async () => {
     const db = await resetTestDb()
     const data = yaml()
