@@ -1,5 +1,6 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { adminApi } from '~/utils/adminApi'
 import { createAdminEditor } from '~/utils/adminEditor/editor'
 import { newRow } from '~/utils/adminEditor/state'
 import { videoFile } from './adminTestUtils'
@@ -15,6 +16,15 @@ registerEndpoint('/api/admin/events', () => [
     contact: '連絡先',
   },
 ])
+
+registerEndpoint('/api/admin/events/s/e', () => ({
+  series: { id: 's', name: 'シリーズ' },
+  event: { id: 'e', name: 'イベント', date: '2026-01-01', contact: '連絡先' },
+  entries: [{ entryNo: 1, name: 'A' }],
+  videos: [
+    { key: 's/e/a.mp4', durationSec: 61, sizeBytes: 10, performers: [1] },
+  ],
+}))
 
 /** ID を書いたエディター */
 function editorWithIds() {
@@ -68,6 +78,17 @@ describe('エディターの操作', () => {
     expect(editor.state.loaded).toBe(false)
   })
 
+  it('openInitial は、一覧にあるイベントなら、そのイベントと R2 の動画を読み込む', async () => {
+    const editor = createAdminEditor(() => {})
+    await editor.openInitial('s/e')
+    expect(editor.state.loaded).toBe(true)
+    expect(editor.currentKey.value).toBe('s/e')
+    expect(editor.state.entriesText).toBe('1: A')
+    expect(editor.state.rows.map((r) => r.relPath)).toEqual(['a.mp4'])
+    expect(editor.canRegister.value).toBe(true)
+    expect(editor.state.messages).toBeNull()
+  })
+
   it('openInitial は、一覧にないイベントなら読み込まず、そう知らせる', async () => {
     const editor = createAdminEditor(() => {})
     await editor.openInitial('s/x')
@@ -75,6 +96,17 @@ describe('エディターの操作', () => {
     expect(editor.state.messages?.lines).toEqual([
       expect.stringContaining('s/x は登録されていません'),
     ])
+  })
+
+  it('openInitial は、一覧を読めなければ、登録されていないとは言わず、読めなかったエラーを出す', async () => {
+    const listEvents = vi
+      .spyOn(adminApi, 'listEvents')
+      .mockRejectedValueOnce(new Error('一覧を読めません'))
+    const editor = createAdminEditor(() => {})
+    await editor.openInitial('s/e')
+    expect(editor.state.loaded).toBe(false)
+    expect(editor.state.messages?.lines).toEqual(['一覧を読めません'])
+    listEvents.mockRestore()
   })
 
   it('openInitial に空を渡すと、一覧を読むだけで何も知らせない', async () => {

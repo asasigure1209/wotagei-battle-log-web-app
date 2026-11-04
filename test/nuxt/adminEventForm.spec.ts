@@ -59,6 +59,17 @@ describe('イベントの登録の画面', () => {
     })
   })
 
+  it('openInitial は、一覧を読めなければ、登録されていないとは言わず、読めなかったエラーを出す', async () => {
+    const listEvents = vi
+      .spyOn(adminApi, 'listEvents')
+      .mockRejectedValueOnce(new Error('一覧を読めません'))
+    const editor = createEventFormEditor(() => {})
+    await editor.openInitial('s/e')
+    expect(editor.state.loaded).toBe(false)
+    expect(editor.state.messages?.lines).toEqual(['一覧を読めません'])
+    listEvents.mockRestore()
+  })
+
   it('新しいイベントを登録すると、一覧を読み直し、登録したイベントを選んだことにする', async () => {
     const editor = await loadedEditor()
     Object.assign(editor.state.form, { seriesId: 's', eventId: 'f' })
