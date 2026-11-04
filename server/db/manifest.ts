@@ -245,6 +245,18 @@ export async function saveEventInfo(db: Db, info: EventInfo) {
   await db.batch([series, event])
 }
 
+/**
+ * 新しいイベントを作る。同じ ID のイベントがもうあれば、書き換えずに失敗する (主キーが重なる)。
+ * シリーズの行は、なければ作り、あれば名前を書き換える。失敗したときは、シリーズの書き換えも戻る
+ */
+export async function createEventInfo(db: Db, info: EventInfo) {
+  const [series] = eventInfoStatements(db, info)
+  await db.batch([
+    series,
+    db.insert(events).values({ ...info.event, seriesId: info.series.id }),
+  ])
+}
+
 /** シリーズとイベントの行を、なければ作り、あれば書き換える */
 function eventInfoStatements(db: Db, { series, event }: EventInfo) {
   return [

@@ -48,9 +48,16 @@ export const adminApi = {
   listEvents: () => $fetch<EventSummary[]>('/api/admin/events'),
   getEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch<Manifest>(`/api/admin/events/${seriesId}/${eventId}`),
-  /** イベントの情報だけを登録する (なければ作り、あれば書き換える) */
-  saveEventInfo: (info: EventInfo) =>
-    $fetch('/api/admin/events', { method: 'POST', body: info }),
+  /**
+   * イベントの情報だけを登録する。create なら新しく作るだけで、同じ ID のイベントがもうあれば 409。
+   * そうでなければ、なければ作り、あれば書き換える
+   */
+  saveEventInfo: (info: EventInfo, create: boolean) =>
+    $fetch('/api/admin/events', {
+      method: 'POST',
+      body: info,
+      query: create ? { create: 1 } : {},
+    }),
   /** 登録済みのイベントに、エントリー・動画を登録する。dryRun なら確かめるだけ */
   saveContents: (
     { seriesId, eventId }: EventIds,

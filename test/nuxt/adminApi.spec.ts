@@ -45,10 +45,12 @@ describe('adminApi', () => {
     await adminApi.getEvent(ids)
     await adminApi.deleteEvent(ids)
     await adminApi.listObjects(ids)
-    await adminApi.saveEventInfo({
+    const info = {
       series: { id: 's', name: 'シリーズ' },
       event: { id: 'e', name: 'イベント', date: '2026-01-01', contact: 'x' },
-    })
+    }
+    await adminApi.saveEventInfo(info, true)
+    await adminApi.saveEventInfo(info, false)
     await adminApi.saveContents(ids, { entries: {}, videos: [] }, true)
     await adminApi.saveContents(ids, { entries: {}, videos: [] }, false)
     expect(api.calls).toEqual([
@@ -56,6 +58,7 @@ describe('adminApi', () => {
       'GET /api/admin/events/s/e',
       'DELETE /api/admin/events/s/e',
       'GET /api/admin/objects?series=s&event=e',
+      'POST /api/admin/events?create=1',
       'POST /api/admin/events',
       'POST /api/admin/events/s/e/contents?dryRun=1',
       'POST /api/admin/events/s/e/contents',

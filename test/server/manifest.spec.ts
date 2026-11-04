@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createEventInfo,
   importManifest,
   ManifestError,
   parseEventInfo,
@@ -143,6 +144,34 @@ describe('saveEventInfo', () => {
     expect(await db.select().from(eventSeries)).toEqual([
       { id: 's', name: '新しいシリーズ名' },
     ])
+  })
+})
+
+describe('createEventInfo', () => {
+  it('新しいイベントを作る', async () => {
+    const db = await resetTestDb()
+    const { series, event } = yaml()
+    await createEventInfo(db, { series, event })
+    expect(await getAdminEventInfo('s', 'e')).toEqual({ series, event })
+  })
+
+  it('同じ ID のイベントがもうあれば、シリーズも含めて何も書き換えずに失敗する', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, parseManifest(yaml()))
+    await expect(
+      createEventInfo(db, {
+        series: { id: 's', name: '新しいシリーズ名' },
+        event: {
+          id: 'e',
+          name: '新しい名前',
+          date: '2026-02-01',
+          contact: 'y',
+        },
+      }),
+    ).rejects.toThrow()
+    const { series, event } = yaml()
+    expect(await getAdminEventInfo('s', 'e')).toEqual({ series, event })
+    expect(await listPlayers('s', 'e')).toHaveLength(3)
   })
 })
 

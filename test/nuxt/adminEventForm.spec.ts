@@ -50,11 +50,21 @@ describe('イベントの登録の画面', () => {
     Object.assign(editor.state.form, { seriesId: 's', eventId: 'f' })
     expect(await editor.save()).toBe(true)
     expect(api.calls).toEqual([
-      'POST /api/admin/events',
+      'POST /api/admin/events?create=1',
       'GET /api/admin/events',
     ])
     expect(editor.state.loaded).toBe(true)
     expect(editor.state.messages?.kind).toBe('info')
+  })
+
+  it('選んだイベントを書き換えるときは、作るだけにせず書き換える', async () => {
+    const editor = await loadedEditor()
+    editor.open('s/e')
+    expect(await editor.save()).toBe(true)
+    expect(api.calls).toEqual([
+      'POST /api/admin/events',
+      'GET /api/admin/events',
+    ])
   })
 
   it('新しく作るときに、登録済みの ID を書いたら、上書きしないよう送らない', async () => {

@@ -84,13 +84,13 @@ export async function save(state: EventFormState) {
     showErrors(state, [`${eventKey(state.form)} ${DUPLICATED}`])
     return false
   }
-  const message = state.loaded ? UPDATED : CREATED
+  const create = !state.loaded
   const ok = await send(state, () =>
-    adminApi.saveEventInfo(eventInfo(state.form)),
+    adminApi.saveEventInfo(eventInfo(state.form), create),
   )
   if (ok) {
     state.loaded = true
-    await reloadAndTell(state, message)
+    await reloadAndTell(state, create ? CREATED : UPDATED)
   }
   return ok
 }
