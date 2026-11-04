@@ -5,8 +5,9 @@ import {
   deleteAdminEvent,
   getAdminEvent,
   listAdminEvents,
+  saveAdminEventInfo,
 } from './admin-repository'
-import { getEvent } from './repository'
+import { getEvent, listPlayers } from './repository'
 
 const manifest = (event = 'e', date = '2026-01-01') =>
   parseManifest({
@@ -44,6 +45,7 @@ describe('管理画面の DB の読み出し', () => {
         eventId: 'f',
         eventName: 'イベント f',
         date: '2026-02-01',
+        contact: '連絡先',
       },
       {
         seriesId: 's',
@@ -51,6 +53,7 @@ describe('管理画面の DB の読み出し', () => {
         eventId: 'e',
         eventName: 'イベント e',
         date: '2026-01-01',
+        contact: '連絡先',
       },
     ])
   })
@@ -100,5 +103,35 @@ describe('管理画面の DB の読み出し', () => {
     await deleteAdminEvent('s', 'e')
     expect(await getEvent('s', 'e')).toBeNull()
     expect(await getEvent('s', 'f')).not.toBeNull()
+  })
+})
+
+describe('イベントの情報だけの登録', () => {
+  beforeEach(async () => {
+    const db = await resetTestDb()
+    await importManifest(db, manifest('e', '2026-01-01'))
+  })
+
+  const info = (event: string, name: string) => ({
+    series: { id: 's', name: '新しいシリーズ名' },
+    event: { id: event, name, date: '2026-03-01', contact: '新しい連絡先' },
+  })
+
+  it('新しいイベントを、エントリー・動画なしで登録する', async () => {
+    await saveAdminEventInfo(info('g', 'イベント g'))
+    expect(await getAdminEvent('s', 'g')).toEqual({
+      ...info('g', 'イベント g'),
+      entries: [],
+      videos: [],
+    })
+  })
+
+  it('登録済みのイベントの情報を直しても、エントリー・動画は残る', async () => {
+    await saveAdminEventInfo(info('e', '直した名前'))
+    const found = await getAdminEvent('s', 'e')
+    expect(found?.series.name).toBe('新しいシリーズ名')
+    expect(found?.event).toEqual(info('e', '直した名前').event)
+    expect(found?.videos).toHaveLength(2)
+    expect(await listPlayers('s', 'e')).toHaveLength(2)
   })
 })

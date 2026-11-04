@@ -4,6 +4,7 @@ import { getEvent, getPlayer, listPlayers } from '../utils/repository'
 import {
   importManifest,
   ManifestError,
+  parseEventInfo,
   parseManifest,
   readManifest,
 } from './manifest'
@@ -94,6 +95,30 @@ describe('parseManifest', () => {
         ],
       }),
     ).toThrow(ManifestError)
+  })
+})
+
+describe('parseEventInfo', () => {
+  it('シリーズとイベントの情報だけを確かめる (エントリー・動画は要らない)', () => {
+    const { series, event } = yaml()
+    expect(parseEventInfo({ series, event })).toEqual({ series, event })
+  })
+
+  it('manifest と同じ書き方で、見つけた誤りをまとめて返す', () => {
+    expect(() =>
+      parseEventInfo({
+        series: { id: 'シリーズ', name: 'シリーズ' },
+        event: { id: 'e', name: '', date: '2026-02-30', contact: 'X' },
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'series.id は英数字と _ - だけで書いてください',
+          'event.name を書いてください',
+          'event.date は YYYY-MM-DD で書いてください: 2026-02-30',
+        ],
+      }),
+    )
   })
 })
 
