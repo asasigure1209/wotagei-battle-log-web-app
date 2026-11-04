@@ -89,6 +89,19 @@ describe('イベントの登録の画面', () => {
     expect(editor.state.form.eventId).toBe('')
   })
 
+  it('シリーズ名を登録済みの名前から変えると、同じシリーズのほかのイベントの数を返す', async () => {
+    const editor = await loadedEditor()
+    editor.state.list = [registered, { ...registered, eventId: 'f' }]
+    editor.open('s/e')
+    expect(editor.seriesRename.value).toBeNull()
+    editor.state.form.seriesName = '新しいシリーズ名'
+    expect(editor.seriesRename.value).toEqual({ from: 'シリーズ', others: 1 })
+    // 新しいイベントでも、登録済みのシリーズの名前を変えるなら同じ
+    editor.open('')
+    Object.assign(editor.state.form, { seriesId: 's', seriesName: '別名' })
+    expect(editor.seriesRename.value).toEqual({ from: 'シリーズ', others: 2 })
+  })
+
   it('ログインが切れていたら onUnauthorized を呼ぶ', async () => {
     const onUnauthorized = vi.fn()
     const editor = await loadedEditor(onUnauthorized)

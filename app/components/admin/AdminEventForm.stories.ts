@@ -41,6 +41,31 @@ export const InvalidId: Story = {
   },
 }
 
+/** シリーズ名は同じシリーズのイベントで共通なので、変えるとほかのイベントの表示も変わることを知らせる。 */
+export const SeriesRename: Story = {
+  args: { initialEvent: 'elnino/elnino_vol_5' },
+  parameters: {
+    fetch: [
+      registeredEvent,
+      {
+        ...registeredEvent,
+        eventId: 'elnino_vol_6',
+        eventName: 'エルニーニョ vol.6',
+      },
+    ],
+  },
+  play: async ({ canvas, userEvent }) => {
+    const name = await canvas.findByDisplayValue('エルニーニョ')
+    await userEvent.clear(name)
+    await userEvent.type(name, 'El Niño')
+    await expect(
+      canvas.getByText(
+        /このシリーズのほかの\s*1 件のイベントの表示も変わります/,
+      ),
+    ).toBeVisible()
+  },
+}
+
 /** 新しく作るときに、もう登録されている ID を書くと、上書きしないよう登録できない。 */
 export const Duplicated: Story = {
   play: async ({ canvas, userEvent }) => {

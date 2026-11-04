@@ -51,11 +51,26 @@ export function createEventFormEditor(onUnauthorized: () => void) {
     ),
     /** 新しく作るときに、もう登録されている ID を書いたか (そのまま登録すると上書きしてしまう) */
     duplicated: computed(() => isDuplicated(state)),
+    seriesRename: computed(() => seriesRename(state)),
     reload: () => reload(state),
     open: (key: string) => open(state, key),
     save: () => save(state),
     remove: () => remove(state),
   }
+}
+
+/**
+ * シリーズ名を、登録済みの名前から変えようとしているときの、元の名前とほかのイベントの数。そうでなければ null。
+ * シリーズ名は同じシリーズのイベントで共通なので、変えるとほかのイベントの表示も変わる
+ */
+function seriesRename(state: EventFormState) {
+  const { seriesId, seriesName } = state.form
+  const key = eventKey(state.form)
+  const sameSeries = state.list.filter((e) => e.seriesId === seriesId)
+  const registered = sameSeries[0]?.seriesName
+  if (registered === undefined || registered === seriesName.trim()) return null
+  const others = sameSeries.filter((e) => eventKey(e) !== key).length
+  return others ? { from: registered, others } : null
 }
 
 function isDuplicated(state: EventFormState) {

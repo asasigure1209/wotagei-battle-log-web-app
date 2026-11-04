@@ -17,8 +17,16 @@ const emit = defineEmits<{
   unauthorized: []
 }>()
 
-const { state, currentKey, idsValid, duplicated, open, save, remove } =
-  useAdminEventForm(() => emit('unauthorized'), props.initialEvent)
+const {
+  state,
+  currentKey,
+  idsValid,
+  duplicated,
+  seriesRename,
+  open,
+  save,
+  remove,
+} = useAdminEventForm(() => emit('unauthorized'), props.initialEvent)
 
 /** 選んでいる登録済みのイベント。新しく作るときは空 */
 const selected = computed({
@@ -114,6 +122,12 @@ async function onDelete() {
       </div>
       <p v-if="showIdWarning" class="admin-warn">
         ID は英数字と _ - だけで書いてください
+      </p>
+      <p v-if="seriesRename" class="admin-warn">
+        シリーズ名は同じシリーズのイベントで共通です。「{{
+          seriesRename.from
+        }}」から変えると、このシリーズのほかの
+        {{ seriesRename.others }} 件のイベントの表示も変わります
       </p>
       <p v-if="duplicated" class="admin-warn">
         {{ currentKey }} はもう登録されています。直すときは、上で選んでください
