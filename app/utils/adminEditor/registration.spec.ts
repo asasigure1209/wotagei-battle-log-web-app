@@ -8,7 +8,7 @@ import {
   reset,
 } from '~/utils/adminEditor/registration'
 import { createEditorState } from '~/utils/adminEditor/state'
-import { fakeAdminApi } from './adminTestUtils'
+import { fakeAdminApi } from '~~/test/nuxt/adminTestUtils'
 
 const manifest = () => ({
   series: { id: 's', name: 'シリーズ' },

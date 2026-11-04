@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { eventSeries } from '../../server/db/schema'
+import { eventSeries } from './schema'
 
 const proxyUrl = 'https://proxy.example/'
 
@@ -7,7 +7,7 @@ const proxyUrl = 'https://proxy.example/'
 async function loadClient(env: Record<string, string>) {
   for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value)
   vi.resetModules()
-  return await import('../../server/db/client')
+  return await import('./client')
 }
 
 /** 中継 Worker の代わりに、受け取った要求を覚えて決まった応答を返す fetch を置く */

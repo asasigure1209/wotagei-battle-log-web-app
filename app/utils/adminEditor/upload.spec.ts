@@ -9,7 +9,7 @@ import {
   uploadTargets,
 } from '~/utils/adminEditor/upload'
 import { uploadMultipart } from '~/utils/multipartUpload'
-import { stateWithIds, videoFile } from './adminTestUtils'
+import { stateWithIds, videoFile } from '~~/test/nuxt/adminTestUtils'
 
 // R2 への実際の送信は multipartUpload.spec.ts で確かめるので、ここでは差し替える
 vi.mock('~/utils/multipartUpload', async (importOriginal) => ({

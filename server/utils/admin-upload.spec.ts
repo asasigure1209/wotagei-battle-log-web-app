@@ -6,7 +6,7 @@ import {
   requireR2Upload,
   requireUploadId,
   requireVideoKey,
-} from '../../server/utils/admin-upload'
+} from './admin-upload'
 
 /** fn が 400 (Bad Request) を投げるか */
 const expectBadRequest = (fn: () => unknown) =>

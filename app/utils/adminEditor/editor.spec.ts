@@ -2,7 +2,7 @@ import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { createAdminEditor } from '~/utils/adminEditor/editor'
 import { newRow } from '~/utils/adminEditor/state'
-import { videoFile } from './adminTestUtils'
+import { videoFile } from '~~/test/nuxt/adminTestUtils'
 
 registerEndpoint('/api/admin/objects', () => [{ key: 's/e/a.mp4', size: 10 }])
 registerEndpoint('/api/admin/events', () => [

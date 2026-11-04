@@ -9,7 +9,12 @@ export default defineConfig({
       await defineVitestProject({
         test: {
           name: 'nuxt',
-          include: ['test/nuxt/**/*.spec.ts'],
+          // 単体テストは対象のファイルの隣に置く。test/ には画面全体を通す結合テストと共用の部品だけを置く
+          include: [
+            'app/**/*.spec.ts',
+            'shared/**/*.spec.ts',
+            'test/nuxt/**/*.spec.ts',
+          ],
           environment: 'nuxt',
         },
       }),
@@ -17,7 +22,7 @@ export default defineConfig({
         // サーバーの処理を、テスト用の SQLite ファイルにつないで確かめる
         test: {
           name: 'server',
-          include: ['test/server/**/*.spec.ts'],
+          include: ['server/**/*.spec.ts', 'test/server/**/*.spec.ts'],
           environment: 'node',
           // どのテストファイルも同じテスト用の DB ファイルを作り直して使うので、1 つずつ流す
           fileParallelism: false,

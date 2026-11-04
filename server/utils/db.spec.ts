@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { connectDb } = vi.hoisted(() => ({ connectDb: vi.fn() }))
 
-vi.mock('../../server/db/client', () => ({ connectDb }))
+vi.mock('../db/client', () => ({ connectDb }))
 
 // useDb は接続をモジュールの中に覚えておくので、テストごとに読み込み直す
 async function importUseDb() {
-  const { useDb } = await import('../../server/utils/db')
+  const { useDb } = await import('./db')
   return useDb
 }
 

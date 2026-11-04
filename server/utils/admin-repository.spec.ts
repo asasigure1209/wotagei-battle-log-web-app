@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { importManifest, parseManifest } from '../../server/db/manifest'
+import { resetTestDb } from '../../test/server/test-db'
+import { importManifest, parseManifest } from '../db/manifest'
 import {
   deleteAdminEvent,
   getAdminEvent,
   listAdminEvents,
-} from '../../server/utils/admin-repository'
-import { getEvent } from '../../server/utils/repository'
-import { resetTestDb } from './test-db'
+} from './admin-repository'
+import { getEvent } from './repository'
 
 const manifest = (event = 'e', date = '2026-01-01') =>
   parseManifest({

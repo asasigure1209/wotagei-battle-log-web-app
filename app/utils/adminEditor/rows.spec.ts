@@ -8,7 +8,7 @@ import {
   updateRow,
 } from '~/utils/adminEditor/rows'
 import { createEditorState, newRow } from '~/utils/adminEditor/state'
-import { videoFile } from './adminTestUtils'
+import { videoFile } from '~~/test/nuxt/adminTestUtils'
 
 const stateWith = (...paths: string[]) => {
   const state = createEditorState(() => {})
