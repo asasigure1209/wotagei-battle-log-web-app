@@ -2,7 +2,7 @@
 // $fetch は同じオリジンに送るので、ログインの Cookie が載る
 
 import { putWithXhr, type UploadDeps } from '~/utils/multipartUpload'
-import type { Manifest } from '~~/server/db/manifest'
+import type { EventInfo, Manifest } from '~~/server/db/manifest'
 import type { listAdminEvents } from '~~/server/utils/admin-repository'
 
 /** シリーズ ID とイベント ID の組 */
@@ -48,6 +48,9 @@ export const adminApi = {
   listEvents: () => $fetch<EventSummary[]>('/api/admin/events'),
   getEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch<Manifest>(`/api/admin/events/${seriesId}/${eventId}`),
+  /** イベントの情報だけを登録する (なければ作り、あれば書き換える) */
+  saveEventInfo: (info: EventInfo) =>
+    $fetch('/api/admin/events', { method: 'POST', body: info }),
   /** 登録済みのイベントに、エントリー・動画を登録する。dryRun なら確かめるだけ */
   saveContents: (
     { seriesId, eventId }: EventIds,
