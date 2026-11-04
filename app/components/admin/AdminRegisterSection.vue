@@ -12,7 +12,7 @@ const { canRegister, currentKey, register } = useAdminEditor()
     <p class="admin-hint">
       すべての動画が「R2
       にあり」になったら登録できます。登録すると、このイベントのエントリー・動画・出演者を入れ直します
-      (イベントの情報と、ほかのイベントには触れません)。
+      (イベントの情報と、ほかのイベントには触れません)。公開ページは、エントリーを登録して初めて出ます。
     </p>
     <div class="admin-actions">
       <button

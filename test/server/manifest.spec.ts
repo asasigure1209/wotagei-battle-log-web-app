@@ -8,6 +8,7 @@ import {
   saveEventInfo,
 } from '../../server/db/manifest'
 import { eventSeries } from '../../server/db/schema'
+import { getAdminEventInfo } from '../../server/utils/admin-repository'
 import { getEvent, getPlayer, listPlayers } from '../../server/utils/repository'
 import { resetTestDb } from './test-db'
 
@@ -122,11 +123,7 @@ describe('saveEventInfo', () => {
     const db = await resetTestDb()
     const { series, event } = yaml()
     await saveEventInfo(db, { series, event })
-    expect(await getEvent('s', 'e')).toEqual({
-      title: 'イベント',
-      date: '2026-01-01',
-      contact: '連絡先',
-    })
+    expect(await getAdminEventInfo('s', 'e')).toEqual({ series, event })
     expect(await listPlayers('s', 'e')).toEqual([])
   })
 

@@ -133,13 +133,6 @@ async function onDelete() {
             :href="`/admin/entries?event=${encodeURIComponent(currentKey)}`"
             >エントリー・動画を登録する</a
           >
-          <a
-            class="link"
-            :href="`/${currentKey}`"
-            target="_blank"
-            rel="noopener"
-            >公開ページを開く</a
-          >
           <button
             type="button"
             class="admin-btn danger"

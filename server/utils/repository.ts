@@ -1,18 +1,29 @@
 // API が返すデータの取り出し口。API のハンドラはここだけを呼び、データの置き場所を知らない。
 // DB の値 (数値の No.・秒・バイト) を、API が返す表示用の形に整える
-import { and, asc, type Column, count, eq } from 'drizzle-orm'
+import { and, asc, type Column, count, eq, exists } from 'drizzle-orm'
 import type { Db } from '../db/client'
 import { entries, events, performers, videos } from '../db/schema'
 // テスト (node 環境) からも読めるよう、Nitro の自動 import に頼らず明示する
 import { useDb } from './db'
 
-/** イベントの情報 (名前・開催日・運営の連絡先)。ないイベントは null */
+/**
+ * イベントの情報 (名前・開催日・運営の連絡先)。ないイベントは null。
+ * 管理画面ではイベントの情報を先に登録し、エントリー・動画をあとから登録するので、
+ * エントリーがまだないイベントも、まだ公開しないものとして null にする
+ * (中身のない画面を出したり、それが ISR でとっておかれたりしないように)
+ */
 export async function getEvent(series: string, event: string) {
   const db = await useDb()
+  const hasEntries = exists(
+    db
+      .select({ entryNo: entries.entryNo })
+      .from(entries)
+      .where(inEvent(entries, series, event)),
+  )
   const [found] = await db
     .select({ title: events.name, date: events.date, contact: events.contact })
     .from(events)
-    .where(and(eq(events.seriesId, series), eq(events.id, event)))
+    .where(and(eq(events.seriesId, series), eq(events.id, event), hasEntries))
   return found ?? null
 }
 

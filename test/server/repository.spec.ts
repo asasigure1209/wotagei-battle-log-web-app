@@ -27,6 +27,14 @@ beforeAll(async () => {
     date: '2026-01-01',
     contact: '連絡先',
   })
+  // イベントの情報だけを登録し、エントリー・動画はまだないイベント
+  await db.insert(events).values({
+    seriesId: 's',
+    id: 'empty',
+    name: '準備中',
+    date: '2026-02-01',
+    contact: '連絡先',
+  })
   await db.insert(entries).values([
     { ...event, entryNo: 1, name: 'A' },
     { ...event, entryNo: 2, name: 'B' },
@@ -68,6 +76,10 @@ describe('getEvent', () => {
 
   it('ないイベントは null', async () => {
     expect(await getEvent('s', 'x')).toBeNull()
+  })
+
+  it('エントリーがまだないイベントは、公開しないので null', async () => {
+    expect(await getEvent('s', 'empty')).toBeNull()
   })
 })
 
