@@ -12,6 +12,7 @@ registerEndpoint('/api/admin/events', () => [
     eventId: 'e',
     eventName: 'イベント',
     date: '2026-01-01',
+    contact: '連絡先',
   },
 ])
 

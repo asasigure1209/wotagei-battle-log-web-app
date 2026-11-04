@@ -1,7 +1,7 @@
 // 管理画面で使う DB の読み出し。画面の API (repository.ts) と違い、manifest と同じ形で返し、
 // 管理画面がそのまま手直しして取り込み直せるようにする
 import { and, asc, desc, eq } from 'drizzle-orm'
-import type { Manifest } from '../db/manifest'
+import type { EventInfo, Manifest } from '../db/manifest'
 import { entries, eventSeries, events, performers, videos } from '../db/schema'
 // テスト (node 環境) からも読めるよう、Nitro の自動 import に頼らず明示する
 import { useDb } from './db'
@@ -22,10 +22,39 @@ export async function listAdminEvents() {
       eventId: events.id,
       eventName: events.name,
       date: events.date,
+      contact: events.contact,
     })
     .from(events)
     .innerJoin(eventSeries, eq(eventSeries.id, events.seriesId))
     .orderBy(desc(events.date))
+}
+
+/** 登録済みのイベントの情報 (シリーズとイベント)。ないイベントは null */
+export async function getAdminEventInfo(
+  series: string,
+  event: string,
+): Promise<EventInfo | null> {
+  const db = await useDb()
+  const [found] = await db
+    .select({
+      seriesName: eventSeries.name,
+      name: events.name,
+      date: events.date,
+      contact: events.contact,
+    })
+    .from(events)
+    .innerJoin(eventSeries, eq(eventSeries.id, events.seriesId))
+    .where(isEvent(series, event))
+  if (!found) return null
+  return {
+    series: { id: series, name: found.seriesName },
+    event: {
+      id: event,
+      name: found.name,
+      date: found.date,
+      contact: found.contact,
+    },
+  }
 }
 
 /** 登録済みのイベントを、manifest と同じ形で。ないイベントは null */

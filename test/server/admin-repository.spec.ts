@@ -3,6 +3,7 @@ import { importManifest, parseManifest } from '../../server/db/manifest'
 import {
   deleteAdminEvent,
   getAdminEvent,
+  getAdminEventInfo,
   listAdminEvents,
 } from '../../server/utils/admin-repository'
 import { getEvent } from '../../server/utils/repository'
@@ -44,6 +45,7 @@ describe('管理画面の DB の読み出し', () => {
         eventId: 'f',
         eventName: 'イベント f',
         date: '2026-02-01',
+        contact: '連絡先',
       },
       {
         seriesId: 's',
@@ -51,8 +53,22 @@ describe('管理画面の DB の読み出し', () => {
         eventId: 'e',
         eventName: 'イベント e',
         date: '2026-01-01',
+        contact: '連絡先',
       },
     ])
+  })
+
+  it('イベントの情報だけを返す。ないイベントは null', async () => {
+    expect(await getAdminEventInfo('s', 'e')).toEqual({
+      series: { id: 's', name: 'シリーズ' },
+      event: {
+        id: 'e',
+        name: 'イベント e',
+        date: '2026-01-01',
+        contact: '連絡先',
+      },
+    })
+    expect(await getAdminEventInfo('s', 'x')).toBeNull()
   })
 
   it('イベントを manifest と同じ形で返し、そのまま取り込み直せる', async () => {
