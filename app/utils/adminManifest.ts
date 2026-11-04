@@ -63,7 +63,9 @@ export function relPathOf(
 
 /**
  * パスの順に並べる (LC_ALL=C の sort と同じく、文字コードの順に比べる)。
- * 並び順がイベントの中での動画の No. になる
+ * 並び順がイベントの中での動画の No. になり、No. はダウンロードの URL (/players/<エントリー No.>/<動画の No.>) に入る。
+ * 以前のイベントは、動画アップロード用の mise タスク (いまは削除済み) が `find | sort` (LC_ALL=C) で並べて登録したので、
+ * 自然順やロケールに沿った順に変えると、そのイベントを管理画面で入れ直したときに No. がずれ、共有された URL が壊れる
  */
 export function compareRelPath(a: string, b: string) {
   if (a === b) return 0
