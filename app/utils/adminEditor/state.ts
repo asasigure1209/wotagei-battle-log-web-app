@@ -22,7 +22,7 @@ export type VideoRow = {
   error: string
 }
 
-type EventForm = {
+export type EventForm = {
   seriesId: string
   seriesName: string
   eventId: string
@@ -116,16 +116,19 @@ export function idsValid(state: EditorState) {
   return isId(state.form.seriesId) && isId(state.form.eventId)
 }
 
-export function info(state: EditorState, ...lines: string[]) {
+/** 知らせ・待っているか・ログイン切れの扱いを持つ状態。イベントの登録の画面 (eventForm.ts) とも共通に使う */
+export type RunState = Pick<EditorState, 'messages' | 'busy' | 'onUnauthorized'>
+
+export function info(state: RunState, ...lines: string[]) {
   state.messages = { kind: 'info', lines }
 }
 
-export function showErrors(state: EditorState, lines: string[]) {
+export function showErrors(state: RunState, lines: string[]) {
   state.messages = { kind: 'error', lines }
 }
 
 /** busy にしてから fn を動かし、失敗したら画面にエラーを出す (ログインが切れていたらログインの画面に戻す) */
-export async function run(state: EditorState, fn: () => Promise<void>) {
+export async function run(state: RunState, fn: () => Promise<void>) {
   state.busy = true
   try {
     await fn()
