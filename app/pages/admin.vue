@@ -37,7 +37,7 @@ async function logout() {
           ログアウト
         </button>
       </header>
-      <AdminEventEditor @unauthorized="loggedIn = false" />
+      <AdminContentsEditor @unauthorized="loggedIn = false" />
     </template>
   </div>
 </template>

@@ -48,11 +48,15 @@ export const adminApi = {
   listEvents: () => $fetch<EventSummary[]>('/api/admin/events'),
   getEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch<Manifest>(`/api/admin/events/${seriesId}/${eventId}`),
-  /** 登録する。dryRun なら確かめるだけ */
-  saveEvent: (manifest: unknown, dryRun: boolean) =>
-    $fetch('/api/admin/events', {
+  /** 登録済みのイベントに、エントリー・動画を登録する。dryRun なら確かめるだけ */
+  saveContents: (
+    { seriesId, eventId }: EventIds,
+    contents: { entries: Record<string, string>; videos: unknown[] },
+    dryRun: boolean,
+  ) =>
+    $fetch(`/api/admin/events/${seriesId}/${eventId}/contents`, {
       method: 'POST',
-      body: manifest as Record<string, unknown>,
+      body: contents,
       query: dryRun ? { dryRun: 1 } : {},
     }),
   deleteEvent: ({ seriesId, eventId }: EventIds) =>

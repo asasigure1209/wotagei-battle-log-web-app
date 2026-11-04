@@ -4,7 +4,7 @@
 import { computed, type InjectionKey, reactive, ref } from 'vue'
 import { adminApi, type EventSummary } from '~/utils/adminApi'
 import { parseEntriesText } from '~/utils/adminManifest'
-import { deleteEvent, loadEvent, register, reset } from './registration'
+import { loadEvent, register, reset } from './registration'
 import {
   addFiles,
   moveRow,
@@ -63,7 +63,7 @@ export function createAdminEditor(onUnauthorized: () => void) {
     currentKey,
     canUpload,
     canRegister,
-    /** 登録済みのイベントを開く。key が空なら新しいイベントを書き始める */
+    /** 登録済みのイベントを選んで読み込む。key が空なら選んでいない状態に戻す */
     open: (key: string) =>
       key ? loadEvent(state, parseEventKey(key)) : reset(state),
     /** ファイルを足し、R2 をまだ調べていなければ調べる */
@@ -79,14 +79,8 @@ export function createAdminEditor(onUnauthorized: () => void) {
     refreshRemote: () => refreshRemote(state),
     uploadAll: () => uploadAll(state),
     cancelUpload: () => cancelUpload(state),
-    /** 登録する (dryRun なら確かめるだけ)。登録できたら一覧を読み直す */
-    register: async (dryRun: boolean) => {
-      const ok = await register(state, dryRun)
-      if (ok && !dryRun) await events.reload()
-    },
-    deleteEvent: async () => {
-      if (await deleteEvent(state)) await events.reload()
-    },
+    /** 登録する (dryRun なら確かめるだけ) */
+    register: (dryRun: boolean) => register(state, dryRun),
   }
 }
 

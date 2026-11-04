@@ -60,7 +60,7 @@ describe('エディターの操作', () => {
     expect(editor.state.remote).toEqual(new Map([['a.mp4', 10]]))
   })
 
-  it('open に空を渡すと、新しいイベントを書き始める', async () => {
+  it('open に空を渡すと、イベントを選んでいない状態に戻す', async () => {
     const editor = editorWithIds()
     editor.state.loaded = true
     await editor.open('')

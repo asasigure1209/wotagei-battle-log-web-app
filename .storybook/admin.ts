@@ -36,13 +36,22 @@ export const registeredEvent = {
   eventId: 'elnino_vol_5',
   eventName: 'エルニーニョ vol.5',
   date: '2026-11-01',
+  contact: 'X: @elnino',
 }
 
-/** イベントの情報とエントリーを書いたところ */
+/** 登録済みのイベントを選び、エントリーを書いたところ */
 export function fillEvent(editor: AdminEditor) {
-  Object.assign(editor.state.form, registeredEvent, {
-    contact: 'X: @elnino',
+  const { seriesId, seriesName, eventId, eventName, date, contact } =
+    registeredEvent
+  Object.assign(editor.state.form, {
+    seriesId,
+    seriesName,
+    eventId,
+    eventName,
+    date,
+    contact,
   })
+  editor.state.loaded = true
   editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
 }
 

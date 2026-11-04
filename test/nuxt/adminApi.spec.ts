@@ -27,10 +27,14 @@ describe('API のエラーの読み取り', () => {
 
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events', body: [] },
-  { method: 'POST', path: '/api/admin/events', body: { ok: true } },
   { method: 'GET', path: '/api/admin/events/s/e', body: {} },
   { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'GET', path: '/api/admin/objects', body: [] },
+  {
+    method: 'POST',
+    path: '/api/admin/events/s/e/contents',
+    body: { ok: true },
+  },
 ])
 
 describe('adminApi', () => {
@@ -40,15 +44,15 @@ describe('adminApi', () => {
     await adminApi.getEvent(ids)
     await adminApi.deleteEvent(ids)
     await adminApi.listObjects(ids)
-    await adminApi.saveEvent({}, true)
-    await adminApi.saveEvent({}, false)
+    await adminApi.saveContents(ids, { entries: {}, videos: [] }, true)
+    await adminApi.saveContents(ids, { entries: {}, videos: [] }, false)
     expect(api.calls).toEqual([
       'GET /api/admin/events',
       'GET /api/admin/events/s/e',
       'DELETE /api/admin/events/s/e',
       'GET /api/admin/objects?series=s&event=e',
-      'POST /api/admin/events?dryRun=1',
-      'POST /api/admin/events',
+      'POST /api/admin/events/s/e/contents?dryRun=1',
+      'POST /api/admin/events/s/e/contents',
     ])
   })
 })
