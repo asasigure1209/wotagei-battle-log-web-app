@@ -52,19 +52,16 @@ export function parseEventInfoBody(
 }
 
 /**
- * 管理画面から登録するエントリーと動画の manifest の、シリーズ・イベントの情報を、DB に登録済みのもの
- * (registered) に差し替える。イベントの情報はイベントの登録の画面でだけ書くので、画面が開いたときの
- * 古い情報で上書きしないようにする。未登録のイベント (消したものも) なら 400
+ * 管理画面から登録するエントリーと動画の manifest が、登録済みのイベントのものか。未登録なら 400。
+ * イベントの情報はイベントの登録の画面でだけ書くので、この画面からはイベントを作らない
  */
-export function withRegisteredEvent(
+export function requireRegisteredEvent(
   manifest: Manifest,
-  registered: Pick<Manifest, 'series' | 'event'> | null,
-): Manifest {
-  if (!registered) {
-    const key = `${manifest.series.id}/${manifest.event.id}`
-    throw invalidManifest([
-      `登録されていないイベントです (${key})。先にイベントの登録の画面で登録してください`,
-    ])
-  }
-  return { ...manifest, ...registered }
+  registered: boolean,
+) {
+  if (registered) return
+  const key = `${manifest.series.id}/${manifest.event.id}`
+  throw invalidManifest([
+    `登録されていないイベントです (${key})。先にイベントの登録の画面で登録してください`,
+  ])
 }

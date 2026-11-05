@@ -3,7 +3,7 @@ import {
   invalidManifest,
   parseEventInfoBody,
   parseManifestBody,
-  withRegisteredEvent,
+  requireRegisteredEvent,
 } from './admin-event'
 
 const body = () => ({
@@ -50,29 +50,7 @@ describe('管理画面のイベントの登録のリクエスト', () => {
       }),
     )
   })
-  it('withRegisteredEvent は、manifest のシリーズ・イベントの情報を、登録済みのものに差し替える', () => {
-    const manifest = {
-      series: { id: 's', name: '古いシリーズ名' },
-      event: { id: 'e', name: '古い名前', date: '2026-01-01', contact: '古い' },
-      entries: [{ entryNo: 1, name: 'A' }],
-      videos: [],
-    }
-    const registered = {
-      series: { id: 's', name: 'シリーズ' },
-      event: {
-        id: 'e',
-        name: 'イベント',
-        date: '2026-02-01',
-        contact: '連絡先',
-      },
-    }
-    expect(withRegisteredEvent(manifest, registered)).toEqual({
-      ...manifest,
-      ...registered,
-    })
-  })
-
-  it('withRegisteredEvent は、未登録のイベントなら 400 にする', () => {
+  it('requireRegisteredEvent は、未登録のイベントなら 400 にする', () => {
     const manifest = {
       series: { id: 's', name: 'シリーズ' },
       event: {
@@ -84,7 +62,8 @@ describe('管理画面のイベントの登録のリクエスト', () => {
       entries: [],
       videos: [],
     }
-    expect(() => withRegisteredEvent(manifest, null)).toThrow(
+    expect(() => requireRegisteredEvent(manifest, true)).not.toThrow()
+    expect(() => requireRegisteredEvent(manifest, false)).toThrow(
       expect.objectContaining({
         statusCode: 400,
         data: {
