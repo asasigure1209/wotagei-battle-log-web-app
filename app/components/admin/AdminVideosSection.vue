@@ -2,7 +2,7 @@
 // 3. 動画: ファイルを選んで並べ、R2 にアップロードする
 
 import { ref } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEventEditor'
+import { useAdminEditor } from '~/composables/useAdminEditor'
 import { formatBytes } from '~/utils/adminManifest'
 import AdminVideoTable from './AdminVideoTable.vue'
 

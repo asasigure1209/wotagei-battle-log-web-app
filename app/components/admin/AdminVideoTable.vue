@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 動画の一覧。並び順がイベントの中での動画の No. になる
 
-import { useAdminEditor } from '~/composables/useAdminEventEditor'
+import { useAdminEditor } from '~/composables/useAdminEditor'
 import AdminVideoRow from './AdminVideoRow.vue'
 
 const { state } = useAdminEditor()

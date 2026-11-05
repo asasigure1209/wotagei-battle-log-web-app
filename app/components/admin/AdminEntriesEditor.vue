@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 1 つのイベントを書いて登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
 
-import { provideAdminEditor } from '~/composables/useAdminEventEditor'
+import { provideAdminEditor } from '~/composables/useAdminEditor'
 import AdminEntriesSection from './AdminEntriesSection.vue'
 import AdminEventSection from './AdminEventSection.vue'
 import AdminMessages from './AdminMessages.vue'

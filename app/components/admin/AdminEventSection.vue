@@ -2,7 +2,7 @@
 // 1. イベント: 登録済みのイベントを選んで読み込むか、新しいイベントの情報を書く
 
 import { computed } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEventEditor'
+import { useAdminEditor } from '~/composables/useAdminEditor'
 import { eventKey } from '~/utils/adminCommon/eventKey'
 
 const { state, events, idsValid, currentKey, open, refreshRemote } =

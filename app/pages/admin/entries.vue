@@ -8,7 +8,7 @@ const loggedIn = useAdminLoggedIn()
 <template>
   <div>
     <h2 class="heading">エントリーと動画の登録</h2>
-    <AdminEventEditor @unauthorized="loggedIn = false" />
+    <AdminEntriesEditor @unauthorized="loggedIn = false" />
   </div>
 </template>
 
