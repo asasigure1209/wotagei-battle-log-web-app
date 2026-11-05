@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { adminApi } from '~/utils/adminApi'
 import {
   buildManifest,
-  deleteEvent,
+  clear,
   fill,
   loadEvent,
   register,
-  reset,
 } from '~/utils/adminEditor/registration'
 import { createEditorState } from '~/utils/adminEditor/state'
 import { fakeAdminApi } from '~~/test/nuxt/adminTestUtils'
@@ -30,7 +30,6 @@ const manifest = () => ({
 
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events/s/e', body: manifest() },
-  { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
   {
     method: 'GET',
     path: '/api/admin/objects',
@@ -40,11 +39,16 @@ const api = fakeAdminApi([
 ])
 
 beforeEach(() => api.reset())
+afterEach(() => vi.restoreAllMocks())
 
 describe('manifest の組み立て', () => {
-  it('fill で書き写した内容から、取り込みと同じ形の manifest を作る', () => {
+  it('fill で書き写した内容から、取り込みと同じ形の manifest を作る (イベントの情報は選んだイベントのもの)', () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
+    expect(state.event).toEqual({
+      series: manifest().series,
+      event: manifest().event,
+    })
     expect(state.entriesText).toBe('1: A\n2: B')
     expect(state.rows.map((r) => r.relPath)).toEqual([
       '予選/1.mp4',
@@ -66,27 +70,75 @@ describe('manifest の組み立て', () => {
       '長さ (秒) を書いてください: 本戦/2.mp4',
     ])
   })
+
+  it('イベントを選んでいなければ、manifest を作らない', () => {
+    const state = createEditorState(() => {})
+    expect(buildManifest(state)).toEqual({
+      manifest: null,
+      problems: ['イベントを選んでください'],
+    })
+  })
 })
 
 describe('登録・読み込み・削除', () => {
-  it('loadEvent はイベントと R2 の一覧を読み込み、読み込んだイベントとして覚える', async () => {
+  it('loadEvent はイベントと R2 の一覧を読み込み、選んだイベントとして覚える', async () => {
     const state = createEditorState(() => {})
     await loadEvent(state, { seriesId: 's', eventId: 'e' })
     expect(api.calls.sort()).toEqual([
       'GET /api/admin/events/s/e',
       'GET /api/admin/objects?series=s&event=e',
     ])
-    expect(state.loaded).toBe(true)
+    expect(state.event?.event.id).toBe('e')
     expect(state.remote).toEqual(new Map([['予選/1.mp4', 10]]))
   })
 
-  it('register は確かめるだけなら読み込んだことにせず、登録したら読み込んだことにする', async () => {
+  it('loadEvent に失敗したら、前に選んでいたイベントを外したままにする (選んだものと中身をずらさない)', async () => {
+    const state = createEditorState(() => {})
+    fill(state, manifest())
+    vi.spyOn(adminApi, 'getEvent').mockRejectedValueOnce(
+      new Error('読めません'),
+    )
+    await loadEvent(state, { seriesId: 's', eventId: 'f' })
+    expect(state.event).toBeNull()
+    expect(state.rows).toEqual([])
+    expect(state.messages).toEqual({ kind: 'error', lines: ['読めません'] })
+  })
+
+  it('loadEvent を続けて呼んだら、最後に選んだイベントの結果だけを使う', async () => {
+    const state = createEditorState(() => {})
+    let finishFirst: (m: ReturnType<typeof manifest>) => void = () => {}
+    const other = manifest()
+    other.event.id = 'f'
+    other.videos = []
+    vi.spyOn(adminApi, 'getEvent')
+      .mockImplementationOnce(() => new Promise((r) => (finishFirst = r)))
+      .mockResolvedValueOnce(other)
+    const first = loadEvent(state, { seriesId: 's', eventId: 'e' })
+    await loadEvent(state, { seriesId: 's', eventId: 'f' })
+    finishFirst(manifest())
+    await first
+    expect(state.event?.event.id).toBe('f')
+  })
+
+  it('register は、確かめるだけなら dryRun を付けて送る', async () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
     expect(await register(state, true)).toBe(true)
-    expect(state.loaded).toBe(false)
     expect(await register(state, false)).toBe(true)
-    expect(state.loaded).toBe(true)
+    expect(api.calls).toEqual([
+      'POST /api/admin/events?dryRun=1',
+      'POST /api/admin/events',
+    ])
+  })
+
+  it('register は、イベントを選んでいなければ送らずにエラーを出す', async () => {
+    const state = createEditorState(() => {})
+    expect(await register(state, false)).toBe(false)
+    expect(api.calls).toEqual([])
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: ['イベントを選んでください'],
+    })
   })
 
   it('ログインが切れていたら onUnauthorized を呼び、エラーを出す', async () => {
@@ -100,16 +152,12 @@ describe('登録・読み込み・削除', () => {
     expect(state.busy).toBe(false)
   })
 
-  it('deleteEvent は読み込んだイベントを消し、書いた内容は残す。reset で空に戻す', async () => {
+  it('clear は、選んだイベントを外し、書いた内容を空に戻す', () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
-    state.loaded = true
-    expect(await deleteEvent(state)).toBe(true)
-    expect(api.calls).toEqual(['DELETE /api/admin/events/s/e'])
-    expect(state.loaded).toBe(false)
-    expect(state.rows).toHaveLength(2)
-    reset(state)
+    clear(state)
+    expect(state.event).toBeNull()
     expect(state.rows).toEqual([])
-    expect(state.form.seriesId).toBe('')
+    expect(state.entriesText).toBe('')
   })
 })

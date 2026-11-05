@@ -3,7 +3,7 @@
 
 import { computed, ref, watch } from 'vue'
 import { useAdminEventForm } from '~/composables/useAdminEventForm'
-import { eventKey } from '~/utils/adminCommon/eventKey'
+import AdminEventSelect from './AdminEventSelect.vue'
 
 const {
   state,
@@ -41,17 +41,13 @@ async function onDelete() {
 <template>
   <section class="admin-card">
     <h2 class="admin-heading">イベント</h2>
-    <label class="admin-field">
-      <span>登録済みのイベントを直す</span>
-      <select v-model="selected" class="admin-input" :disabled="state.busy">
-        <option value="">新しいイベントを作る</option>
-        <option v-for="e in state.list" :key="eventKey(e)" :value="eventKey(e)">
-          {{ e.date }} {{ e.seriesName }} / {{ e.eventName }} ({{
-            eventKey(e)
-          }})
-        </option>
-      </select>
-    </label>
+    <AdminEventSelect
+      v-model="selected"
+      label="登録済みのイベントを直す"
+      empty-label="新しいイベントを作る"
+      :events="state.list"
+      :disabled="state.busy"
+    />
     <div class="grid">
       <label class="admin-field">
         <span>シリーズ ID (英数字と _ -)</span>
@@ -123,8 +119,12 @@ async function onDelete() {
       >
         {{ state.selectedKey ? '書き換える' : '登録する' }}
       </button>
-      <NuxtLink v-if="state.selectedKey" class="link" to="/admin/entries">
-        エントリーと動画の登録へ
+      <NuxtLink
+        v-if="state.selectedKey"
+        class="link"
+        :to="`/admin/entries?event=${state.selectedKey}`"
+      >
+        このイベントのエントリーと動画を登録する
       </NuxtLink>
       <button
         v-if="state.selectedKey"

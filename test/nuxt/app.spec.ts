@@ -130,6 +130,19 @@ describe('管理画面', () => {
       contact: 'X: @elnino',
     },
   ])
+  // そのイベントの登録済みの内容と、R2 の動画 (まだない)
+  registerEndpoint('/api/admin/events/elnino/elnino_vol_5', () => ({
+    series: { id: 'elnino', name: 'エルニーニョ' },
+    event: {
+      id: 'elnino_vol_5',
+      name: 'エルニーニョ vol.5',
+      date: '2026-01-01',
+      contact: 'X: @elnino',
+    },
+    entries: [{ entryNo: 1, name: 'BLAZE' }],
+    videos: [],
+  }))
+  registerEndpoint('/api/admin/objects', () => [])
 
   it('/admin は入口で、イベントの登録と、エントリーと動画の登録のページへ案内する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin' })
@@ -166,5 +179,14 @@ describe('管理画面', () => {
           .element.value,
       ).toBe('elnino_vol_5'),
     )
+  })
+  it('/admin/entries?event= で開くと、そのイベントを選んで、エントリーを書ける', async () => {
+    const wrapper = await mountSuspended(App, {
+      route: '/admin/entries?event=elnino/elnino_vol_5',
+    })
+    await vi.waitFor(() =>
+      expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
+    )
+    expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
   })
 })

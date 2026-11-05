@@ -60,9 +60,18 @@ export const registeredEvent = {
   contact: 'X: @elnino',
 }
 
-/** イベントの情報とエントリーを書いたところ */
+/** 登録済みのイベントを選び、エントリーを書いたところ */
 export function fillEvent(editor: AdminEditor) {
-  Object.assign(editor.state.form, registeredEvent)
+  editor.events.list.value = [registeredEvent]
+  editor.state.event = {
+    series: { id: registeredEvent.seriesId, name: registeredEvent.seriesName },
+    event: {
+      id: registeredEvent.eventId,
+      name: registeredEvent.eventName,
+      date: registeredEvent.date,
+      contact: registeredEvent.contact,
+    },
+  }
   editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
 }
 

@@ -1,0 +1,74 @@
+<script setup lang="ts">
+// 1. イベントを選ぶ: エントリーと動画を登録する、登録済みのイベントを選ぶ。イベントの情報はここでは直さない
+
+import { computed } from 'vue'
+import { useAdminEditor } from '~/composables/useAdminEditor'
+import AdminEventSelect from './AdminEventSelect.vue'
+
+const { state, events, currentKey, open } = useAdminEditor()
+
+/** 選んでいるイベントのキー。選び直すと、そのイベントを読み込む */
+const selectedKey = computed({
+  get: () => currentKey.value,
+  set: (key: string) => open(key),
+})
+const editLink = computed(
+  () => `/admin/events${currentKey.value ? `?event=${currentKey.value}` : ''}`,
+)
+</script>
+
+<template>
+  <section class="admin-card">
+    <h2 class="admin-heading">1. イベントを選ぶ</h2>
+    <p v-if="!events.list.value.length" class="admin-hint">
+      まだイベントがありません。先に
+      <NuxtLink class="link" to="/admin/events">イベントを登録</NuxtLink>
+      してください。
+    </p>
+    <AdminEventSelect
+      v-else
+      v-model="selectedKey"
+      label="登録済みのイベント"
+      empty-label="選んでください"
+      :events="events.list.value"
+      :disabled="state.busy"
+    />
+    <dl v-if="state.event" class="info">
+      <dt>シリーズ</dt>
+      <dd>{{ state.event.series.name }} ({{ state.event.series.id }})</dd>
+      <dt>イベント</dt>
+      <dd>{{ state.event.event.name }} ({{ state.event.event.id }})</dd>
+      <dt>開催日</dt>
+      <dd>{{ state.event.event.date }}</dd>
+      <dt>運営の連絡先</dt>
+      <dd>{{ state.event.event.contact }}</dd>
+    </dl>
+    <p class="admin-hint">
+      イベントの情報を直すときや、新しいイベントを足すときは
+      <NuxtLink class="link" :to="editLink">イベントの登録</NuxtLink>
+      で行います。
+    </p>
+  </section>
+</template>
+
+<style scoped>
+.info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.info dt {
+  color: var(--color-muted);
+}
+
+.info dd {
+  margin: 0;
+}
+
+.link {
+  color: var(--color-accent);
+}
+</style>

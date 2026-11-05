@@ -17,10 +17,16 @@ export const registeredEvent = {
   contact: '連絡先',
 }
 
-/** シリーズ ID 's'・イベント ID 'e' を書いたエディターの状態 */
-export function stateWithIds() {
+/** 登録済みのイベント (シリーズ ID 's'・イベント ID 'e') の情報 (manifest の series・event と同じ形) */
+export const eventInfo = () => ({
+  series: { id: 's', name: 'シリーズ' },
+  event: { id: 'e', name: 'イベント', date: '2026-01-01', contact: '連絡先' },
+})
+
+/** 登録済みのイベント (シリーズ ID 's'・イベント ID 'e') を選んだエディターの状態 */
+export function stateWithEvent() {
   const state = createEditorState(() => {})
-  Object.assign(state.form, { seriesId: 's', eventId: 'e' })
+  state.event = eventInfo()
   return state
 }
 

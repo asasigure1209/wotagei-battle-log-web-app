@@ -2,9 +2,9 @@
 // 2. エントリー: 「No.: 名前」の形で 1 行に 1 人ずつ書く
 
 import { computed } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEventEditor'
+import { useAdminEditor } from '~/composables/useAdminEditor'
 
-const { state, entries } = useAdminEditor()
+const { state, entries, selected } = useAdminEditor()
 const count = computed(() => Object.keys(entries.value.entries).length)
 </script>
 
@@ -18,6 +18,7 @@ const count = computed(() => Object.keys(entries.value.entries).length)
         class="admin-input entries"
         rows="8"
         placeholder="1: BLAZE&#10;2: しぐれ"
+        :disabled="!selected"
       />
     </label>
     <ul v-if="entries.problems.length" class="admin-warn problems">

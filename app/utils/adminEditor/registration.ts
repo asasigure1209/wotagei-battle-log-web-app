@@ -1,4 +1,4 @@
-// 書いた内容を manifest の形にして DB に登録し、登録済みのイベントを読み込み・消す
+// 選んだイベントを読み込み、書いたエントリーと動画を manifest の形にして DB に登録する
 
 import { adminApi, type EventIds } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
@@ -9,7 +9,7 @@ import {
   parsePerformers,
 } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
-import { type EditorState, emptyForm, newRow, type VideoRow } from './state'
+import { type EditorState, eventIds, newRow, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
 const DRY_RUN_OK = '問題ありません。このまま登録できます'
@@ -35,68 +35,55 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
 
 /** 送る内容 (manifest の YAML を読んだ値と同じ形) と、送る前に見つかった誤り */
 export function buildManifest(state: EditorState) {
+  const { event } = state
+  if (!event) return { manifest: null, problems: ['イベントを選んでください'] }
   const { entries, problems } = parseEntriesText(state.entriesText)
-  const prefix = eventPrefix(state.form)
+  const prefix = eventPrefix(eventIds(event))
   const videos = state.rows.map((row) => manifestVideo(row, prefix, problems))
-  const { form } = state
-  const manifest = {
-    series: { id: form.seriesId, name: form.seriesName },
-    event: {
-      id: form.eventId,
-      name: form.eventName,
-      date: form.date,
-      contact: form.contact,
-    },
-    entries,
-    videos,
-  }
+  const manifest = { ...event, entries, videos }
   return { manifest, problems }
 }
 
-/** DB に登録する (dryRun なら確かめるだけ)。登録できたら、このイベントを読み込んだものとして扱う */
+/** DB に登録する (dryRun なら確かめるだけ) */
 export async function register(state: EditorState, dryRun: boolean) {
   const { manifest, problems } = buildManifest(state)
-  if (problems.length) {
+  if (!manifest || problems.length) {
     showErrors(state, problems)
     return false
   }
   const ok = await run(state, async () => {
     await adminApi.saveEvent(manifest, dryRun)
   })
-  if (!ok) return false
-  info(state, dryRun ? DRY_RUN_OK : REGISTERED)
-  if (!dryRun) state.loaded = true
-  return true
+  if (ok) info(state, dryRun ? DRY_RUN_OK : REGISTERED)
+  return ok
 }
 
-/** 登録済みのイベントと、その R2 の動画を読み込む */
+/**
+ * 登録済みのイベントと、その R2 の動画を読み込む。読み込む前に前のイベントを外すので、
+ * 失敗しても、選んだものと違うイベントの中身が残ることはない
+ */
 export async function loadEvent(state: EditorState, ids: EventIds) {
-  state.messages = null
-  state.remote = null
+  clear(state)
+  const seq = state.loadSeq
   await run(state, async () => {
     // 2 つは別々に引けるので、待ち合わせずに並べて引く
     const [data, remote] = await Promise.all([
       adminApi.getEvent(ids),
       fetchRemote(ids),
     ])
+    // 待っている間にほかのイベントを選び直していたら、この結果は使わない
+    if (seq !== state.loadSeq) return
     fill(state, data)
     state.remote = remote
-    state.loaded = true
   })
 }
 
 /** 登録済みのイベントを、画面に書き写す */
 export function fill(state: EditorState, data: Manifest) {
-  state.form = {
-    seriesId: data.series.id,
-    seriesName: data.series.name,
-    eventId: data.event.id,
-    eventName: data.event.name,
-    date: data.event.date,
-    contact: data.event.contact,
-  }
+  const event = { series: data.series, event: data.event }
+  state.event = event
   state.entriesText = formatEntriesText(data.entries)
-  const prefix = eventPrefix(state.form)
+  const prefix = eventPrefix(eventIds(event))
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
@@ -106,25 +93,12 @@ export function fill(state: EditorState, data: Manifest) {
   )
 }
 
-/** 新しいイベントを書き始める */
-export function reset(state: EditorState) {
-  state.form = emptyForm()
+/** 選んだイベントを外し、書いた内容を空に戻す。読み込み中のイベントがあれば、その結果も使わない */
+export function clear(state: EditorState) {
+  state.loadSeq++
+  state.event = null
   state.entriesText = ''
   state.rows = []
   state.remote = null
-  state.loaded = false
   state.messages = null
-}
-
-/** 読み込んだイベントを DB から消す。書いた内容は画面に残すので、そのまま登録し直せる */
-export async function deleteEvent(state: EditorState) {
-  if (!state.loaded) return false
-  const ids = { ...state.form }
-  const ok = await run(state, async () => {
-    await adminApi.deleteEvent(ids)
-  })
-  if (!ok) return false
-  state.loaded = false
-  info(state, 'DB からイベントを消しました (R2 の動画は残っています)')
-  return true
 }
