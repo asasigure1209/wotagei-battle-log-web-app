@@ -1,4 +1,4 @@
-// 書いた内容を manifest の形にして DB に登録し、登録済みのイベントを読み込み・消す
+// 書いた内容を manifest の形にして DB に登録し、登録済みのイベントを読み込む
 
 import { adminApi, type EventIds } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
@@ -114,17 +114,4 @@ export function reset(state: EditorState) {
   state.remote = null
   state.loaded = false
   state.messages = null
-}
-
-/** 読み込んだイベントを DB から消す。書いた内容は画面に残すので、そのまま登録し直せる */
-export async function deleteEvent(state: EditorState) {
-  if (!state.loaded) return false
-  const ids = { ...state.form }
-  const ok = await run(state, async () => {
-    await adminApi.deleteEvent(ids)
-  })
-  if (!ok) return false
-  state.loaded = false
-  info(state, 'DB からイベントを消しました (R2 の動画は残っています)')
-  return true
 }

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildManifest,
-  deleteEvent,
   fill,
   loadEvent,
   register,
@@ -30,7 +29,6 @@ const manifest = () => ({
 
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events/s/e', body: manifest() },
-  { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
   {
     method: 'GET',
     path: '/api/admin/objects',
@@ -100,14 +98,10 @@ describe('登録・読み込み・削除', () => {
     expect(state.busy).toBe(false)
   })
 
-  it('deleteEvent は読み込んだイベントを消し、書いた内容は残す。reset で空に戻す', async () => {
+  it('reset で空に戻す', () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
     state.loaded = true
-    expect(await deleteEvent(state)).toBe(true)
-    expect(api.calls).toEqual(['DELETE /api/admin/events/s/e'])
-    expect(state.loaded).toBe(false)
-    expect(state.rows).toHaveLength(2)
     reset(state)
     expect(state.rows).toEqual([])
     expect(state.form.seriesId).toBe('')

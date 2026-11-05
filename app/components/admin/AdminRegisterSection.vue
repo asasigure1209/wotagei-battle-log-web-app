@@ -1,23 +1,9 @@
 <script setup lang="ts">
-// 4. DB に登録: 書いた内容を確かめて登録する。読み込んだイベントは消すこともできる
+// 4. DB に登録: 書いた内容を確かめて登録する (イベントを消すのは、イベントの登録の画面で行う)
 
-import { ref, watch } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEditor'
 
-const { state, canRegister, currentKey, events, register, deleteEvent } =
-  useAdminEditor()
-
-/** 消すボタンを 1 度押したか。もう一度押すと消す */
-const confirmDelete = ref(false)
-// ほかのイベントに切り替えたら、1 度押したことは忘れる
-watch(currentKey, () => {
-  confirmDelete.value = false
-})
-
-async function onDelete() {
-  confirmDelete.value = !confirmDelete.value
-  if (!confirmDelete.value) await deleteEvent()
-}
+const { canRegister, currentKey, events, register } = useAdminEditor()
 </script>
 
 <template>
@@ -53,19 +39,6 @@ async function onDelete() {
         rel="noopener"
         >公開ページを開く</a
       >
-      <button
-        v-if="state.loaded"
-        type="button"
-        class="admin-btn danger"
-        :disabled="state.busy"
-        @click="onDelete"
-      >
-        {{
-          confirmDelete
-            ? 'もう一度押すと DB から消します'
-            : 'このイベントを消す'
-        }}
-      </button>
     </div>
   </section>
 </template>

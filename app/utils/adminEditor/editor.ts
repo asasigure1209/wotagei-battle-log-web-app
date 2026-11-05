@@ -6,7 +6,7 @@ import { adminApi, type EventSummary } from '~/utils/adminApi'
 import { eventKey, idsValid, parseEventKey } from '~/utils/adminCommon/eventKey'
 import { run } from '~/utils/adminCommon/operation'
 import { parseEntriesText } from '~/utils/adminManifest'
-import { deleteEvent, loadEvent, register, reset } from './registration'
+import { loadEvent, register, reset } from './registration'
 import {
   addFiles,
   moveRow,
@@ -78,9 +78,6 @@ export function createAdminEditor(onUnauthorized: () => void) {
     register: async (dryRun: boolean) => {
       const ok = await register(state, dryRun)
       if (ok && !dryRun) await events.reload()
-    },
-    deleteEvent: async () => {
-      if (await deleteEvent(state)) await events.reload()
     },
   }
 }

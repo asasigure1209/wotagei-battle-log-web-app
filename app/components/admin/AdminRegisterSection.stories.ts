@@ -9,10 +9,7 @@ import {
 } from '../../../.storybook/admin'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 
-/**
- * 4. DB に登録。すべての動画が R2 にあれば登録できる。
- * 読み込んだイベントは消せる (誤って消さないよう、2 回押す)。
- */
+/** 4. DB に登録。すべての動画が R2 にあれば登録できる。 */
 const meta = {
   component: AdminRegisterSection,
   tags: ['autodocs'],
@@ -53,7 +50,7 @@ export const NotUploaded: Story = {
   },
 }
 
-/** 登録済みのイベントは、公開ページを開け、消せる。1 回目は確かめるだけで、もう一度押すと消す。 */
+/** 登録済みのイベントは、公開ページを開ける。 */
 export const Loaded: Story = {
   decorators: [
     withAdminEditor((editor) => {
@@ -62,15 +59,10 @@ export const Loaded: Story = {
       editor.events.list.value = [registeredEvent]
     }),
   ],
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('link', { name: '公開ページを開く' }),
     ).toHaveAttribute('href', '/elnino/elnino_vol_5')
-    await userEvent.click(
-      canvas.getByRole('button', { name: 'このイベントを消す' }),
-    )
-    await expect(
-      canvas.getByRole('button', { name: 'もう一度押すと DB から消します' }),
-    ).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /消す/ })).toBeNull()
   },
 }
