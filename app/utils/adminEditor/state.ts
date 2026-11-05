@@ -33,6 +33,8 @@ export type EditorState = OperationState & {
   remote: Map<string, number> | null
   /** アップロードしている間だけある (中止に使う) */
   uploadAbort: AbortController | null
+  /** イベントを選び直すたびに増やす。読み込みを待つ間に選び直したら、古い結果を捨てるのに使う */
+  loadSeq: number
 }
 
 export function createEditorState(onUnauthorized: () => void): EditorState {
@@ -43,6 +45,7 @@ export function createEditorState(onUnauthorized: () => void): EditorState {
     rows: [],
     remote: null,
     uploadAbort: null,
+    loadSeq: 0,
   }
 }
 

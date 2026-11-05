@@ -60,16 +60,21 @@ export async function register(state: EditorState, dryRun: boolean) {
   return ok
 }
 
-/** 登録済みのイベントと、その R2 の動画を読み込む */
+/**
+ * 登録済みのイベントと、その R2 の動画を読み込む。読み込む前に前のイベントを外すので、
+ * 失敗しても、選んだものと違うイベントの中身が残ることはない
+ */
 export async function loadEvent(state: EditorState, ids: EventIds) {
-  state.messages = null
-  state.remote = null
+  clear(state)
+  const seq = state.loadSeq
   await run(state, async () => {
     // 2 つは別々に引けるので、待ち合わせずに並べて引く
     const [data, remote] = await Promise.all([
       adminApi.getEvent(ids),
       fetchRemote(ids),
     ])
+    // 待っている間にほかのイベントを選び直していたら、この結果は使わない
+    if (seq !== state.loadSeq) return
     fill(state, data)
     state.remote = remote
   })
@@ -92,8 +97,9 @@ export function fill(state: EditorState, data: Manifest) {
   )
 }
 
-/** 選んだイベントを外し、書いた内容を空に戻す */
+/** 選んだイベントを外し、書いた内容を空に戻す。読み込み中のイベントがあれば、その結果も使わない */
 export function clear(state: EditorState) {
+  state.loadSeq++
   state.event = null
   state.entriesText = ''
   state.rows = []

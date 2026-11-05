@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { adminApi } from '~/utils/adminApi'
 import {
   buildManifest,
   clear,
@@ -38,6 +39,7 @@ const api = fakeAdminApi([
 ])
 
 beforeEach(() => api.reset())
+afterEach(() => vi.restoreAllMocks())
 
 describe('manifest の組み立て', () => {
   it('fill で書き写した内容から、取り込みと同じ形の manifest を作る (イベントの情報は選んだイベントのもの)', () => {
@@ -88,6 +90,34 @@ describe('登録・読み込み・削除', () => {
     ])
     expect(state.event?.event.id).toBe('e')
     expect(state.remote).toEqual(new Map([['予選/1.mp4', 10]]))
+  })
+
+  it('loadEvent に失敗したら、前に選んでいたイベントを外したままにする (選んだものと中身をずらさない)', async () => {
+    const state = createEditorState(() => {})
+    fill(state, manifest())
+    vi.spyOn(adminApi, 'getEvent').mockRejectedValueOnce(
+      new Error('読めません'),
+    )
+    await loadEvent(state, { seriesId: 's', eventId: 'f' })
+    expect(state.event).toBeNull()
+    expect(state.rows).toEqual([])
+    expect(state.messages).toEqual({ kind: 'error', lines: ['読めません'] })
+  })
+
+  it('loadEvent を続けて呼んだら、最後に選んだイベントの結果だけを使う', async () => {
+    const state = createEditorState(() => {})
+    let finishFirst: (m: ReturnType<typeof manifest>) => void = () => {}
+    const other = manifest()
+    other.event.id = 'f'
+    other.videos = []
+    vi.spyOn(adminApi, 'getEvent')
+      .mockImplementationOnce(() => new Promise((r) => (finishFirst = r)))
+      .mockResolvedValueOnce(other)
+    const first = loadEvent(state, { seriesId: 's', eventId: 'e' })
+    await loadEvent(state, { seriesId: 's', eventId: 'f' })
+    finishFirst(manifest())
+    await first
+    expect(state.event?.event.id).toBe('f')
   })
 
   it('register は、確かめるだけなら dryRun を付けて送る', async () => {
