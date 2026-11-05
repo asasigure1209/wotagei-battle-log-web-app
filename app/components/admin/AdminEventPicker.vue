@@ -7,7 +7,8 @@ import { eventKey } from '~/utils/adminCommon/eventKey'
 
 const { state, events, currentKey, open } = useAdminEditor()
 
-const selected = computed({
+/** 選んでいるイベントのキー。選び直すと、そのイベントを読み込む */
+const selectedKey = computed({
   get: () => currentKey.value,
   set: (key: string) => open(key),
 })
@@ -26,7 +27,7 @@ const editLink = computed(
     </p>
     <label v-else class="admin-field">
       <span>登録済みのイベント</span>
-      <select v-model="selected" class="admin-input" :disabled="state.busy">
+      <select v-model="selectedKey" class="admin-input" :disabled="state.busy">
         <option value="">選んでください</option>
         <option
           v-for="e in events.list.value"
