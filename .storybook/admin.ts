@@ -1,5 +1,6 @@
 // 管理画面のストーリーで使う道具。
-// 管理画面のコンポーネントはエディター (useAdminEditor) を inject するので、状態を作り込んだエディターを provide して描く。
+// 管理画面のコンポーネントはエディター (useAdminEditor) やイベントの登録画面 (useAdminEventForm) を inject するので、
+// 状態を作り込んだものを provide して描く。
 // API を呼ぶストーリーは、parameters.fetch に返す値を書く (preview.ts が $fetch として返す)
 import type { Decorator } from '@storybook/vue3-vite'
 import { provide } from 'vue'
@@ -10,6 +11,11 @@ import {
   createAdminEditor,
 } from '../app/utils/adminEditor/editor'
 import { newRow, type VideoRow } from '../app/utils/adminEditor/state'
+import {
+  type AdminEventForm,
+  adminEventFormKey,
+  createAdminEventForm,
+} from '../app/utils/adminEvents/form'
 
 /** 管理画面は広い画面で使うので、スマホの幅に収めない */
 export const adminParameters = { maxWidth: '1080px' }
@@ -24,6 +30,21 @@ export function withAdminEditor(
       const editor = createAdminEditor(() => {})
       prepare(editor)
       provide(adminEditorKey, editor)
+    },
+    template: '<story />',
+  })
+}
+
+/** prepare で状態を作り込んだイベントの登録画面を、ストーリーのコンポーネントに渡す */
+export function withAdminEventForm(
+  prepare: (form: AdminEventForm) => void = () => {},
+): Decorator {
+  return (story) => ({
+    components: { story },
+    setup() {
+      const form = createAdminEventForm(() => {})
+      prepare(form)
+      provide(adminEventFormKey, form)
     },
     template: '<story />',
   })

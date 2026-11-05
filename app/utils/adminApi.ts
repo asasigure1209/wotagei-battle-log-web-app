@@ -11,6 +11,14 @@ export type EventIds = { seriesId: string; eventId: string }
 /** 登録済みのイベントの一覧の 1 件 (サーバーの listAdminEvents と同じ形) */
 export type EventSummary = Awaited<ReturnType<typeof listAdminEvents>>[number]
 
+/** イベントの情報の登録 (PUT /api/admin/events/<series>/<event>) の本文 */
+export type EventInfoBody = {
+  seriesName: string
+  name: string
+  date: string
+  contact: string
+}
+
 /** 管理画面の API のエラーから、画面に出す文を取り出す (誤りの一覧があれば 1 行ずつ) */
 export function adminErrorMessages(error: unknown): string[] {
   const e = error as {
@@ -48,12 +56,18 @@ export const adminApi = {
   listEvents: () => $fetch<EventSummary[]>('/api/admin/events'),
   getEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch<Manifest>(`/api/admin/events/${seriesId}/${eventId}`),
-  /** 登録する。dryRun なら確かめるだけ */
+  /** エントリーと動画を登録する (本文は manifest)。dryRun なら確かめるだけ */
   saveEvent: (manifest: unknown, dryRun: boolean) =>
     $fetch('/api/admin/events', {
       method: 'POST',
       body: manifest as Record<string, unknown>,
       query: dryRun ? { dryRun: 1 } : {},
+    }),
+  /** イベントの情報だけを登録する (あれば書き換える)。エントリー・動画は残る */
+  saveEventInfo: ({ seriesId, eventId }: EventIds, info: EventInfoBody) =>
+    $fetch(`/api/admin/events/${seriesId}/${eventId}`, {
+      method: 'PUT',
+      body: info,
     }),
   deleteEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch(`/api/admin/events/${seriesId}/${eventId}`, { method: 'DELETE' }),

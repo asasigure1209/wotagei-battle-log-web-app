@@ -16,6 +16,9 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(
+      canvas.getByRole('link', { name: /イベントを登録する/ }),
+    ).toHaveAttribute('href', '/admin/events')
+    await expect(
       canvas.getByRole('link', { name: /エントリーと動画を登録する/ }),
     ).toHaveAttribute('href', '/admin/entries')
   },
