@@ -67,8 +67,12 @@ export function newRow(
   }
 }
 
+/** イベントの情報から、ID の組を取り出す */
+export function eventIds({ series, event }: SelectedEvent): EventIds {
+  return { seriesId: series.id, eventId: event.id }
+}
+
 /** 選んだイベントの ID の組。選んでいなければ null */
 export function selectedIds(state: EditorState): EventIds | null {
-  const { event } = state
-  return event ? { seriesId: event.series.id, eventId: event.event.id } : null
+  return state.event ? eventIds(state.event) : null
 }

@@ -9,7 +9,7 @@ import {
   parsePerformers,
 } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
-import { type EditorState, newRow, selectedIds, type VideoRow } from './state'
+import { type EditorState, eventIds, newRow, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
 const DRY_RUN_OK = '問題ありません。このまま登録できます'
@@ -35,14 +35,12 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
 
 /** 送る内容 (manifest の YAML を読んだ値と同じ形) と、送る前に見つかった誤り */
 export function buildManifest(state: EditorState) {
-  const ids = selectedIds(state)
-  if (!state.event || !ids) {
-    return { manifest: null, problems: ['イベントを選んでください'] }
-  }
+  const { event } = state
+  if (!event) return { manifest: null, problems: ['イベントを選んでください'] }
   const { entries, problems } = parseEntriesText(state.entriesText)
-  const prefix = eventPrefix(ids)
+  const prefix = eventPrefix(eventIds(event))
   const videos = state.rows.map((row) => manifestVideo(row, prefix, problems))
-  const manifest = { ...state.event, entries, videos }
+  const manifest = { ...event, entries, videos }
   return { manifest, problems }
 }
 
@@ -82,12 +80,10 @@ export async function loadEvent(state: EditorState, ids: EventIds) {
 
 /** 登録済みのイベントを、画面に書き写す */
 export function fill(state: EditorState, data: Manifest) {
-  state.event = { series: data.series, event: data.event }
+  const event = { series: data.series, event: data.event }
+  state.event = event
   state.entriesText = formatEntriesText(data.entries)
-  const prefix = eventPrefix({
-    seriesId: data.series.id,
-    eventId: data.event.id,
-  })
+  const prefix = eventPrefix(eventIds(event))
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
