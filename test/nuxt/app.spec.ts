@@ -118,15 +118,25 @@ describe('プレイヤーの動画一覧ページ', () => {
 })
 
 describe('管理画面', () => {
-  // ログインしている (session が 200 を返す) ことにする。登録済みのイベントはない
+  // ログインしている (session が 200 を返す) ことにする。登録済みのイベントは 1 つ
   registerEndpoint('/api/admin/session', () => ({ ok: true }))
-  registerEndpoint('/api/admin/events', () => [])
+  registerEndpoint('/api/admin/events', () => [
+    {
+      seriesId: 'elnino',
+      seriesName: 'エルニーニョ',
+      eventId: 'elnino_vol_5',
+      eventName: 'エルニーニョ vol.5',
+      date: '2026-01-01',
+      contact: 'X: @elnino',
+    },
+  ])
 
-  it('/admin は入口で、エントリーと動画の登録のページへ案内する', async () => {
+  it('/admin は入口で、イベントの登録と、エントリーと動画の登録のページへ案内する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin' })
     await vi.waitFor(() =>
       expect(wrapper.find('a[href="/admin/entries"]').exists()).toBe(true),
     )
+    expect(wrapper.find('a[href="/admin/events"]').exists()).toBe(true)
     // 入口には登録の画面そのものは出さない
     expect(wrapper.text()).not.toContain('1 行に 1 人')
   })
@@ -136,5 +146,25 @@ describe('管理画面', () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain('1 行に 1 人'))
     // ヘッダーから入口へ戻れる
     expect(wrapper.find('a[href="/admin"]').exists()).toBe(true)
+  })
+
+  it('/admin/events で、イベントを登録する', async () => {
+    const wrapper = await mountSuspended(App, { route: '/admin/events' })
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain('新しいイベントを作る'),
+    )
+    // エントリーの欄はない
+    expect(wrapper.text()).not.toContain('1 行に 1 人')
+  })
+  it('/admin/events?event= で開くと、そのイベントを選んで直せる', async () => {
+    const wrapper = await mountSuspended(App, {
+      route: '/admin/events?event=elnino/elnino_vol_5',
+    })
+    await vi.waitFor(() =>
+      expect(
+        wrapper.find<HTMLInputElement>('input[placeholder="elnino_vol_5"]')
+          .element.value,
+      ).toBe('elnino_vol_5'),
+    )
   })
 })

@@ -7,6 +7,16 @@ import { createEditorState } from '~/utils/adminEditor/state'
 export const videoFile = (name: string, size = 0) =>
   new File([new Uint8Array(size)], name)
 
+/** 登録済みのイベントの一覧の 1 件 (シリーズ ID 's'・イベント ID 'e') */
+export const registeredEvent = {
+  seriesId: 's',
+  seriesName: 'シリーズ',
+  eventId: 'e',
+  eventName: 'イベント',
+  date: '2026-01-01',
+  contact: '連絡先',
+}
+
 /** シリーズ ID 's'・イベント ID 'e' を書いたエディターの状態 */
 export function stateWithIds() {
   const state = createEditorState(() => {})

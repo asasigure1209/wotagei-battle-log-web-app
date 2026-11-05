@@ -5,11 +5,17 @@
 
 <template>
   <nav class="menu" aria-label="登録の操作">
+    <NuxtLink class="admin-card item" to="/admin/events">
+      <span class="admin-heading">イベントを登録する</span>
+      <span class="admin-hint">
+        シリーズ・イベント名・開催日・運営の連絡先を登録する。登録済みのイベントを直す・消すのもここ
+      </span>
+    </NuxtLink>
     <NuxtLink class="admin-card item" to="/admin/entries">
       <span class="admin-heading">エントリーと動画を登録する</span>
       <span class="admin-hint">
         イベントの情報とエントリーを書き、動画を R2
-        にアップロードして、出演者と一緒に登録する。登録済みのイベントを直す・消すのもここ
+        にアップロードして、出演者と一緒に登録する
       </span>
     </NuxtLink>
   </nav>

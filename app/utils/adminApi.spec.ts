@@ -29,6 +29,7 @@ const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events', body: [] },
   { method: 'POST', path: '/api/admin/events', body: { ok: true } },
   { method: 'GET', path: '/api/admin/events/s/e', body: {} },
+  { method: 'PUT', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'GET', path: '/api/admin/objects', body: [] },
 ])
@@ -42,6 +43,12 @@ describe('adminApi', () => {
     await adminApi.listObjects(ids)
     await adminApi.saveEvent({}, true)
     await adminApi.saveEvent({}, false)
+    await adminApi.saveEventInfo(ids, {
+      seriesName: 'シリーズ',
+      name: 'イベント',
+      date: '2026-01-01',
+      contact: '連絡先',
+    })
     expect(api.calls).toEqual([
       'GET /api/admin/events',
       'GET /api/admin/events/s/e',
@@ -49,6 +56,7 @@ describe('adminApi', () => {
       'GET /api/admin/objects?series=s&event=e',
       'POST /api/admin/events?dryRun=1',
       'POST /api/admin/events',
+      'PUT /api/admin/events/s/e',
     ])
   })
 })
