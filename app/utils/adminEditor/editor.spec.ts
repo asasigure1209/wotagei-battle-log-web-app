@@ -85,4 +85,25 @@ describe('エディターの操作', () => {
     expect(editor.events.has('s/e')).toBe(true)
     expect(editor.events.has('s/x')).toBe(false)
   })
+  it('openInitial は、一覧にあるイベントなら開き、なければそのことを知らせる', async () => {
+    const editor = createAdminEditor(() => {})
+    await editor.events.reload()
+    await editor.openInitial('s/x')
+    expect(editor.state.event).toBeNull()
+    expect(editor.state.messages).toEqual({
+      kind: 'error',
+      lines: ['登録済みのイベントに見つかりません: s/x'],
+    })
+    await editor.openInitial('')
+    expect(editor.state.messages?.kind).toBe('error')
+  })
+
+  it('openInitial は、それまでに自分でイベントを選んでいたら、何もしない', async () => {
+    const editor = createAdminEditor(() => {})
+    await editor.events.reload()
+    await editor.open('')
+    await editor.openInitial('s/e')
+    expect(editor.state.event).toBeNull()
+    expect(editor.state.messages).toBeNull()
+  })
 })

@@ -5,7 +5,7 @@ import { adminEditorKey, createAdminEditor } from '~/utils/adminEditor/editor'
 
 /**
  * エディターを作り、子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ。
- * initialEvent (`シリーズID/イベントID`) が登録済みのイベントなら、開いたときに選ぶ
+ * initialEvent (`シリーズID/イベントID`) があれば、一覧を読んだあとに選ぶ
  */
 export function provideAdminEditor(
   onUnauthorized: () => void,
@@ -15,7 +15,7 @@ export function provideAdminEditor(
   provide(adminEditorKey, editor)
   onMounted(async () => {
     await editor.events.reload()
-    if (editor.events.has(initialEvent)) await editor.open(initialEvent)
+    await editor.openInitial(initialEvent)
   })
   return editor
 }
