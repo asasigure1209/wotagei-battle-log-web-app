@@ -123,8 +123,12 @@ async function onDelete() {
       >
         {{ state.selectedKey ? '書き換える' : '登録する' }}
       </button>
-      <NuxtLink v-if="state.selectedKey" class="link" to="/admin/entries">
-        エントリーと動画の登録へ
+      <NuxtLink
+        v-if="state.selectedKey"
+        class="link"
+        :to="`/admin/entries?event=${state.selectedKey}`"
+      >
+        このイベントのエントリーと動画を登録する
       </NuxtLink>
       <button
         v-if="state.selectedKey"

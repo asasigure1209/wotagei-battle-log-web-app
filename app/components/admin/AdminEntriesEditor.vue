@@ -8,12 +8,20 @@ import AdminMessages from './AdminMessages.vue'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 import AdminVideosSection from './AdminVideosSection.vue'
 
+const props = defineProps<{
+  /** 開いたときに選ぶイベント (`シリーズID/イベントID`) */
+  initialEvent?: string
+}>()
+
 const emit = defineEmits<{
   /** ログインが切れたとき */
   unauthorized: []
 }>()
 
-const { state } = provideAdminEditor(() => emit('unauthorized'))
+const { state } = provideAdminEditor(
+  () => emit('unauthorized'),
+  props.initialEvent,
+)
 </script>
 
 <template>

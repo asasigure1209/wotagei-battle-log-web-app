@@ -73,8 +73,10 @@ export const Selected: Story = {
       canvas.getByLabelText('イベント ID (英数字と _ -)'),
     ).toBeDisabled()
     await expect(
-      canvas.getByRole('link', { name: 'エントリーと動画の登録へ' }),
-    ).toHaveAttribute('href', '/admin/entries')
+      canvas.getByRole('link', {
+        name: 'このイベントのエントリーと動画を登録する',
+      }),
+    ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
     await userEvent.click(
       canvas.getByRole('button', { name: 'このイベントを消す' }),
     )
