@@ -3,6 +3,7 @@ import { resetTestDb } from '../../test/server/test-db'
 import { importManifest, parseManifest } from '../db/manifest'
 import {
   deleteAdminEvent,
+  findAdminEventInfo,
   getAdminEvent,
   listAdminEvents,
   saveAdminEventInfo,
@@ -93,6 +94,19 @@ describe('管理画面の DB の読み出し', () => {
     expect(parseManifest({ ...found, entries })).toEqual(
       expect.objectContaining({ event: found?.event }),
     )
+  })
+
+  it('findAdminEventInfo は、シリーズとイベントの情報だけを manifest と同じ形で返す。ないイベントは null', async () => {
+    expect(await findAdminEventInfo('s', 'e')).toEqual({
+      series: { id: 's', name: 'シリーズ' },
+      event: {
+        id: 'e',
+        name: 'イベント e',
+        date: '2026-01-01',
+        contact: '連絡先',
+      },
+    })
+    expect(await findAdminEventInfo('s', 'x')).toBeNull()
   })
 
   it('ないイベントは null', async () => {
