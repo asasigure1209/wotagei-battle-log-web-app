@@ -3,6 +3,7 @@ import {
   invalidManifest,
   parseEventInfoBody,
   parseManifestBody,
+  unregisteredEvent,
 } from './admin-event'
 
 const body = () => ({
@@ -46,6 +47,18 @@ describe('管理画面のイベントの登録のリクエスト', () => {
       expect.objectContaining({
         statusCode: 400,
         data: { problems: ['event.name を書いてください'] },
+      }),
+    )
+  })
+  it('unregisteredEvent は、先にイベントを登録するよう案内する 400', () => {
+    expect(unregisteredEvent('s', 'e')).toEqual(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            '登録されていないイベントです (s/e)。先にイベントの登録の画面で登録してください',
+          ],
+        },
       }),
     )
   })
