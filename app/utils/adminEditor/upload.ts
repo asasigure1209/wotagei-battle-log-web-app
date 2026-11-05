@@ -1,10 +1,10 @@
 // R2 にある動画の確認と、この画面で選んだ動画のアップロード
 import { adminApi, adminUploadDeps, type EventIds } from '~/utils/adminApi'
-import { eventPrefix, idsValid } from '~/utils/adminCommon/eventKey'
+import { eventPrefix } from '~/utils/adminCommon/eventKey'
 import { info, run } from '~/utils/adminCommon/operation'
 import { uploadMultipart } from '~/utils/multipartUpload'
 import { needsUpload } from './rows'
-import type { EditorState, VideoRow } from './state'
+import { type EditorState, selectedIds, type VideoRow } from './state'
 
 /** 送信中の進み具合を画面に反映する間隔 */
 const PROGRESS_INTERVAL_MS = 200
@@ -18,8 +18,8 @@ export async function fetchRemote(ids: EventIds) {
 
 export async function refreshRemote(state: EditorState) {
   state.remote = null
-  if (!idsValid(state.form)) return
-  const ids = { ...state.form }
+  const ids = selectedIds(state)
+  if (!ids) return
   await run(state, async () => {
     state.remote = await fetchRemote(ids)
   })
@@ -31,13 +31,15 @@ export function uploadTargets(state: EditorState) {
 }
 
 export async function uploadAll(state: EditorState) {
-  if (!idsValid(state.form) || !state.remote) return
+  const ids = selectedIds(state)
+  if (!ids || !state.remote) return
   state.messages = null
   const abort = new AbortController()
   state.uploadAbort = abort
   const targets = uploadTargets(state)
+  const prefix = eventPrefix(ids)
   const ok = await run(state, async () => {
-    for (const row of targets) await uploadRow(state, row, abort.signal)
+    for (const row of targets) await uploadRow(state, row, prefix, abort.signal)
   })
   state.uploadAbort = null
   if (ok) info(state, `${targets.length} 本アップロードしました`)
@@ -46,6 +48,7 @@ export async function uploadAll(state: EditorState) {
 async function uploadRow(
   state: EditorState,
   row: VideoRow,
+  prefix: string,
   signal: AbortSignal,
 ) {
   const { file } = row
@@ -55,7 +58,7 @@ async function uploadRow(
   try {
     await uploadMultipart(
       file,
-      eventPrefix(state.form) + row.relPath,
+      prefix + row.relPath,
       throttledProgress(row),
       adminUploadDeps,
       signal,

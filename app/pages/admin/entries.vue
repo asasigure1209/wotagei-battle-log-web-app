@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// エントリーと動画の登録 (イベントの情報もここで書く)
+// エントリーと動画の登録。登録済みのイベントを選んで行う
 useHead({ title: 'エントリーと動画の登録 | 管理画面' })
 
 const loggedIn = useAdminLoggedIn()

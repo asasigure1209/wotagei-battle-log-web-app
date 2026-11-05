@@ -1,12 +1,12 @@
-// 管理画面のエディター。utils/adminEditor/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
+// エントリーと動画の登録画面のエディター。utils/adminEditor/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
 // Nuxt が自動 import しない utils/ の下の階層に置き、画面からは composables の provideAdminEditor を通して使う
 // (テストと Storybook はここから直接作る)
 import { computed, type InjectionKey, reactive, ref } from 'vue'
 import { adminApi, type EventSummary } from '~/utils/adminApi'
-import { eventKey, idsValid, parseEventKey } from '~/utils/adminCommon/eventKey'
+import { eventKey, parseEventKey } from '~/utils/adminCommon/eventKey'
 import { run } from '~/utils/adminCommon/operation'
 import { parseEntriesText } from '~/utils/adminManifest'
-import { loadEvent, register, reset } from './registration'
+import { clear, loadEvent, register } from './registration'
 import {
   addFiles,
   moveRow,
@@ -15,7 +15,7 @@ import {
   sortRows,
   updateRow,
 } from './rows'
-import { createEditorState, type EditorState } from './state'
+import { createEditorState, type EditorState, selectedIds } from './state'
 import { cancelUpload, refreshRemote, uploadAll, uploadTargets } from './upload'
 
 export type AdminEditor = ReturnType<typeof createAdminEditor>
@@ -33,16 +33,23 @@ export function createAdminEditor(onUnauthorized: () => void) {
   const totalUploadBytes = computed(() =>
     targets.value.reduce((n, r) => n + r.sizeBytes, 0),
   )
-  const valid = computed(() => idsValid(state.form))
-  const currentKey = computed(() => eventKey(state.form))
+  /** イベントを選んでいるか。選ぶまではエントリー・動画を操作できない */
+  const selected = computed(() => state.event !== null)
+  const currentKey = computed(() => {
+    const ids = selectedIds(state)
+    return ids ? eventKey(ids) : ''
+  })
   const canUpload = computed(
     () =>
-      valid.value && !!state.remote && targets.value.length > 0 && !state.busy,
+      selected.value &&
+      !!state.remote &&
+      targets.value.length > 0 &&
+      !state.busy,
   )
   /** すべての動画が R2 にあり、登録できるか */
   const canRegister = computed(
     () =>
-      valid.value &&
+      selected.value &&
       state.rows.length > 0 &&
       !state.busy &&
       state.rows.every((r) => rowState(r, state.remote).kind === 'ok'),
@@ -54,13 +61,13 @@ export function createAdminEditor(onUnauthorized: () => void) {
     entries,
     targets,
     totalUploadBytes,
-    idsValid: valid,
+    selected,
     currentKey,
     canUpload,
     canRegister,
-    /** 登録済みのイベントを開く。key が空なら新しいイベントを書き始める */
-    open: (key: string) =>
-      key ? loadEvent(state, parseEventKey(key)) : reset(state),
+    /** 登録済みのイベントを開く。key が空なら選んだイベントを外す */
+    open: async (key: string) =>
+      key ? loadEvent(state, parseEventKey(key)) : clear(state),
     /** ファイルを足し、R2 をまだ調べていなければ調べる */
     addFiles: async (files: File[], category: string) => {
       await addFiles(state, files, category)
@@ -74,11 +81,8 @@ export function createAdminEditor(onUnauthorized: () => void) {
     refreshRemote: () => refreshRemote(state),
     uploadAll: () => uploadAll(state),
     cancelUpload: () => cancelUpload(state),
-    /** 登録する (dryRun なら確かめるだけ)。登録できたら一覧を読み直す */
-    register: async (dryRun: boolean) => {
-      const ok = await register(state, dryRun)
-      if (ok && !dryRun) await events.reload()
-    },
+    /** 登録する (dryRun なら確かめるだけ) */
+    register: (dryRun: boolean) => register(state, dryRun),
   }
 }
 

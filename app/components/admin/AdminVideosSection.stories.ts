@@ -94,7 +94,7 @@ export const Uploading: Story = {
   },
 }
 
-/** R2 をまだ調べていない (ID が決まっていない) あいだは、アップロードできない。 */
+/** イベントを選んでいない (R2 をまだ調べていない) あいだは、R2 を確かめられず、アップロードもできない。 */
 export const RemoteUnknown: Story = {
   decorators: [
     withAdminEditor((editor) => {
@@ -103,6 +103,9 @@ export const RemoteUnknown: Story = {
   ],
   play: async ({ canvas }) => {
     await expect(canvas.getByText('未確認')).toBeVisible()
+    await expect(
+      canvas.getByRole('button', { name: 'R2 を確認' }),
+    ).toBeDisabled()
     await expect(
       canvas.getByRole('button', { name: /R2 にアップロード/ }),
     ).toBeDisabled()

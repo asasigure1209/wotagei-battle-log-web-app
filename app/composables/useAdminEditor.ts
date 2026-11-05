@@ -1,5 +1,5 @@
-// 管理画面のエディターを、親 (AdminEntriesEditor) が provideAdminEditor で作って渡し、各セクションは useAdminEditor で受け取る。
-// エディターそのものは utils/adminEditor/editor.ts
+// エントリーと動画の登録画面のエディターを、親 (AdminEntriesEditor) が provideAdminEditor で作って渡し、
+// 各セクションは useAdminEditor で受け取る。エディターそのものは utils/adminEditor/editor.ts
 import { inject, onMounted, provide } from 'vue'
 import { adminEditorKey, createAdminEditor } from '~/utils/adminEditor/editor'
 

@@ -42,7 +42,10 @@ export const WithProblems: Story = {
   },
 }
 
-/** 書く人がまだいない。 */
-export const Empty: Story = {
+/** イベントを選ぶまでは書けない。 */
+export const NotSelected: Story = {
   decorators: [withAdminEditor()],
+  play: async ({ canvas }) => {
+    await expect(canvas.getByLabelText(/1 行に 1 人/)).toBeDisabled()
+  },
 }

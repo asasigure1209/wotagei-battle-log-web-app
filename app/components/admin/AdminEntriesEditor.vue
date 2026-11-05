@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// 1 つのイベントを書いて登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
+// 登録済みのイベントを選び、エントリーと動画を登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
 
 import { provideAdminEditor } from '~/composables/useAdminEditor'
 import AdminEntriesSection from './AdminEntriesSection.vue'
-import AdminEventSection from './AdminEventSection.vue'
+import AdminEventPicker from './AdminEventPicker.vue'
 import AdminMessages from './AdminMessages.vue'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 import AdminVideosSection from './AdminVideosSection.vue'
@@ -18,7 +18,7 @@ const { state } = provideAdminEditor(() => emit('unauthorized'))
 
 <template>
   <div class="editor">
-    <AdminEventSection />
+    <AdminEventPicker />
     <AdminEntriesSection />
     <AdminVideosSection />
     <AdminRegisterSection />

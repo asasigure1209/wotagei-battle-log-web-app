@@ -8,7 +8,7 @@ import AdminVideoTable from './AdminVideoTable.vue'
 
 const {
   state,
-  idsValid,
+  selected,
   targets,
   totalUploadBytes,
   canUpload,
@@ -46,7 +46,7 @@ async function onPickFiles(e: Event) {
           type="file"
           webkitdirectory
           multiple
-          :disabled="state.busy"
+          :disabled="!selected || state.busy"
           @change="onPickFiles"
         >
       </label>
@@ -63,14 +63,14 @@ async function onPickFiles(e: Event) {
           type="file"
           accept=".mp4,video/mp4"
           multiple
-          :disabled="state.busy"
+          :disabled="!selected || state.busy"
           @change="onPickFiles"
         >
       </label>
       <button
         type="button"
         class="admin-btn"
-        :disabled="!idsValid || state.busy"
+        :disabled="!selected || state.busy"
         @click="refreshRemote"
       >
         R2 を確認

@@ -3,13 +3,12 @@ import { expect } from 'storybook/test'
 import {
   adminParameters,
   fillEvent,
-  registeredEvent,
   videoRow,
   withAdminEditor,
 } from '../../../.storybook/admin'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 
-/** 4. DB に登録。すべての動画が R2 にあれば登録できる。 */
+/** 4. DB に登録。すべての動画が R2 にあれば、選んだイベントにエントリーと動画を登録できる。 */
 const meta = {
   component: AdminRegisterSection,
   tags: ['autodocs'],
@@ -50,19 +49,28 @@ export const NotUploaded: Story = {
   },
 }
 
-/** 登録済みのイベントは、公開ページを開ける。 */
-export const Loaded: Story = {
-  decorators: [
-    withAdminEditor((editor) => {
-      fillEvent(editor)
-      editor.state.loaded = true
-      editor.events.list.value = [registeredEvent]
-    }),
-  ],
+/** 選んだイベントの公開ページを開ける。 */
+export const PublicLink: Story = {
+  decorators: [withAdminEditor(fillEvent)],
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('link', { name: '公開ページを開く' }),
     ).toHaveAttribute('href', '/elnino/elnino_vol_5')
-    await expect(canvas.queryByRole('button', { name: /消す/ })).toBeNull()
+  },
+}
+
+/** イベントを選んでいなければ、登録できない。 */
+export const NotSelected: Story = {
+  decorators: [
+    withAdminEditor((editor) => {
+      editor.state.rows = [videoRow('予選/M1256.mp4', { sizeBytes: 10 })]
+      editor.state.remote = new Map([['予選/M1256.mp4', 10]])
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('button', { name: '登録する' }),
+    ).toBeDisabled()
+    await expect(canvas.queryByRole('link')).toBeNull()
   },
 }

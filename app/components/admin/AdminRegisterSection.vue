@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// 4. DB に登録: 書いた内容を確かめて登録する (イベントを消すのは、イベントの登録の画面で行う)
+// 4. DB に登録: 書いたエントリーと動画を確かめて、選んだイベントに登録する
 
 import { useAdminEditor } from '~/composables/useAdminEditor'
 
-const { canRegister, currentKey, events, register } = useAdminEditor()
+const { canRegister, currentKey, register } = useAdminEditor()
 </script>
 
 <template>
@@ -11,7 +11,7 @@ const { canRegister, currentKey, events, register } = useAdminEditor()
     <h2 class="admin-heading">4. DB に登録</h2>
     <p class="admin-hint">
       すべての動画が「R2
-      にあり」になったら登録できます。登録すると、このイベントのエントリー・動画・出演者を入れ直します
+      にあり」になったら登録できます。登録すると、選んだイベントのエントリー・動画・出演者を入れ直します
       (ほかのイベントには触れません)。
     </p>
     <div class="admin-actions">
@@ -32,7 +32,7 @@ const { canRegister, currentKey, events, register } = useAdminEditor()
         登録する
       </button>
       <a
-        v-if="events.has(currentKey)"
+        v-if="currentKey"
         class="link"
         :href="`/${currentKey}`"
         target="_blank"

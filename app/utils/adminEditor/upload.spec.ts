@@ -9,7 +9,7 @@ import {
   uploadTargets,
 } from '~/utils/adminEditor/upload'
 import { uploadMultipart } from '~/utils/multipartUpload'
-import { stateWithIds, videoFile } from '~~/test/nuxt/adminTestUtils'
+import { stateWithEvent, videoFile } from '~~/test/nuxt/adminTestUtils'
 
 // R2 への実際の送信は multipartUpload.spec.ts で確かめるので、ここでは差し替える
 vi.mock('~/utils/multipartUpload', async (importOriginal) => ({
@@ -23,9 +23,9 @@ registerEndpoint('/api/admin/objects', () => [
   { key: 's/e/b.mp4', size: 20 },
 ])
 
-/** ID を書き、R2 を調べ終えた状態 */
+/** イベントを選び、R2 を調べ終えた状態 */
 function readyState() {
-  const state = stateWithIds()
+  const state = stateWithEvent()
   state.remote = new Map([['予選/a.mp4', 10]])
   return state
 }
@@ -45,12 +45,13 @@ describe('R2 の確認', () => {
     )
   })
 
-  it('refreshRemote は、ID が正しくなければ問い合わせず、未確認にする', async () => {
+  it('refreshRemote は、イベントを選んでいなければ問い合わせず、未確認にする', async () => {
     const state = readyState()
-    state.form.eventId = 'e/x'
+    const { event } = state
+    state.event = null
     await refreshRemote(state)
     expect(state.remote).toBeNull()
-    state.form.eventId = 'e'
+    state.event = event
     await refreshRemote(state)
     expect(state.remote?.get('b.mp4')).toBe(20)
   })
