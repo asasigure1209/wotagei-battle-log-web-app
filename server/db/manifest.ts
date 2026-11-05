@@ -230,8 +230,44 @@ export function upsertSeries(db: Db, series: Manifest['series']) {
  */
 export async function importManifest(db: Db, manifest: Manifest) {
   const seriesId = manifest.series.id
-  const eventId = manifest.event.id
-  const event = { seriesId, eventId }
+  await runBatch(db, [
+    upsertSeries(db, manifest.series),
+    db.delete(events).where(isManifestEvent(manifest)),
+    db.insert(events).values({ ...manifest.event, seriesId }),
+    ...insertContents(db, manifest),
+  ])
+}
+
+/**
+ * 登録済みのイベントの、エントリー・動画・出演者だけを入れ直す (管理画面の登録)。シリーズ・イベントの行には触れないので、
+ * イベントの登録の画面で直した情報を上書きしない。イベントがなければ (消されていれば)、外部キーで batch ごと失敗する
+ */
+export async function importEventContents(db: Db, manifest: Manifest) {
+  const { seriesId, eventId } = manifestIds(manifest)
+  await runBatch(db, [
+    // 出演者は、エントリー・動画を消すと ON DELETE CASCADE で消える
+    db
+      .delete(entries)
+      .where(and(eq(entries.seriesId, seriesId), eq(entries.eventId, eventId))),
+    db
+      .delete(videos)
+      .where(and(eq(videos.seriesId, seriesId), eq(videos.eventId, eventId))),
+    ...insertContents(db, manifest),
+  ])
+}
+
+function manifestIds(manifest: Manifest) {
+  return { seriesId: manifest.series.id, eventId: manifest.event.id }
+}
+
+function isManifestEvent(manifest: Manifest) {
+  const { seriesId, eventId } = manifestIds(manifest)
+  return and(eq(events.seriesId, seriesId), eq(events.id, eventId))
+}
+
+/** manifest のエントリー・動画・出演者を入れる文 */
+function insertContents(db: Db, manifest: Manifest) {
+  const event = manifestIds(manifest)
   const videoRows = manifest.videos.map((v, i) => ({
     ...event,
     no: i + 1,
@@ -243,20 +279,17 @@ export async function importManifest(db: Db, manifest: Manifest) {
   const performerRows = manifest.videos.flatMap((v, i) =>
     v.performers.map((entryNo) => ({ ...event, entryNo, videoNo: i + 1 })),
   )
-
-  const statements: BatchItem<'sqlite'>[] = [
-    upsertSeries(db, manifest.series),
-    db
-      .delete(events)
-      .where(and(eq(events.seriesId, seriesId), eq(events.id, eventId))),
-    db.insert(events).values({ ...manifest.event, seriesId }),
+  return [
     ...chunks(manifest.entries.map((e) => ({ ...event, ...e }))).map((rows) =>
       db.insert(entries).values(rows),
     ),
     ...chunks(videoRows).map((rows) => db.insert(videos).values(rows)),
     ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
   ]
-  await db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
+}
+
+function runBatch(db: Db, statements: BatchItem<'sqlite'>[]) {
+  return db.batch(statements as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
 }
 
 /** D1 は 1 つの SQL に渡せる値が 100 個までなので、insert する行をそれに収まるよう分ける */

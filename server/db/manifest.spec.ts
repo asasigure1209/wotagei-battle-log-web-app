@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { resetTestDb } from '../../test/server/test-db'
 import { getEvent, getPlayer, listPlayers } from '../utils/repository'
 import {
+  importEventContents,
   importManifest,
   ManifestError,
   parseEventInfo,
@@ -194,5 +195,40 @@ describe('importManifest', () => {
     const players = await listPlayers('s', 'e')
     expect(players).toHaveLength(40)
     expect(players.every((p) => p.count === 2)).toBe(true)
+  })
+})
+
+describe('importEventContents', () => {
+  it('エントリー・動画・出演者だけを入れ直し、シリーズ・イベントの情報には触れない', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, parseManifest(yaml()))
+
+    const contents = yaml()
+    contents.series.name = '画面が開いたときの古いシリーズ名'
+    contents.event.name = '古い名前'
+    contents.entries = { '1': 'A' }
+    contents.videos = [qualifier()]
+    await importEventContents(db, parseManifest(contents))
+
+    expect(await getEvent('s', 'e')).toEqual({
+      title: 'イベント',
+      date: '2026-01-01',
+      contact: '連絡先',
+    })
+    expect(await db.select().from(eventSeries)).toEqual([
+      { id: 's', name: 'シリーズ' },
+    ])
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A', count: 1 },
+    ])
+  })
+
+  it('イベントがなければ (消されていれば) 何も入れずに失敗する', async () => {
+    const db = await resetTestDb()
+    await expect(
+      importEventContents(db, parseManifest(yaml())),
+    ).rejects.toThrow()
+    expect(await db.select().from(eventSeries)).toEqual([])
+    expect(await listPlayers('s', 'e')).toEqual([])
   })
 })
