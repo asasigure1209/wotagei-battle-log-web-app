@@ -3,7 +3,7 @@
 
 import { computed } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEditor'
-import { eventKey } from '~/utils/adminCommon/eventKey'
+import AdminEventSelect from './AdminEventSelect.vue'
 
 const { state, events, currentKey, open } = useAdminEditor()
 
@@ -25,21 +25,14 @@ const editLink = computed(
       <NuxtLink class="link" to="/admin/events">イベントを登録</NuxtLink>
       してください。
     </p>
-    <label v-else class="admin-field">
-      <span>登録済みのイベント</span>
-      <select v-model="selectedKey" class="admin-input" :disabled="state.busy">
-        <option value="">選んでください</option>
-        <option
-          v-for="e in events.list.value"
-          :key="eventKey(e)"
-          :value="eventKey(e)"
-        >
-          {{ e.date }} {{ e.seriesName }} / {{ e.eventName }} ({{
-            eventKey(e)
-          }})
-        </option>
-      </select>
-    </label>
+    <AdminEventSelect
+      v-else
+      v-model="selectedKey"
+      label="登録済みのイベント"
+      empty-label="選んでください"
+      :events="events.list.value"
+      :disabled="state.busy"
+    />
     <dl v-if="state.event" class="info">
       <dt>シリーズ</dt>
       <dd>{{ state.event.series.name }} ({{ state.event.series.id }})</dd>
