@@ -55,9 +55,14 @@ export function createAdminEditor(onUnauthorized: () => void) {
       state.rows.every((r) => rowState(r, state.remote).kind === 'ok'),
   )
 
-  /** 登録済みのイベントを開く。key が空なら選んだイベントを外す */
-  const open = async (key: string) =>
-    key ? loadEvent(state, parseEventKey(key)) : clear(state)
+  /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
+  const open = async (key: string) => {
+    if (!key) return clear(state)
+    if (!events.has(key)) {
+      return showErrors(state, [`登録済みのイベントに見つかりません: ${key}`])
+    }
+    await loadEvent(state, parseEventKey(key))
+  }
 
   return {
     state,
@@ -70,15 +75,6 @@ export function createAdminEditor(onUnauthorized: () => void) {
     canUpload,
     canRegister,
     open,
-    /**
-     * 開いたときに選ぶイベント (?event=) を開く。一覧になければ、そのことを知らせる。
-     * 一覧を読む間に自分で選んでいたら (loadSeq が進んでいたら)、そちらを残す
-     */
-    openInitial: async (key: string) => {
-      if (!key || state.loadSeq) return
-      if (events.has(key)) return open(key)
-      showErrors(state, [`登録済みのイベントに見つかりません: ${key}`])
-    },
     /** ファイルを足し、R2 をまだ調べていなければ調べる */
     addFiles: async (files: File[], category: string) => {
       await addFiles(state, files, category)

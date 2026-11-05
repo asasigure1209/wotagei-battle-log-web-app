@@ -15,7 +15,8 @@ export function provideAdminEditor(
   provide(adminEditorKey, editor)
   onMounted(async () => {
     await editor.events.reload()
-    await editor.openInitial(initialEvent)
+    // 一覧を読む間は選べない (選択肢がなく、読み終わるまで busy) ので、自分で選んだものを上書きすることはない
+    if (initialEvent) await editor.open(initialEvent)
   })
   return editor
 }
