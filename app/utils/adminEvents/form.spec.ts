@@ -1,14 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createAdminEventForm } from '~/utils/adminEvents/form'
+import { registeredEvent } from '~~/test/nuxt/adminTestUtils'
 
-const registered = {
-  seriesId: 's',
-  seriesName: 'シリーズ',
-  eventId: 'e',
-  eventName: 'イベント',
-  date: '2026-01-01',
-  contact: '連絡先',
-}
+const registered = registeredEvent
 
 describe('フォームの算出値', () => {
   it('canSave は、ID が正しく、待っていないときだけ true', () => {

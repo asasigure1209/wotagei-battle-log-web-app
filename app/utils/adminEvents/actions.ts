@@ -23,16 +23,8 @@ export function open(state: EventFormState, key: string) {
   state.messages = null
   const found = state.list.find((e) => eventKey(e) === key)
   state.selectedKey = found ? key : ''
-  state.form = found
-    ? {
-        seriesId: found.seriesId,
-        seriesName: found.seriesName,
-        eventId: found.eventId,
-        eventName: found.eventName,
-        date: found.date,
-        contact: found.contact,
-      }
-    : emptyForm()
+  // 一覧の 1 件はフォームと同じ欄を持つので、そのまま写す (一覧の値は書き換えない)
+  state.form = found ? { ...found } : emptyForm()
 }
 
 /** 書いたシリーズ ID が登録済みのシリーズなら、シリーズ名を埋める */

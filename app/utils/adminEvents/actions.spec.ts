@@ -8,16 +8,9 @@ import {
   save,
 } from '~/utils/adminEvents/actions'
 import { createEventFormState } from '~/utils/adminEvents/state'
-import { fakeAdminApi } from '~~/test/nuxt/adminTestUtils'
+import { fakeAdminApi, registeredEvent } from '~~/test/nuxt/adminTestUtils'
 
-const registered = {
-  seriesId: 's',
-  seriesName: 'シリーズ',
-  eventId: 'e',
-  eventName: 'イベント',
-  date: '2026-01-01',
-  contact: '連絡先',
-}
+const registered = registeredEvent
 
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events', body: [registered] },
