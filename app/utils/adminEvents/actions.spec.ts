@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { adminApi } from '~/utils/adminApi'
 import {
   fillSeriesName,
   open,
@@ -26,6 +27,13 @@ const api = fakeAdminApi([
 ])
 
 beforeEach(() => api.reset())
+afterEach(() => vi.restoreAllMocks())
+
+/** 一覧の読み直しだけを、次の 1 回失敗させる */
+const failNextListReload = () =>
+  vi
+    .spyOn(adminApi, 'listEvents')
+    .mockRejectedValueOnce(new Error('一覧を読めませんでした'))
 
 /** 登録済みのイベントの一覧を読んだ状態 */
 function stateWithList() {
@@ -84,10 +92,11 @@ describe('イベントを選ぶ', () => {
 })
 
 describe('登録・削除', () => {
-  it('save は書いた内容を送り、一覧を読み直して、そのイベントを選んだことにする', async () => {
+  it('新しいイベントは、送る前に一覧を読み直して確かめ、送ったあとも読み直して、そのイベントを選んだことにする', async () => {
     const state = stateWithNewEvent()
     expect(await save(state)).toBe(true)
     expect(api.calls).toEqual([
+      'GET /api/admin/events',
       'PUT /api/admin/events/s/f',
       'GET /api/admin/events',
     ])
@@ -95,12 +104,34 @@ describe('登録・削除', () => {
     expect(state.messages?.kind).toBe('info')
   })
 
-  it('新しく書いたイベントの ID が登録済みなら、送らずに誤りにする', async () => {
+  it('新しく書いたイベントの ID が登録済みなら、送らずに誤りにする (画面の一覧が古くても)', async () => {
     const state = stateWithNewEvent()
+    // 画面を開いたあとに、ほかで s/e が登録された
+    state.list = []
     state.form.eventId = 'e'
+    expect(await save(state)).toBe(false)
+    expect(api.calls).toEqual(['GET /api/admin/events'])
+    expect(state.messages?.kind).toBe('error')
+  })
+
+  it('新しいイベントで、送る前の一覧の読み直しに失敗したら、送らない', async () => {
+    failNextListReload()
+    const state = stateWithNewEvent()
     expect(await save(state)).toBe(false)
     expect(api.calls).toEqual([])
     expect(state.messages?.kind).toBe('error')
+  })
+
+  it('送れたあとの一覧の読み直しに失敗しても、登録できたことにして、そのイベントを選ぶ', async () => {
+    const state = stateWithList()
+    open(state, 's/e')
+    failNextListReload()
+    expect(await save(state)).toBe(true)
+    expect(state.selectedKey).toBe('s/e')
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: ['一覧を読めませんでした'],
+    })
   })
 
   it('登録済みのイベントを選んでいれば、同じ ID で書き換える', async () => {
@@ -121,6 +152,15 @@ describe('登録・削除', () => {
     ])
     expect(state.selectedKey).toBe('')
     expect(state.form.eventId).toBe('e')
+  })
+
+  it('消せたあとの一覧の読み直しに失敗しても、消したイベントは選ばない', async () => {
+    const state = stateWithList()
+    open(state, 's/e')
+    failNextListReload()
+    expect(await remove(state)).toBe(true)
+    expect(state.selectedKey).toBe('')
+    expect(state.messages?.kind).toBe('error')
   })
 
   it('ログインが切れていたら onUnauthorized を呼ぶ', async () => {
