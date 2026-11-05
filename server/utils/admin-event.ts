@@ -1,12 +1,7 @@
 // 管理画面のイベントの登録 (/api/admin/events/**) で共通に使う、リクエストの確かめ。
 // テスト (node 環境) からも呼べるよう、Nitro の自動 import に頼らず明示する
 import { createError } from 'h3'
-import {
-  type Manifest,
-  ManifestError,
-  parseEventInfo,
-  parseManifest,
-} from '../db/manifest'
+import { ManifestError, parseEventInfo, parseManifest } from '../db/manifest'
 
 /** 誤りの一覧を持つ 400。画面は data.problems を 1 行ずつ出す */
 export function invalidManifest(problems: string[]) {
@@ -51,17 +46,9 @@ export function parseEventInfoBody(
   )
 }
 
-/**
- * 管理画面から登録するエントリーと動画の manifest が、登録済みのイベントのものか。未登録なら 400。
- * イベントの情報はイベントの登録の画面でだけ書くので、この画面からはイベントを作らない
- */
-export function requireRegisteredEvent(
-  manifest: Manifest,
-  registered: boolean,
-) {
-  if (registered) return
-  const key = `${manifest.series.id}/${manifest.event.id}`
-  throw invalidManifest([
-    `登録されていないイベントです (${key})。先にイベントの登録の画面で登録してください`,
+/** 未登録のイベントに、エントリーと動画を登録しようとしたときの 400 */
+export function unregisteredEvent(seriesId: string, eventId: string) {
+  return invalidManifest([
+    `登録されていないイベントです (${seriesId}/${eventId})。先にイベントの登録の画面で登録してください`,
   ])
 }

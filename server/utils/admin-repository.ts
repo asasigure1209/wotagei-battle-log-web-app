@@ -1,7 +1,7 @@
 // 管理画面で使う DB の読み書き。画面の API (repository.ts) と違い、manifest と同じ形で返し、
 // 管理画面がそのまま手直しして取り込み直せるようにする
 import { and, asc, desc, eq } from 'drizzle-orm'
-import { type Manifest, upsertSeries } from '../db/manifest'
+import { insertContents, type Manifest, upsertSeries } from '../db/manifest'
 import { entries, eventSeries, events, performers, videos } from '../db/schema'
 // テスト (node 環境) からも読めるよう、Nitro の自動 import に頼らず明示する
 import { useDb } from './db'
@@ -113,6 +113,23 @@ export async function hasAdminEvent(series: string, event: string) {
     .from(events)
     .where(isEvent(series, event))
   return found.length > 0
+}
+
+/**
+ * 登録済みのイベントの、エントリー・動画・出演者だけを入れ直す (管理画面のエントリーと動画の登録)。
+ * シリーズ・イベントの行には触れないので、イベントの登録の画面で直した情報を上書きしない。
+ * イベントがなければ (消されていれば)、外部キーで batch ごと失敗し、作り直さない
+ */
+export async function replaceAdminEventContents(manifest: Manifest) {
+  const db = await useDb()
+  const series = manifest.series.id
+  const event = manifest.event.id
+  await db.batch([
+    // 出演者は、エントリー・動画を消すと ON DELETE CASCADE で消える
+    db.delete(entries).where(inEvent(entries, series, event)),
+    db.delete(videos).where(inEvent(videos, series, event)),
+    ...insertContents(db, manifest),
+  ])
 }
 
 /** イベントを消す。エントリー・動画・出演者も一緒に消える (ON DELETE CASCADE)。R2 の動画は消さない */

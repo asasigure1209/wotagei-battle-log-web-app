@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { resetTestDb } from '../../test/server/test-db'
 import { importManifest, parseManifest } from '../db/manifest'
+import { eventSeries } from '../db/schema'
 import {
   deleteAdminEvent,
   getAdminEvent,
   hasAdminEvent,
   listAdminEvents,
+  replaceAdminEventContents,
   saveAdminEventInfo,
 } from './admin-repository'
 import { getEvent, listPlayers } from './repository'
@@ -139,5 +141,38 @@ describe('イベントの情報だけの登録', () => {
     expect(found?.event).toEqual(info('e', '直した名前').event)
     expect(found?.videos).toHaveLength(2)
     expect(await listPlayers('s', 'e')).toHaveLength(2)
+  })
+})
+
+describe('エントリー・動画・出演者だけの登録', () => {
+  it('シリーズ・イベントの情報には触れずに、エントリー・動画・出演者だけを入れ直す', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, manifest('e'))
+
+    const contents = manifest('e')
+    contents.series.name = '画面が開いたときの古いシリーズ名'
+    contents.event.name = '古い名前'
+    contents.entries = [{ entryNo: 1, name: 'A' }]
+    contents.videos = contents.videos.slice(0, 1)
+    await replaceAdminEventContents(contents)
+
+    expect(await getEvent('s', 'e')).toEqual({
+      title: 'イベント e',
+      date: '2026-01-01',
+      contact: '連絡先',
+    })
+    expect(await db.select().from(eventSeries)).toEqual([
+      { id: 's', name: 'シリーズ' },
+    ])
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A', count: 1 },
+    ])
+  })
+
+  it('イベントがなければ (消されていれば) 何も入れずに失敗する', async () => {
+    const db = await resetTestDb()
+    await expect(replaceAdminEventContents(manifest('e'))).rejects.toThrow()
+    expect(await db.select().from(eventSeries)).toEqual([])
+    expect(await listPlayers('s', 'e')).toEqual([])
   })
 })

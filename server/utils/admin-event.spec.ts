@@ -3,7 +3,7 @@ import {
   invalidManifest,
   parseEventInfoBody,
   parseManifestBody,
-  requireRegisteredEvent,
+  unregisteredEvent,
 } from './admin-event'
 
 const body = () => ({
@@ -50,20 +50,8 @@ describe('管理画面のイベントの登録のリクエスト', () => {
       }),
     )
   })
-  it('requireRegisteredEvent は、未登録のイベントなら 400 にする', () => {
-    const manifest = {
-      series: { id: 's', name: 'シリーズ' },
-      event: {
-        id: 'e',
-        name: 'イベント',
-        date: '2026-01-01',
-        contact: '連絡先',
-      },
-      entries: [],
-      videos: [],
-    }
-    expect(() => requireRegisteredEvent(manifest, true)).not.toThrow()
-    expect(() => requireRegisteredEvent(manifest, false)).toThrow(
+  it('unregisteredEvent は、先にイベントを登録するよう案内する 400', () => {
+    expect(unregisteredEvent('s', 'e')).toEqual(
       expect.objectContaining({
         statusCode: 400,
         data: {
