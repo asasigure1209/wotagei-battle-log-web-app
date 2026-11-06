@@ -41,9 +41,9 @@ export default defineNuxtConfig({
     '/:series/:event': isrHourly,
     '/:series/:event/players/:no': isrHourly,
     // 管理画面はログインしているかで中身が変わるので、サーバーで描画せず、とっておかない。
-    // 入口の /admin と、その下の登録のページ (/admin/entries など) の両方に付ける。
+    // 入口の /admin と、その下の登録のページ (/admin/videos など) の両方に付ける。
     // - isr: false は省けない。Nitro が routeRules を照合すると、1 階層の /admin も上の '/:series/:event' に
-    //   当たったことになり (2 階層の /admin/entries はそのまま当たる)、Vercel 向けの出力で ISR とみなして
+    //   当たったことになり (2 階層の /admin/videos はそのまま当たる)、Vercel 向けの出力で ISR とみなして
     //   関数を作らず、Vercel の 404 になる
     // - headers も書かない。Vercel 向けの出力で、ヘッダーを付けるだけで行き先のないルートになり、同じく 404 になる。
     //   検索エンジン向けの noindex は、ページの <meta> で付けている

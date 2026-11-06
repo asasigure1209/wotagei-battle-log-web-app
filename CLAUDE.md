@@ -25,7 +25,7 @@ Biome の `noExcessiveCognitiveComplexity` は上限 5。
 - モジュールの責務は 1 つに保ち、大きくなる前に分ける。既存の分け方に合わせる:
   - `server/api/**` のハンドラは薄くし、DB・R2・検証は `server/utils/` に置く
   - 公開画面用と管理画面用で返す形が違うものは分ける (`repository.ts` / `admin-repository.ts`)
-  - 画面の状態とロジックは `app/utils/` に出す。大きいものは `app/utils/adminEditor/` のように関心ごとに分け、束ねる役を置く
+  - 画面の状態とロジックは `app/utils/` に出す。大きいものは `app/utils/adminVideos/` のように関心ごとに分け、束ねる役を置く
   - クライアントとサーバーで共用する検証は `shared/utils/`
 
 ## アーキテクチャ
