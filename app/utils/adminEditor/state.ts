@@ -20,7 +20,8 @@ export type VideoRow = {
 }
 
 /**
- * 選んだ登録済みのイベント (event) は、この画面ではイベントの情報を書かず、登録のときもこれをそのまま送る
+ * エントリーと動画の登録画面の状態。選んだ登録済みのイベント (EventSelectionState の event) は、
+ * この画面ではイベントの情報を書かず、登録のときもそれをそのまま送る
  */
 export type EditorState = EventSelectionState & {
   entriesText: string

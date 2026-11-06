@@ -28,7 +28,9 @@ export type EventSelectionState = OperationState & {
 export type EventLoader<S extends EventSelectionState, T> = {
   /** 選んだイベントについて読む */
   fetch: (ids: EventIds) => Promise<T>
-  /** 読み込めた結果を画面に書き写す (state.event もここで入れる)。待つ間に選び直していたら呼ばない */
+  /** 読み込んだ結果から、選んだイベントの情報を取り出す (state.event に入れる) */
+  toEvent: (data: T) => SelectedEvent
+  /** 読み込めた結果を画面に書き写す。state.event を入れたあとに呼び、待つ間に選び直していたら呼ばない */
   fill: (state: S, data: T) => void
   /** 選んだイベントを外すときに、画面の内容を空に戻す */
   reset: (state: S) => void
@@ -99,6 +101,7 @@ export async function loadSelectedEvent<S extends EventSelectionState, T>(
     const data = await loader.fetch(ids)
     // 待っている間にほかのイベントを選び直していたら、この結果は使わない
     if (seq !== state.loadSeq) return
+    state.event = loader.toEvent(data)
     loader.fill(state, data)
   })
 }

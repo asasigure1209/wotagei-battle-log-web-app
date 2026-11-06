@@ -37,14 +37,20 @@ const createState = (onUnauthorized = () => {}): TestState => ({
   text: '',
 })
 
+/** 読み込んだイベント ID のイベント */
+const eventOf = (eventId: string) => ({
+  ...eventInfo(),
+  event: { ...eventInfo().event, id: eventId },
+})
+
 /** ids のイベントを読み、そのイベント ID を text に書き写す読み込み方 */
 function testLoader(
   fetch: (ids: EventIds) => Promise<string> = async (ids) => ids.eventId,
 ): EventLoader<TestState, string> {
   return {
     fetch,
+    toEvent: eventOf,
     fill: (state, text) => {
-      state.event = eventInfo()
       state.text = text
     },
     reset: (state) => {
@@ -96,7 +102,7 @@ describe('選んだイベント', () => {
 })
 
 describe('選んだイベントの読み込み', () => {
-  it('loadSelectedEvent は、読み込んだ結果を画面に書き写す', async () => {
+  it('loadSelectedEvent は、読み込んだ結果から選んだイベントを入れ、画面に書き写す', async () => {
     const state = createState()
     await loadSelectedEvent(
       state,
@@ -137,6 +143,7 @@ describe('選んだイベントの読み込み', () => {
     await loadSelectedEvent(state, { seriesId: 's', eventId: 'f' }, loader)
     finishFirst('e')
     await first
+    expect(state.event).toEqual(eventOf('f'))
     expect(state.text).toBe('f')
   })
 

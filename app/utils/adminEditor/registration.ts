@@ -69,6 +69,7 @@ export const editorLoader: EventLoader<
 > = {
   // 2 つは別々に引けるので、待ち合わせずに並べて引く
   fetch: (ids) => Promise.all([adminApi.getEvent(ids), fetchRemote(ids)]),
+  toEvent: ([data]) => ({ series: data.series, event: data.event }),
   fill: (state, [data, remote]) => {
     fill(state, data)
     state.remote = remote
@@ -80,12 +81,10 @@ export const editorLoader: EventLoader<
   },
 }
 
-/** 登録済みのイベントを、画面に書き写す */
+/** 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく) */
 export function fill(state: EditorState, data: Manifest) {
-  const event = { series: data.series, event: data.event }
-  state.event = event
   state.entriesText = formatEntriesText(data.entries)
-  const prefix = eventPrefix(eventIds(event))
+  const prefix = eventPrefix(eventIds(data))
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
