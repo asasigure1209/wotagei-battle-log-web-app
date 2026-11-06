@@ -7,19 +7,14 @@ import type { EventSummary } from '~/utils/adminApi'
 import type { SelectedEvent } from '~/utils/adminCommon/eventSelection'
 import AdminEventSelect from './AdminEventSelect.vue'
 
-withDefaults(
-  defineProps<{
-    /** 登録済みのイベントの一覧 */
-    events: EventSummary[]
-    /** 選んで読み込んだイベントの情報。読み込めるまでは null */
-    event: SelectedEvent | null
-    /** API を待っているか (待っている間は選び直せない) */
-    busy?: boolean
-    /** 見出し */
-    heading?: string
-  }>(),
-  { busy: false, heading: '1. イベントを選ぶ' },
-)
+defineProps<{
+  /** 登録済みのイベントの一覧 */
+  events: EventSummary[]
+  /** 選んで読み込んだイベントの情報。読み込めるまでは null */
+  event: SelectedEvent | null
+  /** API を待っているか (待っている間は選び直せない) */
+  busy?: boolean
+}>()
 
 /** 選んでいるイベントのキー (`シリーズID/イベントID`)。選んでいなければ空 */
 const selectedKey = defineModel<string>({ required: true })
@@ -32,7 +27,7 @@ const editLink = computed(
 
 <template>
   <section class="admin-card">
-    <h2 class="admin-heading">{{ heading }}</h2>
+    <h2 class="admin-heading">1. イベントを選ぶ</h2>
     <p v-if="!events.length" class="admin-hint">
       まだイベントがありません。先に
       <NuxtLink class="link" to="/admin/events">イベントを登録</NuxtLink>
