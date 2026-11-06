@@ -122,7 +122,7 @@ async function onDelete() {
       <NuxtLink
         v-if="state.selectedKey"
         class="link"
-        :to="`/admin/entries?event=${state.selectedKey}`"
+        :to="`/admin/videos?event=${state.selectedKey}`"
       >
         このイベントのエントリーと動画を登録する
       </NuxtLink>

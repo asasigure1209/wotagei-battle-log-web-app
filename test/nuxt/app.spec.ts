@@ -147,15 +147,15 @@ describe('管理画面', () => {
   it('/admin は入口で、イベントの登録と、エントリーと動画の登録のページへ案内する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin' })
     await vi.waitFor(() =>
-      expect(wrapper.find('a[href="/admin/entries"]').exists()).toBe(true),
+      expect(wrapper.find('a[href="/admin/videos"]').exists()).toBe(true),
     )
     expect(wrapper.find('a[href="/admin/events"]').exists()).toBe(true)
     // 入口には登録の画面そのものは出さない
     expect(wrapper.text()).not.toContain('1 行に 1 人')
   })
 
-  it('/admin/entries で、エントリーと動画を登録する', async () => {
-    const wrapper = await mountSuspended(App, { route: '/admin/entries' })
+  it('/admin/videos で、エントリーと動画を登録する', async () => {
+    const wrapper = await mountSuspended(App, { route: '/admin/videos' })
     await vi.waitFor(() => expect(wrapper.text()).toContain('1 行に 1 人'))
     // ヘッダーから入口へ戻れる
     expect(wrapper.find('a[href="/admin"]').exists()).toBe(true)
@@ -180,13 +180,22 @@ describe('管理画面', () => {
       ).toBe('elnino_vol_5'),
     )
   })
-  it('/admin/entries?event= で開くと、そのイベントを選んで、エントリーを書ける', async () => {
+  it('/admin/videos?event= で開くと、そのイベントを選んで、エントリーを書ける', async () => {
     const wrapper = await mountSuspended(App, {
-      route: '/admin/entries?event=elnino/elnino_vol_5',
+      route: '/admin/videos?event=elnino/elnino_vol_5',
     })
     await vi.waitFor(() =>
       expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
     )
     expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
+  })
+  it('前の URL の /admin/entries?event= で開くと、?event= を引き継いで /admin/videos に移る', async () => {
+    const wrapper = await mountSuspended(App, {
+      route: '/admin/entries?event=elnino/elnino_vol_5',
+    })
+    expect(useRoute().fullPath).toBe('/admin/videos?event=elnino/elnino_vol_5')
+    await vi.waitFor(() =>
+      expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
+    )
   })
 })
