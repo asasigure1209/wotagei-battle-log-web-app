@@ -145,18 +145,49 @@ export const SelectPerformers: Story = {
   },
 }
 
-/** 選んだイベントにエントリーがまだなければ、エントリーの登録へ案内する。 */
+/**
+ * 選んだイベントにエントリーがまだなければ、エントリーの登録へ案内する。
+ * 案内のリンクで移ると選んだファイルが失われるので、ファイルを選ぶ・アップロード・出演者を選ぶこともできない。
+ */
 export const NoEntries: Story = {
   decorators: [
     withAdminVideoEditor((editor) => {
       fillEvent(editor)
       editor.state.entries = []
+      editor.state.rows = [
+        videoRow('予選/M1256.mp4', { performers: [null, null] }),
+      ]
+      editor.state.remote = new Map()
     }),
   ],
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('link', { name: '先にエントリーを登録してください' }),
     ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
+    await expect(canvas.getByLabelText('フォルダを選ぶ')).toBeDisabled()
+    await expect(canvas.getByLabelText('ファイルを選ぶ')).toBeDisabled()
+    await expect(
+      canvas.getByRole('button', { name: /R2 にアップロード/ }),
+    ).toBeDisabled()
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 1' }),
+    ).toBeDisabled()
+  },
+}
+
+/** API を待っているあいだは、出演者を選び直せない。 */
+export const BusyPerformers: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.rows = [videoRow('予選/M1256.mp4')]
+      editor.state.busy = true
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 2' }),
+    ).toBeDisabled()
   },
 }
 

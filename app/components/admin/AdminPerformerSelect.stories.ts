@@ -46,3 +46,11 @@ export const Unregistered: Story = {
     await expect(select).toHaveAttribute('aria-invalid', 'true')
   },
 }
+
+/** disabled のあいだは選べない。 */
+export const Disabled: Story = {
+  args: { modelValue: 1, disabled: true },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole('combobox')).toBeDisabled()
+  },
+}

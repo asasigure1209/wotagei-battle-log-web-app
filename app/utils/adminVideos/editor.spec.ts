@@ -64,6 +64,28 @@ describe('エディターの算出値', () => {
     expect(editor.canRegister.value).toBe(false)
   })
 
+  it('エントリーが 1 人もいなければ、ファイルを選べず (canPickFiles)、アップロードもできない', () => {
+    const editor = editorWithEvent()
+    editor.state.rows = [
+      newRow('b.mp4', { file: videoFile('b.mp4'), sizeBytes: 5 }),
+    ]
+    editor.state.remote = new Map()
+    expect(editor.canPickFiles.value).toBe(true)
+    expect(editor.canUpload.value).toBe(true)
+    editor.state.entries = []
+    expect(editor.canPickFiles.value).toBe(false)
+    expect(editor.canUpload.value).toBe(false)
+  })
+
+  it('canPickFiles は、イベントを選び、待っていないときだけ true', () => {
+    const editor = editorWithEvent()
+    editor.state.busy = true
+    expect(editor.canPickFiles.value).toBe(false)
+    editor.state.busy = false
+    editor.state.event = null
+    expect(editor.canPickFiles.value).toBe(false)
+  })
+
   it('エントリーが 1 人もいなければ、hasEntries は false で、登録できない', () => {
     const editor = editorWithEvent()
     editor.state.rows = [newRow('a.mp4', { sizeBytes: 10 })]

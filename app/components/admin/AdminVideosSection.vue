@@ -12,6 +12,7 @@ const {
   selected,
   hasEntries,
   currentKey,
+  canPickFiles,
   targets,
   totalUploadBytes,
   canUpload,
@@ -55,7 +56,7 @@ async function onPickFiles(e: Event) {
           type="file"
           webkitdirectory
           multiple
-          :disabled="!selected || state.busy"
+          :disabled="!canPickFiles"
           @change="onPickFiles"
         >
       </label>
@@ -72,7 +73,7 @@ async function onPickFiles(e: Event) {
           type="file"
           accept=".mp4,video/mp4"
           multiple
-          :disabled="!selected || state.busy"
+          :disabled="!canPickFiles"
           @change="onPickFiles"
         >
       </label>

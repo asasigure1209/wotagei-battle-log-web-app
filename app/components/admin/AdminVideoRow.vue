@@ -54,6 +54,9 @@ const performerWarnings = computed(() =>
   ].filter(Boolean),
 )
 
+/** 出演者を選べるか (待っているあいだと、エントリーがないあいだは選べない) */
+const selectable = computed(() => !state.busy && state.entries.length > 0)
+
 function setPerformer(slot: 0 | 1, no: number | null) {
   const performers: Performers = [...props.row.performers]
   performers[slot] = no
@@ -82,6 +85,7 @@ function setPerformer(slot: 0 | 1, no: number | null) {
         :label="`${row.relPath} の出演者 1`"
         empty-label="選んでください"
         :entries="state.entries"
+        :disabled="!selectable"
         @update:model-value="setPerformer(0, $event)"
       />
     </td>
@@ -91,6 +95,7 @@ function setPerformer(slot: 0 | 1, no: number | null) {
         :label="`${row.relPath} の出演者 2`"
         empty-label="なし"
         :entries="state.entries"
+        :disabled="!selectable"
         @update:model-value="setPerformer(1, $event)"
       />
       <p v-for="w in performerWarnings" :key="w" class="admin-warn warning">

@@ -13,6 +13,7 @@ const props = defineProps<{
   emptyLabel: string
   /** 登録済みのエントリー */
   entries: Manifest['entries']
+  disabled?: boolean
 }>()
 
 /** 選んだエントリー No.。選んでいなければ null */
@@ -29,6 +30,7 @@ const unregistered = computed(
     v-model="selected"
     :class="['admin-input', 'performer', { unregistered }]"
     :aria-label="label"
+    :disabled="disabled"
     :aria-invalid="unregistered || undefined"
   >
     <option :value="null">{{ emptyLabel }}</option>

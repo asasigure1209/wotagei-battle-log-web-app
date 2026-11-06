@@ -37,9 +37,17 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
   /** 選んだイベントにエントリーが登録済みか。ないあいだは出演者を選べず、登録できない */
   const hasEntries = computed(() => state.entries.length > 0)
   const currentKey = computed(() => selectedKey(state))
+  /**
+   * ファイルを選べるか。エントリーがないあいだは、案内のリンクでエントリーの登録へ移ると選んだファイルや
+   * アップロードの途中が失われるので、選ばせない
+   */
+  const canPickFiles = computed(
+    () => selected.value && hasEntries.value && !state.busy,
+  )
   const canUpload = computed(
     () =>
       selected.value &&
+      hasEntries.value &&
       !!state.remote &&
       targets.value.length > 0 &&
       !state.busy,
@@ -63,6 +71,7 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
     selected,
     hasEntries,
     currentKey,
+    canPickFiles,
     canUpload,
     canRegister,
     /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
