@@ -5,6 +5,7 @@ import {
   parseEntryNamesBody,
   parseEventInfoBody,
   parseManifestBody,
+  parseVideosBody,
   removedPerformerProblems,
   unregisteredEvent,
 } from './admin-event'
@@ -131,6 +132,76 @@ describe('エントリーだけの登録のリクエスト', () => {
       name: '新しい名前',
     }))
     expect(removedPerformerProblems(renamed, performed)).toEqual([])
+  })
+})
+
+describe('動画と出演者だけの登録のリクエスト', () => {
+  const video = (performers: unknown) => ({
+    key: 's/e/本戦/1.mp4',
+    durationSec: 192,
+    sizeBytes: 20,
+    performers,
+  })
+  const scope = { prefix: 's/e/', entryNos: [1, 2, 3] }
+
+  it('parseVideosBody は、本文の videos を manifest の動画と同じ形にする', () => {
+    expect(parseVideosBody({ videos: [video([1, 2])] }, scope)).toEqual([
+      video([1, 2]),
+    ])
+  })
+
+  it('parseVideosBody は、出演者が 1〜2 人で、登録済みのエントリーの No. でなければ、まとめて 400 にする', () => {
+    const body = {
+      videos: [
+        video([]),
+        { ...video([1, 2, 3]), key: 's/e/本戦/2.mp4' },
+        { ...video([4]), key: 's/e/本戦/3.mp4' },
+      ],
+    }
+    expect(() => parseVideosBody(body, scope)).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            'videos[0].performers に、出ているエントリー No. を書いてください (s/e/本戦/1.mp4)',
+            'videos[1].performers の出演者は 2 人までです (s/e/本戦/2.mp4)',
+            'videos[2].performers の 4 は entries にありません (s/e/本戦/3.mp4)',
+          ],
+        },
+      }),
+    )
+  })
+
+  it('parseVideosBody は、videos がない・ほかのイベントのキーなら 400', () => {
+    expect(() => parseVideosBody({}, scope)).toThrow(
+      expect.objectContaining({
+        data: { problems: ['videos がありません'] },
+      }),
+    )
+    expect(() =>
+      parseVideosBody({ videos: [{ ...video([1]), key: 's/x/1.mp4' }] }, scope),
+    ).toThrow(
+      expect.objectContaining({
+        data: {
+          problems: ['videos[0].key は s/e/ で始まるはずです: s/x/1.mp4'],
+        },
+      }),
+    )
+  })
+
+  it('parseVideosBody は、エントリーがまだ登録されていなければ、先にエントリーを登録するよう案内する 400', () => {
+    expect(() =>
+      parseVideosBody({ videos: [video([1])] }, { ...scope, entryNos: [] }),
+    ).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            'エントリーがまだ登録されていません。先にエントリーの登録の画面でエントリーを登録してください',
+          ],
+        },
+      }),
+    )
   })
 })
 

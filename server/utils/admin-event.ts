@@ -6,6 +6,7 @@ import {
   ManifestError,
   parseEventInfo,
   parseManifest,
+  parseVideoList,
 } from '../db/manifest'
 
 /** 誤りの一覧を持つ 400。画面は data.problems を 1 行ずつ出す */
@@ -104,6 +105,33 @@ export function removedPerformerProblems(
   return [...removed].map(
     ([entryNo, rows]) =>
       `エントリー No. ${entryNo} (${rows[0]?.name}) は動画に出ているので消せません: ${rows.map((r) => r.key).join(', ')}`,
+  )
+}
+
+/** 管理画面で登録する動画の出演者の上限 (バトルの動画には 2 人が出る) */
+const MAX_PERFORMERS = 2
+
+/**
+ * 動画と出演者だけの登録の本文 ({ videos: [{ key, durationSec, sizeBytes, performers }] }) から、動画の一覧を作る。
+ * prefix は `シリーズ ID/イベント ID/`、entryNos は DB に登録済みのエントリーの No.。
+ * 出演者は 1〜2 人で、登録済みのエントリーの No. であること。誤りがあれば、まとめて 400
+ */
+export function parseVideosBody(
+  body: unknown,
+  { prefix, entryNos }: { prefix: string; entryNos: number[] },
+): Manifest['videos'] {
+  if (!entryNos.length) {
+    throw invalidManifest([
+      'エントリーがまだ登録されていません。先にエントリーの登録の画面でエントリーを登録してください',
+    ])
+  }
+  const { videos } = (body ?? {}) as Record<string, unknown>
+  return orInvalid(() =>
+    parseVideoList(videos, {
+      prefix,
+      entryNos,
+      maxPerformers: MAX_PERFORMERS,
+    }),
   )
 }
 
