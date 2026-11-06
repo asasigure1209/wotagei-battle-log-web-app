@@ -62,7 +62,7 @@ export const registeredEvent = {
 
 /** 登録済みのイベントを選び、エントリーを書いたところ */
 export function fillEvent(editor: AdminEditor) {
-  editor.events.list.value = [registeredEvent]
+  editor.state.registeredEvents = [registeredEvent]
   editor.state.event = {
     series: { id: registeredEvent.seriesId, name: registeredEvent.seriesName },
     event: {

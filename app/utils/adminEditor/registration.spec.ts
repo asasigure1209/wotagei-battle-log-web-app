@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminApi } from '~/utils/adminApi'
+import { loadSelectedEvent, unselect } from '~/utils/adminCommon/eventSelection'
 import {
   buildManifest,
-  clear,
+  editorLoader,
   fill,
-  loadEvent,
   register,
 } from '~/utils/adminEditor/registration'
 import { createEditorState } from '~/utils/adminEditor/state'
@@ -81,9 +81,13 @@ describe('manifest の組み立て', () => {
 })
 
 describe('登録・読み込み・削除', () => {
-  it('loadEvent はイベントと R2 の一覧を読み込み、選んだイベントとして覚える', async () => {
+  it('editorLoader で読み込むと、イベントと R2 の一覧を読み込み、選んだイベントとして覚える', async () => {
     const state = createEditorState(() => {})
-    await loadEvent(state, { seriesId: 's', eventId: 'e' })
+    await loadSelectedEvent(
+      state,
+      { seriesId: 's', eventId: 'e' },
+      editorLoader,
+    )
     expect(api.calls.sort()).toEqual([
       'GET /api/admin/events/s/e',
       'GET /api/admin/objects?series=s&event=e',
@@ -92,32 +96,20 @@ describe('登録・読み込み・削除', () => {
     expect(state.remote).toEqual(new Map([['予選/1.mp4', 10]]))
   })
 
-  it('loadEvent に失敗したら、前に選んでいたイベントを外したままにする (選んだものと中身をずらさない)', async () => {
+  it('editorLoader での読み込みに失敗したら、前に選んでいたイベントを外したままにする (選んだものと中身をずらさない)', async () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
     vi.spyOn(adminApi, 'getEvent').mockRejectedValueOnce(
       new Error('読めません'),
     )
-    await loadEvent(state, { seriesId: 's', eventId: 'f' })
+    await loadSelectedEvent(
+      state,
+      { seriesId: 's', eventId: 'f' },
+      editorLoader,
+    )
     expect(state.event).toBeNull()
     expect(state.rows).toEqual([])
     expect(state.messages).toEqual({ kind: 'error', lines: ['読めません'] })
-  })
-
-  it('loadEvent を続けて呼んだら、最後に選んだイベントの結果だけを使う', async () => {
-    const state = createEditorState(() => {})
-    let finishFirst: (m: ReturnType<typeof manifest>) => void = () => {}
-    const other = manifest()
-    other.event.id = 'f'
-    other.videos = []
-    vi.spyOn(adminApi, 'getEvent')
-      .mockImplementationOnce(() => new Promise((r) => (finishFirst = r)))
-      .mockResolvedValueOnce(other)
-    const first = loadEvent(state, { seriesId: 's', eventId: 'e' })
-    await loadEvent(state, { seriesId: 's', eventId: 'f' })
-    finishFirst(manifest())
-    await first
-    expect(state.event?.event.id).toBe('f')
   })
 
   it('register は、確かめるだけなら dryRun を付けて送る', async () => {
@@ -152,12 +144,14 @@ describe('登録・読み込み・削除', () => {
     expect(state.busy).toBe(false)
   })
 
-  it('clear は、選んだイベントを外し、書いた内容を空に戻す', () => {
+  it('選んだイベントを外すと、書いた内容と R2 の一覧も空に戻す', () => {
     const state = createEditorState(() => {})
     fill(state, manifest())
-    clear(state)
+    state.remote = new Map()
+    unselect(state, editorLoader)
     expect(state.event).toBeNull()
     expect(state.rows).toEqual([])
     expect(state.entriesText).toBe('')
+    expect(state.remote).toBeNull()
   })
 })

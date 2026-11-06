@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>
 export const NotSelected: Story = {
   decorators: [
     withAdminEditor((editor) => {
-      editor.events.list.value = [registeredEvent]
+      editor.state.registeredEvents = [registeredEvent]
     }),
   ],
   play: async ({ canvas }) => {

@@ -4,6 +4,12 @@ import { createAdminEditor } from '~/utils/adminEditor/editor'
 import { newRow } from '~/utils/adminEditor/state'
 import { eventInfo, videoFile } from '~~/test/nuxt/adminTestUtils'
 
+registerEndpoint('/api/admin/events/s/e', () => ({
+  ...eventInfo(),
+  entries: [],
+  videos: [],
+}))
+
 registerEndpoint('/api/admin/objects', () => [{ key: 's/e/a.mp4', size: 10 }])
 registerEndpoint('/api/admin/events', () => [
   {
@@ -79,20 +85,11 @@ describe('エディターの操作', () => {
     expect(editor.state.event).toBeNull()
   })
 
-  it('events.reload で登録済みのイベントを読み、has で見分ける', async () => {
+  it('open は、一覧にあるイベントを、R2 の一覧とともに読み込む', async () => {
     const editor = createAdminEditor(() => {})
     await editor.events.reload()
-    expect(editor.events.has('s/e')).toBe(true)
-    expect(editor.events.has('s/x')).toBe(false)
-  })
-  it('open は、一覧にないイベントなら読み込まず、そのことを知らせる', async () => {
-    const editor = createAdminEditor(() => {})
-    await editor.events.reload()
-    await editor.open('s/x')
-    expect(editor.state.event).toBeNull()
-    expect(editor.state.messages).toEqual({
-      kind: 'error',
-      lines: ['登録済みのイベントに見つかりません: s/x'],
-    })
+    await editor.open('s/e')
+    expect(editor.currentKey.value).toBe('s/e')
+    expect(editor.state.remote).toEqual(new Map([['a.mp4', 10]]))
   })
 })

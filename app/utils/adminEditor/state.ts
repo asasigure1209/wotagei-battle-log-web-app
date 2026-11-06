@@ -1,11 +1,9 @@
 // エントリーと動画の登録画面 (エディター) の状態。
 // Vue に依存しない関数として書き、エディター (editor.ts) が状態を reactive にして渡す
-import type { EventIds } from '~/utils/adminApi'
 import {
-  createOperationState,
-  type OperationState,
-} from '~/utils/adminCommon/operation'
-import type { Manifest } from '~~/server/db/manifest'
+  createEventSelectionState,
+  type EventSelectionState,
+} from '~/utils/adminCommon/eventSelection'
 
 /** 動画の 1 行。file はこの画面で選んだファイル (DB から読んだだけの行にはない) */
 export type VideoRow = {
@@ -21,31 +19,25 @@ export type VideoRow = {
   error: string
 }
 
-/** 選んだイベントの情報 (manifest の series・event と同じ形) */
-export type SelectedEvent = Pick<Manifest, 'series' | 'event'>
-
-export type EditorState = OperationState & {
-  /** 選んだ登録済みのイベント。この画面ではイベントの情報を書かず、登録のときもこれをそのまま送る */
-  event: SelectedEvent | null
+/**
+ * 選んだ登録済みのイベント (event) は、この画面ではイベントの情報を書かず、登録のときもこれをそのまま送る
+ */
+export type EditorState = EventSelectionState & {
   entriesText: string
   rows: VideoRow[]
   /** R2 にある動画 (相対パス → サイズ)。まだ調べていなければ null */
   remote: Map<string, number> | null
   /** アップロードしている間だけある (中止に使う) */
   uploadAbort: AbortController | null
-  /** イベントを選び直すたびに増やす。読み込みを待つ間に選び直したら、古い結果を捨てるのに使う */
-  loadSeq: number
 }
 
 export function createEditorState(onUnauthorized: () => void): EditorState {
   return {
-    ...createOperationState(onUnauthorized),
-    event: null,
+    ...createEventSelectionState(onUnauthorized),
     entriesText: '',
     rows: [],
     remote: null,
     uploadAbort: null,
-    loadSeq: 0,
   }
 }
 
@@ -65,14 +57,4 @@ export function newRow(
     error: '',
     ...init,
   }
-}
-
-/** イベントの情報から、ID の組を取り出す */
-export function eventIds({ series, event }: SelectedEvent): EventIds {
-  return { seriesId: series.id, eventId: event.id }
-}
-
-/** 選んだイベントの ID の組。選んでいなければ null */
-export function selectedIds(state: EditorState): EventIds | null {
-  return state.event ? eventIds(state.event) : null
 }

@@ -5,7 +5,7 @@ import { computed } from 'vue'
 import { useAdminEditor } from '~/composables/useAdminEditor'
 import AdminEventSelect from './AdminEventSelect.vue'
 
-const { state, events, currentKey, open } = useAdminEditor()
+const { state, currentKey, open } = useAdminEditor()
 
 /** 選んでいるイベントのキー。選び直すと、そのイベントを読み込む */
 const selectedKey = computed({
@@ -20,7 +20,7 @@ const editLink = computed(
 <template>
   <section class="admin-card">
     <h2 class="admin-heading">1. イベントを選ぶ</h2>
-    <p v-if="!events.list.value.length" class="admin-hint">
+    <p v-if="!state.registeredEvents.length" class="admin-hint">
       まだイベントがありません。先に
       <NuxtLink class="link" to="/admin/events">イベントを登録</NuxtLink>
       してください。
@@ -30,7 +30,7 @@ const editLink = computed(
       v-model="selectedKey"
       label="登録済みのイベント"
       empty-label="選んでください"
-      :events="events.list.value"
+      :events="state.registeredEvents"
       :disabled="state.busy"
     />
     <dl v-if="state.event" class="info">
