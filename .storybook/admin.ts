@@ -5,6 +5,7 @@
 import type { Decorator } from '@storybook/vue3-vite'
 import { provide } from 'vue'
 import '../app/assets/css/admin.css'
+import type { SelectedEvent } from '../app/utils/adminCommon/eventSelection'
 import {
   type AdminEditor,
   adminEditorKey,
@@ -60,18 +61,21 @@ export const registeredEvent = {
   contact: 'X: @elnino',
 }
 
+/** registeredEvent を選んだときの、選んだイベントの情報 */
+export const selectedEvent: SelectedEvent = {
+  series: { id: registeredEvent.seriesId, name: registeredEvent.seriesName },
+  event: {
+    id: registeredEvent.eventId,
+    name: registeredEvent.eventName,
+    date: registeredEvent.date,
+    contact: registeredEvent.contact,
+  },
+}
+
 /** 登録済みのイベントを選び、エントリーを書いたところ */
 export function fillEvent(editor: AdminEditor) {
   editor.state.registeredEvents = [registeredEvent]
-  editor.state.event = {
-    series: { id: registeredEvent.seriesId, name: registeredEvent.seriesName },
-    event: {
-      id: registeredEvent.eventId,
-      name: registeredEvent.eventName,
-      date: registeredEvent.date,
-      contact: registeredEvent.contact,
-    },
-  }
+  editor.state.event = selectedEvent
   editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
 }
 

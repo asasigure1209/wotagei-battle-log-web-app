@@ -1,26 +1,39 @@
 <script setup lang="ts">
-// 1. イベントを選ぶ: エントリーと動画を登録する、登録済みのイベントを選ぶ。イベントの情報はここでは直さない
+// イベントを選ぶ: エントリーや動画を登録する、登録済みのイベントを選ぶ。イベントの情報はここでは直さない。
+// 選んだキーを v-model でやり取りし、読み込んだイベントの情報を出すだけにする (読み込むのは親)
 
 import { computed } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEditor'
+import type { EventSummary } from '~/utils/adminApi'
+import type { SelectedEvent } from '~/utils/adminCommon/eventSelection'
 import AdminEventSelect from './AdminEventSelect.vue'
 
-const { state, currentKey, open } = useAdminEditor()
+withDefaults(
+  defineProps<{
+    /** 登録済みのイベントの一覧 */
+    events: EventSummary[]
+    /** 選んで読み込んだイベントの情報。読み込めるまでは null */
+    event: SelectedEvent | null
+    /** API を待っているか (待っている間は選び直せない) */
+    busy?: boolean
+    /** 見出し */
+    heading?: string
+  }>(),
+  { busy: false, heading: '1. イベントを選ぶ' },
+)
 
-/** 選んでいるイベントのキー。選び直すと、そのイベントを読み込む */
-const selectedKey = computed({
-  get: () => currentKey.value,
-  set: (key: string) => open(key),
-})
+/** 選んでいるイベントのキー (`シリーズID/イベントID`)。選んでいなければ空 */
+const selectedKey = defineModel<string>({ required: true })
+
 const editLink = computed(
-  () => `/admin/events${currentKey.value ? `?event=${currentKey.value}` : ''}`,
+  () =>
+    `/admin/events${selectedKey.value ? `?event=${selectedKey.value}` : ''}`,
 )
 </script>
 
 <template>
   <section class="admin-card">
-    <h2 class="admin-heading">1. イベントを選ぶ</h2>
-    <p v-if="!state.registeredEvents.length" class="admin-hint">
+    <h2 class="admin-heading">{{ heading }}</h2>
+    <p v-if="!events.length" class="admin-hint">
       まだイベントがありません。先に
       <NuxtLink class="link" to="/admin/events">イベントを登録</NuxtLink>
       してください。
@@ -30,18 +43,18 @@ const editLink = computed(
       v-model="selectedKey"
       label="登録済みのイベント"
       empty-label="選んでください"
-      :events="state.registeredEvents"
-      :disabled="state.busy"
+      :events="events"
+      :disabled="busy"
     />
-    <dl v-if="state.event" class="info">
+    <dl v-if="event" class="info">
       <dt>シリーズ</dt>
-      <dd>{{ state.event.series.name }} ({{ state.event.series.id }})</dd>
+      <dd>{{ event.series.name }} ({{ event.series.id }})</dd>
       <dt>イベント</dt>
-      <dd>{{ state.event.event.name }} ({{ state.event.event.id }})</dd>
+      <dd>{{ event.event.name }} ({{ event.event.id }})</dd>
       <dt>開催日</dt>
-      <dd>{{ state.event.event.date }}</dd>
+      <dd>{{ event.event.date }}</dd>
       <dt>運営の連絡先</dt>
-      <dd>{{ state.event.event.contact }}</dd>
+      <dd>{{ event.event.contact }}</dd>
     </dl>
     <p class="admin-hint">
       イベントの情報を直すときや、新しいイベントを足すときは

@@ -18,7 +18,7 @@ const emit = defineEmits<{
   unauthorized: []
 }>()
 
-const { state } = provideAdminEditor(
+const { state, currentKey, open } = provideAdminEditor(
   () => emit('unauthorized'),
   props.initialEvent,
 )
@@ -26,7 +26,13 @@ const { state } = provideAdminEditor(
 
 <template>
   <div class="editor">
-    <AdminEventPicker />
+    <AdminEventPicker
+      :model-value="currentKey"
+      :events="state.registeredEvents"
+      :event="state.event"
+      :busy="state.busy"
+      @update:model-value="open"
+    />
     <AdminEntriesSection />
     <AdminVideosSection />
     <AdminRegisterSection />
