@@ -48,7 +48,7 @@ export function parseEventInfoBody(
   )
 }
 
-/** 未登録のイベントに、エントリーと動画を登録しようとしたときの 400 */
+/** 未登録のイベントに、エントリーや動画を登録しようとしたときの 400 (エントリーの登録・動画の登録で使う) */
 export function unregisteredEvent(seriesId: string, eventId: string) {
   return invalidManifest([
     `登録されていないイベントです (${seriesId}/${eventId})。先にイベントの登録の画面で登録してください`,

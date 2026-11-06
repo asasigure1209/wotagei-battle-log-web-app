@@ -1,6 +1,7 @@
 // イベントごとのデータファイル (manifest) を確かめて、DB に取り込む。
 // manifest は、イベント情報・エントリー・各動画のキー・長さ・サイズ・出演者を書いた YAML。
-// 管理画面 (/admin) の登録も、画面の内容からこの形を組み立てて確かめる
+// 管理画面 (/admin) は manifest を組み立てず、イベントの情報 (parseEventInfo)・動画の一覧 (parseVideoList) を
+// 同じ規則で別々に確かめる
 import { readFile } from 'node:fs/promises'
 import { and, eq } from 'drizzle-orm'
 import { parse } from 'yaml'
