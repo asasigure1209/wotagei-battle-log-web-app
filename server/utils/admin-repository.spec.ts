@@ -297,6 +297,39 @@ describe('動画と出演者だけの登録', () => {
     ])
   })
 
+  it('今あるキーを逆の順に入れ直すと、動画の No. と出演者が入れ替わる', async () => {
+    await replaceAdminEventVideos('s', 'e', manifest('e').videos.toReversed())
+    expect((await getAdminEvent('s', 'e'))?.videos).toEqual([
+      {
+        key: 's/e/本戦/2.mp4',
+        durationSec: 192,
+        sizeBytes: 20,
+        performers: [1, 2],
+      },
+      {
+        key: 's/e/予選/1.mp4',
+        durationSec: 61,
+        sizeBytes: 10,
+        performers: [1],
+      },
+    ])
+  })
+
+  it('出演者のエントリーがなくて失敗したら、前の動画と出演者がそのまま残る', async () => {
+    const before = await getAdminEvent('s', 'e')
+    await expect(
+      replaceAdminEventVideos('s', 'e', [
+        {
+          key: 's/e/予選/1.mp4',
+          durationSec: 61,
+          sizeBytes: 10,
+          performers: [9],
+        },
+      ]),
+    ).rejects.toThrow()
+    expect(await getAdminEvent('s', 'e')).toEqual(before)
+  })
+
   it('ほかのイベントには触れない', async () => {
     const before = await getAdminEvent('s', 'f')
     await replaceAdminEventVideos('s', 'e', manifest('e').videos.slice(0, 1))
