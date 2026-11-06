@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { resetTestDb } from '../../test/server/test-db'
-import { getEvent, getPlayer, listPlayers } from '../utils/repository'
+import { getEvent, getPlayer, inEvent, listPlayers } from '../utils/repository'
 import {
   importManifest,
+  insertEntries,
+  insertVideos,
   ManifestError,
   parseEventInfo,
   parseManifest,
   readManifest,
 } from './manifest'
-import { eventSeries } from './schema'
+import { entries, eventSeries, videos } from './schema'
 
 /** 予選 (A が 1 人で出る) の動画 */
 const qualifier = () => ({
@@ -194,5 +196,41 @@ describe('importManifest', () => {
     const players = await listPlayers('s', 'e')
     expect(players).toHaveLength(40)
     expect(players.every((p) => p.count === 2)).toBe(true)
+  })
+})
+
+describe('insertEntries・insertVideos', () => {
+  const ids = { seriesId: 's', eventId: 'e' }
+
+  it('動画だけを消してから insertVideos で入れると、出演者ごと元に戻る', async () => {
+    const db = await resetTestDb()
+    const manifest = parseManifest(yaml())
+    await importManifest(db, manifest)
+
+    // 出演者は、動画を消すと ON DELETE CASCADE で消える
+    await db.batch([
+      db.delete(videos).where(inEvent(videos, 's', 'e')),
+      ...insertVideos(db, ids, manifest.videos),
+    ])
+
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A', count: 2 },
+      { no: '02', name: 'B', count: 1 },
+      { no: '03', name: 'C', count: 0 },
+    ])
+  })
+
+  it('insertEntries は、エントリーだけを入れる', async () => {
+    const db = await resetTestDb()
+    await importManifest(db, parseManifest(yaml()))
+
+    await db.batch([
+      db.delete(entries).where(inEvent(entries, 's', 'e')),
+      ...insertEntries(db, ids, [{ entryNo: 1, name: 'X' }]),
+    ])
+
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'X', count: 0 },
+    ])
   })
 })
