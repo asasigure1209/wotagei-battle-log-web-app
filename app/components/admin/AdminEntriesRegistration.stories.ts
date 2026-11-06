@@ -77,7 +77,10 @@ export const SelectEvent: Story = {
   },
 }
 
-/** ?event= で開くと、そのイベントを選んだ状態になる。登録すると知らせを出し、動画の登録へ案内する。 */
+/**
+ * ?event= で開くと、そのイベントを選んだ状態になる。登録すると知らせを出し、動画の登録へ案内する。
+ * 登録したあとに書き換えると、登録したものと違うので案内を消す。
+ */
 export const InitialEventAndRegister: Story = {
   args: { initialEvent: 'elnino/elnino_vol_5' },
   play: async ({ canvas, userEvent }) => {
@@ -91,6 +94,10 @@ export const InitialEventAndRegister: Story = {
     await expect(
       canvas.getByRole('link', { name: 'このイベントの動画を登録する' }),
     ).toHaveAttribute('href', '/admin/videos?event=elnino/elnino_vol_5')
+    await userEvent.type(names, '\nはやて')
+    await expect(
+      canvas.queryByRole('link', { name: 'このイベントの動画を登録する' }),
+    ).toBeNull()
   },
 }
 

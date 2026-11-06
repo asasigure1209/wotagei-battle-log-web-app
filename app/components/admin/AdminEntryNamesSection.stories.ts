@@ -49,6 +49,19 @@ export const Typing: Story = {
   },
 }
 
+/** 送っている間は書き換えられない。 */
+export const Busy: Story = {
+  decorators: [
+    withAdminEntriesForm((form) => {
+      fillEntryNames(form)
+      form.state.busy = true
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(canvas.getByLabelText(/1 行に 1 人/)).toBeDisabled()
+  },
+}
+
 /** イベントを選ぶまでは書けない。 */
 export const NotSelected: Story = {
   decorators: [withAdminEntriesForm()],

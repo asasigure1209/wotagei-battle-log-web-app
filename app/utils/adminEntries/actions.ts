@@ -44,7 +44,7 @@ export const entriesLoader: EventLoader<EntriesFormState, Manifest> = {
   reset: (state) => {
     state.namesText = ''
     state.entryNosProblem = ''
-    state.registered = false
+    state.savedNamesText = null
   },
 }
 
@@ -66,17 +66,21 @@ export async function save(state: EntriesFormState, dryRun: boolean) {
   const target = saveTarget(state)
   if (!target) return false
   const { ids, names } = target
+  // 登録に失敗したら、前に登録できた文のままとは限らないので忘れる
+  if (!dryRun) state.savedNamesText = null
+  // 送っている間にイベントを選び直したら、結果を書かない
+  const seq = state.loadSeq
   const ok = await run(state, async () => {
     await adminApi.saveEntries(ids, names, dryRun)
   })
-  if (!ok) return false
+  if (!ok || seq !== state.loadSeq) return false
   if (dryRun) {
     info(state, DRY_RUN_OK)
     return true
   }
   // 送った名前に書き直し、画面を登録したものと同じにする
   state.namesText = names.join('\n')
-  state.registered = true
+  state.savedNamesText = state.namesText
   info(state, REGISTERED)
   return true
 }

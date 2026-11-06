@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// 3. DB に登録: 書いた名前を、選んだイベントのエントリーとして登録する。登録できたら、動画の登録へ案内する
+// 3. DB に登録: 書いた名前を、選んだイベントのエントリーとして登録する。登録できた文のままなら、動画の登録へ案内する
 
 import { useAdminEntriesForm } from '~/composables/useAdminEntriesForm'
 
-const { state, canSave, currentKey, save } = useAdminEntriesForm()
+const { state, canSave, registered, currentKey, save } = useAdminEntriesForm()
 </script>
 
 <template>
@@ -35,7 +35,7 @@ const { state, canSave, currentKey, save } = useAdminEntriesForm()
         登録する
       </button>
       <NuxtLink
-        v-if="state.registered && currentKey"
+        v-if="registered && currentKey"
         class="link"
         :to="`/admin/videos?event=${currentKey}`"
       >

@@ -16,8 +16,11 @@ export type EntriesFormState = EventSelectionState & {
    * この画面で登録すると No. が振り直されて出演者がずれるので、あるあいだは登録できない
    */
   entryNosProblem: string
-  /** 選んだイベントにエントリーを登録できたか (確認だけのときは変えない)。選び直すと false に戻す */
-  registered: boolean
+  /**
+   * 選んだイベントに登録できた文 (確認だけのときは変えない)。登録していないか、そのあとの登録に失敗したら null。
+   * 選び直すと null に戻す
+   */
+  savedNamesText: string | null
 }
 
 export function createEntriesFormState(
@@ -27,6 +30,6 @@ export function createEntriesFormState(
     ...createEventSelectionState(onUnauthorized),
     namesText: '',
     entryNosProblem: '',
-    registered: false,
+    savedNamesText: null,
   }
 }

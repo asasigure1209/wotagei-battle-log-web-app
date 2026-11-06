@@ -89,10 +89,10 @@ describe('選んだイベントの読み込み', () => {
 
   it('選んだイベントを外すと、書いた名前と登録できたことを忘れる', () => {
     const state = stateWithNames('BLAZE')
-    state.registered = true
+    state.savedNamesText = 'BLAZE'
     unselect(state, entriesLoader)
     expect(state.namesText).toBe('')
-    expect(state.registered).toBe(false)
+    expect(state.savedNamesText).toBeNull()
   })
 })
 
@@ -108,9 +108,9 @@ describe('登録', () => {
     )
     expect(api.calls).toEqual(['PUT /api/admin/events/s/e/entries'])
     expect(state.messages?.kind).toBe('info')
-    expect(state.registered).toBe(true)
-    // 送った名前に書き直す (登録したものと画面が同じになる)
+    // 送った名前に書き直し (登録したものと画面が同じになる)、登録できた文として覚える
     expect(state.namesText).toBe('BLAZE\nしぐれ')
+    expect(state.savedNamesText).toBe('BLAZE\nしぐれ')
   })
 
   it('確認だけなら dryRun で送り、登録できたことにはしない', async () => {
@@ -121,7 +121,7 @@ describe('登録', () => {
       kind: 'info',
       lines: ['問題ありません。このまま登録できます'],
     })
-    expect(state.registered).toBe(false)
+    expect(state.savedNamesText).toBeNull()
   })
 
   it('名前が 1 人もいなければ、送らずに誤りにする', async () => {
@@ -152,9 +152,28 @@ describe('登録', () => {
       }),
     )
     const state = stateWithNames('BLAZE')
+    // 前に登録できていても、登録に失敗したら、登録できた文を忘れる
+    state.savedNamesText = 'BLAZE'
     expect(await save(state, false)).toBe(false)
     expect(state.messages).toEqual({ kind: 'error', lines: [problem] })
-    expect(state.registered).toBe(false)
+    expect(state.savedNamesText).toBeNull()
+  })
+
+  it('送っている間にイベントを選び直したら、結果を画面に書かない', async () => {
+    let finish: () => void = () => {}
+    vi.spyOn(adminApi, 'saveEntries').mockImplementationOnce(
+      () => new Promise((r) => (finish = () => r({ ok: true }))),
+    )
+    const state = stateWithNames(' BLAZE ')
+    const saving = save(state, false)
+    // 選び直した (loadSelectedEvent は、読み込む前に unselect で loadSeq を増やす)
+    unselect(state, entriesLoader)
+    state.namesText = 'ほかのイベント'
+    finish()
+    expect(await saving).toBe(false)
+    expect(state.namesText).toBe('ほかのイベント')
+    expect(state.savedNamesText).toBeNull()
+    expect(state.messages).toBeNull()
   })
 
   it('ログインが切れていたら onUnauthorized を呼ぶ', async () => {

@@ -17,7 +17,7 @@ const { state, names, selected } = useAdminEntriesForm()
           class="admin-input names"
           rows="12"
           placeholder="BLAZE&#10;しぐれ"
-          :disabled="!selected"
+          :disabled="!selected || state.busy"
         />
       </label>
       <div class="table-wrap">

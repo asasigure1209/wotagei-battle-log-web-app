@@ -23,6 +23,11 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
   /** イベントを選んでいるか。選ぶまではエントリーを書けない */
   const selected = computed(() => state.event !== null)
   const currentKey = computed(() => selectedKey(state))
+  /** 書いている文が、登録できた文のままか (このときだけ動画の登録へ案内する) */
+  const registered = computed(
+    () =>
+      state.savedNamesText !== null && state.savedNamesText === state.namesText,
+  )
   const canSave = computed(
     () =>
       selected.value &&
@@ -37,6 +42,7 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
     selected,
     currentKey,
     canSave,
+    registered,
     /** 登録済みのイベントの一覧を読み直す (一覧そのものは state.registeredEvents) */
     reload,
     /** 画面を開いたときに呼ぶ。一覧を読み、initialEvent があれば開く (一覧を読めなければ開かない) */
