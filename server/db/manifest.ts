@@ -240,26 +240,54 @@ export async function importManifest(db: Db, manifest: Manifest) {
   ])
 }
 
+/** そのイベントを指す ID の組 (エントリー・動画・出演者の表の列名にそろえる) */
+type EventRowIds = { seriesId: string; eventId: string }
+
 /** manifest のエントリー・動画・出演者を入れる文 (そのイベントの行がすでにあること)。batch に入れて使う */
 export function insertContents(db: Db, manifest: Manifest) {
-  const event = { seriesId: manifest.series.id, eventId: manifest.event.id }
-  const videoRows = manifest.videos.map((v, i) => ({
-    ...event,
+  const ids = { seriesId: manifest.series.id, eventId: manifest.event.id }
+  return [
+    ...insertEntries(db, ids, manifest.entries),
+    ...insertVideos(db, ids, manifest.videos),
+  ]
+}
+
+/** エントリーを入れる文 (そのイベントの行がすでにあること)。batch に入れて使う */
+export function insertEntries(
+  db: Db,
+  ids: EventRowIds,
+  rows: Manifest['entries'],
+) {
+  return chunks(rows.map((e) => ({ ...ids, ...e }))).map((chunk) =>
+    db.insert(entries).values(chunk),
+  )
+}
+
+/**
+ * 動画と出演者を入れる文 (出演者のエントリーがすでにあること)。動画の No. は videos の並び順。
+ * batch に入れて使う
+ */
+export function insertVideos(
+  db: Db,
+  ids: EventRowIds,
+  rows: Manifest['videos'],
+) {
+  const videoRows = rows.map((v, i) => ({
+    ...ids,
     no: i + 1,
     fileName: v.key.slice(v.key.lastIndexOf('/') + 1),
     storageKey: v.key,
     durationSec: v.durationSec,
     sizeBytes: v.sizeBytes,
   }))
-  const performerRows = manifest.videos.flatMap((v, i) =>
-    v.performers.map((entryNo) => ({ ...event, entryNo, videoNo: i + 1 })),
+  const performerRows = rows.flatMap((v, i) =>
+    v.performers.map((entryNo) => ({ ...ids, entryNo, videoNo: i + 1 })),
   )
   return [
-    ...chunks(manifest.entries.map((e) => ({ ...event, ...e }))).map((rows) =>
-      db.insert(entries).values(rows),
+    ...chunks(videoRows).map((chunk) => db.insert(videos).values(chunk)),
+    ...chunks(performerRows).map((chunk) =>
+      db.insert(performers).values(chunk),
     ),
-    ...chunks(videoRows).map((rows) => db.insert(videos).values(rows)),
-    ...chunks(performerRows).map((rows) => db.insert(performers).values(rows)),
   ]
 }
 

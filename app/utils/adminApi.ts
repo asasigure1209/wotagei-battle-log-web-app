@@ -69,6 +69,17 @@ export const adminApi = {
       method: 'PUT',
       body: info,
     }),
+  /** エントリーだけを登録する (No. は names の順に 1 から)。dryRun なら確かめるだけ。動画・出演者は残る */
+  saveEntries: (
+    { seriesId, eventId }: EventIds,
+    names: string[],
+    dryRun: boolean,
+  ) =>
+    $fetch(`/api/admin/events/${seriesId}/${eventId}/entries`, {
+      method: 'PUT',
+      body: { names },
+      query: dryRun ? { dryRun: 1 } : {},
+    }),
   deleteEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch(`/api/admin/events/${seriesId}/${eventId}`, { method: 'DELETE' }),
   /** イベントの R2 にある動画のキーとサイズ */
