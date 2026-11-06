@@ -1,11 +1,20 @@
 <script setup lang="ts">
-// 動画の一覧の 1 行。長さと出演 No. をその場で直し、並べ替えや取り外しをする
+// 動画の一覧の 1 行。長さと出演者をその場で直し、並べ替えや取り外しをする。
+// 出演者は、登録済みのエントリーから出演者 1 (必須)・出演者 2 (任意) を選ぶ
 
 import { computed } from 'vue'
 import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes, formatSeconds } from '~/utils/adminManifest'
+import {
+  droppedPerformersWarning,
+  isSamePerformerTwice,
+  NO_FIRST_PERFORMER,
+  type Performers,
+  performerProblems,
+} from '~/utils/adminVideos/performers'
 import { rowState } from '~/utils/adminVideos/rows'
 import type { VideoRow } from '~/utils/adminVideos/state'
+import AdminPerformerSelect from './AdminPerformerSelect.vue'
 
 const props = defineProps<{
   /** 動画の行。書き換えはエディターの updateRow を通す */
@@ -14,7 +23,8 @@ const props = defineProps<{
   index: number
 }>()
 
-const { state, updateRow, moveRow, removeRow } = useAdminVideoEditor()
+const { state, hasEntries, updateRow, moveRow, removeRow } =
+  useAdminVideoEditor()
 // 行ごとに出すので、ほかの行が送信中でも、この行は描き直さない
 const status = computed(() => rowState(props.row, state.remote))
 const last = computed(() => props.index === state.rows.length - 1)
@@ -31,10 +41,34 @@ function onDuration(e: Event) {
   })
 }
 
-function onPerformers(e: Event) {
-  updateRow(props.row.id, {
-    performersText: (e.target as HTMLInputElement).value,
-  })
+/**
+ * 出演者の警告。同じ人を 2 回選んだ・登録されていない No. は、送る前にその場で出す
+ * (出演者 1 をまだ選んでいないのは、足したばかりの行ではいつもなので、登録のときにだけ出す)。
+ * 読み込んだときに 3 人目からいた出演者は、登録すると外れるので、登録するまで出し続ける
+ */
+const performerWarnings = computed(() =>
+  [
+    ...performerProblems(props.row.performers, state.entries).filter(
+      (p) => p !== NO_FIRST_PERFORMER,
+    ),
+    droppedPerformersWarning(props.row.droppedPerformers),
+  ].filter(Boolean),
+)
+
+/** 出演者の警告を出している要素の id。警告がなければ undefined (select の aria-describedby を付けない) */
+const warningsId = computed(() =>
+  performerWarnings.value.length
+    ? `performer-warnings-${props.row.id}`
+    : undefined,
+)
+
+/** 出演者を選べるか (待っているあいだと、エントリーがないあいだは選べない) */
+const selectable = computed(() => !state.busy && hasEntries.value)
+
+function setPerformer(slot: 0 | 1, no: number | null) {
+  const performers: Performers = [...props.row.performers]
+  performers[slot] = no
+  updateRow(props.row.id, { performers })
 }
 </script>
 
@@ -54,12 +88,32 @@ function onPerformers(e: Event) {
     </td>
     <td class="mono">{{ formatBytes(row.sizeBytes) }}</td>
     <td>
-      <input
-        :value="row.performersText"
-        class="admin-input performers"
-        placeholder="1, 2"
-        @input="onPerformers"
-      >
+      <AdminPerformerSelect
+        :model-value="row.performers[0]"
+        :label="`${row.relPath} の出演者 1`"
+        empty-label="選んでください"
+        :entries="state.entries"
+        :disabled="!selectable"
+        :describedby="warningsId"
+        @update:model-value="setPerformer(0, $event)"
+      />
+    </td>
+    <td>
+      <AdminPerformerSelect
+        :model-value="row.performers[1]"
+        :label="`${row.relPath} の出演者 2`"
+        empty-label="なし"
+        :entries="state.entries"
+        :disabled="!selectable"
+        :describedby="warningsId"
+        :invalid="isSamePerformerTwice(row.performers)"
+        @update:model-value="setPerformer(1, $event)"
+      />
+      <div v-if="warningsId" :id="warningsId">
+        <p v-for="w in performerWarnings" :key="w" class="admin-warn warning">
+          {{ w }}
+        </p>
+      </div>
     </td>
     <td>
       <span :class="['state', status?.kind]">{{ status?.label }}</span>
@@ -114,8 +168,9 @@ td {
   width: 80px;
 }
 
-.performers {
-  width: 90px;
+.warning {
+  margin-top: 4px;
+  white-space: nowrap;
 }
 
 .ops {

@@ -93,11 +93,18 @@ export const selectedEvent: SelectedEvent = {
   },
 }
 
-/** 登録済みのイベントを選び、エントリーを書いたところ */
+/** 動画の登録画面で選んだイベントに、登録済みのエントリー */
+export const registeredEntries = [
+  { entryNo: 1, name: 'BLAZE' },
+  { entryNo: 2, name: 'しぐれ' },
+  { entryNo: 3, name: 'ヲタ' },
+]
+
+/** 動画の登録画面で、登録済みのイベント (エントリーは registeredEntries) を選んだところ */
 export function fillEvent(editor: AdminVideoEditor) {
   editor.state.registeredEvents = [registeredEvent]
   editor.state.event = selectedEvent
-  editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
+  editor.state.entries = registeredEntries
 }
 
 /** エントリーの登録画面で、登録済みのイベントを選び、エントリーの名前を書いたところ */
@@ -116,7 +123,7 @@ export function videoRow(
   return newRow(relPath, {
     durationSec: 192,
     sizeBytes: 742_000_000,
-    performersText: '1, 2',
+    performers: [1, 2],
     ...(withFile ? { file: new File([], relPath.split('/').pop() ?? '') } : {}),
     ...rest,
   })

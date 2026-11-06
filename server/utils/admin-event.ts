@@ -1,11 +1,11 @@
 // 管理画面のイベントの登録 (/api/admin/events/**) で共通に使う、リクエストの確かめ。
 // テスト (node 環境) からも呼べるよう、Nitro の自動 import に頼らず明示する
 import { createError } from 'h3'
+import { MAX_PERFORMERS } from '../../shared/utils/performers'
 import {
   type Manifest,
   ManifestError,
   parseEventInfo,
-  parseManifest,
   parseVideoList,
   type VideoListScope,
 } from '../db/manifest'
@@ -30,11 +30,6 @@ function orInvalid<T>(parse: () => T) {
   }
 }
 
-/** manifest を確かめる。誤りがあれば 400 */
-export function parseManifestBody(body: unknown) {
-  return orInvalid(() => parseManifest(body))
-}
-
 /**
  * パスの ID と本文 ({ seriesName, name, date, contact }) から、シリーズとイベントの情報を作る。
  * 誤りがあれば 400
@@ -53,7 +48,7 @@ export function parseEventInfoBody(
   )
 }
 
-/** 未登録のイベントに、エントリーと動画を登録しようとしたときの 400 */
+/** 未登録のイベントに、エントリーや動画を登録しようとしたときの 400 (エントリーの登録・動画の登録で使う) */
 export function unregisteredEvent(seriesId: string, eventId: string) {
   return invalidManifest([
     `登録されていないイベントです (${seriesId}/${eventId})。先にイベントの登録の画面で登録してください`,
@@ -108,9 +103,6 @@ export function removedPerformerProblems(
       `エントリー No. ${entryNo} (${rows[0]?.name}) は動画に出ているので消せません: ${rows.map((r) => r.key).join(', ')}`,
   )
 }
-
-/** 管理画面で登録する動画の出演者の上限 (バトルの動画には 2 人が出る) */
-const MAX_PERFORMERS = 2
 
 /**
  * 動画と出演者だけの登録の本文 ({ videos: [{ key, durationSec, sizeBytes, performers }] }) から、動画の一覧を作る。

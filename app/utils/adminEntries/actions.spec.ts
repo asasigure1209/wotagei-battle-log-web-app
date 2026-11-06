@@ -18,7 +18,7 @@ const manifest = () => ({
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events/s/e', body: manifest() },
   { method: 'PUT', path: '/api/admin/events/s/e/entries', body: { ok: true } },
-  // No. に抜けがある (db:import や動画の画面で「1: A / 3: C」のように作れる)
+  // No. に抜けがある (db:import や、以前の動画の画面のエントリーの欄で「1: A / 3: C」のように作れた)
   {
     method: 'GET',
     path: '/api/admin/events/s/gap',
@@ -34,7 +34,7 @@ const api = fakeAdminApi([
 ])
 
 const GAP_PROBLEM =
-  '登録済みのエントリーの No. に抜けがあります (1, 3)。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません。動画の登録の画面のエントリーの欄で No. を 1 から抜けなく付け直し、出演 No. も合わせて直してから登録してください'
+  '登録済みのエントリーの No. に抜けがあります (1, 3)。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません。No. を 1 から抜けなく付け直し、動画の出演者も合わせて直した manifest を bun run db:import で取り込み直してから登録してください (手順は docs/production-db.md の「エントリーの No. に抜けがあるイベントを直す」)'
 
 beforeEach(() => api.reset())
 afterEach(() => vi.restoreAllMocks())

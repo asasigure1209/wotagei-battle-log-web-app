@@ -56,13 +56,6 @@ export const adminApi = {
   listEvents: () => $fetch<EventSummary[]>('/api/admin/events'),
   getEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch<Manifest>(`/api/admin/events/${seriesId}/${eventId}`),
-  /** エントリーと動画を登録する (本文は manifest)。dryRun なら確かめるだけ */
-  saveEvent: (manifest: unknown, dryRun: boolean) =>
-    $fetch('/api/admin/events', {
-      method: 'POST',
-      body: manifest as Record<string, unknown>,
-      query: dryRun ? { dryRun: 1 } : {},
-    }),
   /** イベントの情報だけを登録する (あれば書き換える)。エントリー・動画は残る */
   saveEventInfo: ({ seriesId, eventId }: EventIds, info: EventInfoBody) =>
     $fetch(`/api/admin/events/${seriesId}/${eventId}`, {

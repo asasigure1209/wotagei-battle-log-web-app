@@ -18,7 +18,7 @@ const registered = {
   videos: [],
 }
 
-/** No. に抜けがある登録済みのエントリー (db:import や動画の画面で「1: BLAZE / 3: ヲタ」のように作れる) */
+/** No. に抜けがある登録済みのエントリー (db:import や、以前の動画の画面のエントリーの欄で「1: BLAZE / 3: ヲタ」のように作れた) */
 const withGap = {
   ...registered,
   entries: [

@@ -130,7 +130,7 @@ describe('管理画面', () => {
       contact: 'X: @elnino',
     },
   ])
-  // そのイベントの登録済みの内容と、R2 の動画 (まだない)
+  // そのイベントの登録済みの内容 (動画は 1 本) と、R2 の動画 (まだない)
   registerEndpoint('/api/admin/events/elnino/elnino_vol_5', () => ({
     series: { id: 'elnino', name: 'エルニーニョ' },
     event: {
@@ -140,7 +140,14 @@ describe('管理画面', () => {
       contact: 'X: @elnino',
     },
     entries: [{ entryNo: 1, name: 'BLAZE' }],
-    videos: [],
+    videos: [
+      {
+        key: 'elnino/elnino_vol_5/予選/M1256.mp4',
+        durationSec: 192,
+        sizeBytes: 10,
+        performers: [1],
+      },
+    ],
   }))
   registerEndpoint('/api/admin/objects', () => [])
 
@@ -155,9 +162,11 @@ describe('管理画面', () => {
     expect(wrapper.find('textarea').exists()).toBe(false)
   })
 
-  it('/admin/videos で、エントリーと動画を登録する', async () => {
+  it('/admin/videos で、動画と出演者を登録する (エントリーの欄はない)', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin/videos' })
-    await vi.waitFor(() => expect(wrapper.text()).toContain('1 行に 1 人'))
+    await vi.waitFor(() => expect(wrapper.text()).toContain('動画の登録'))
+    expect(wrapper.text()).toContain('3. DB に登録')
+    expect(wrapper.find('textarea').exists()).toBe(false)
     // ヘッダーから入口へ戻れる
     expect(wrapper.find('a[href="/admin"]').exists()).toBe(true)
   })
@@ -181,14 +190,19 @@ describe('管理画面', () => {
       ).toBe('elnino_vol_5'),
     )
   })
-  it('/admin/videos?event= で開くと、そのイベントを選んで、エントリーを書ける', async () => {
+  it('/admin/videos?event= で開くと、そのイベントを選んで、動画の出演者を登録済みのエントリーから選べる', async () => {
     const wrapper = await mountSuspended(App, {
       route: '/admin/videos?event=elnino/elnino_vol_5',
     })
-    await vi.waitFor(() =>
-      expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
-    )
-    expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
+    const first = () =>
+      wrapper.find<HTMLSelectElement>(
+        'select[aria-label="予選/M1256.mp4 の出演者 1"]',
+      )
+    await vi.waitFor(() => expect(first().exists()).toBe(true))
+    const { selectedOptions } = first().element
+    expect(selectedOptions[0]?.textContent?.trim()).toBe('No. 1 BLAZE')
+    // エントリーがあるので、エントリーの登録への案内は出さない
+    expect(wrapper.text()).not.toContain('先にエントリーを登録してください')
   })
   it('/admin/entries で、登録済みのイベントを選んでエントリーを登録する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin/entries' })

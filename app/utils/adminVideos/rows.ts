@@ -49,7 +49,7 @@ function upsertRow(
 export function updateRow(
   state: VideoEditorState,
   id: number,
-  patch: Partial<Pick<VideoRow, 'durationSec' | 'performersText'>>,
+  patch: Partial<Pick<VideoRow, 'durationSec' | 'performers'>>,
 ) {
   const row = state.rows.find((r) => r.id === id)
   if (row) Object.assign(row, patch)

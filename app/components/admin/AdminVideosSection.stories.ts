@@ -10,7 +10,7 @@ import {
 import AdminVideosSection from './AdminVideosSection.vue'
 
 /**
- * 3. 動画。ファイルを選んで並べ、R2 にアップロードする。
+ * 2. 動画。ファイルを選んで並べ、R2 にアップロードし、出演者を選ぶ。
  * 行ごとに、R2 にあるか・送信中か・失敗したかを出す。R2 にない (またはサイズの違う) 動画だけを送る。
  */
 const meta = {
@@ -39,7 +39,7 @@ export const RowStates: Story = {
         videoRow('予選/M1256.mp4', { sizeBytes: 100 }),
         videoRow('予選/M1257.mp4', { withFile: true, durationSec: null }),
         videoRow('予選/M1258.mp4', { withFile: true, sizeBytes: 300 }),
-        videoRow('本戦/M1268.mp4', { performersText: '' }),
+        videoRow('本戦/M1268.mp4', { performers: [null, null] }),
         videoRow('本戦/M1269.mp4', {
           withFile: true,
           error: 'アップロード失敗',
@@ -109,5 +109,120 @@ export const RemoteUnknown: Story = {
     await expect(
       canvas.getByRole('button', { name: /R2 にアップロード/ }),
     ).toBeDisabled()
+  },
+}
+
+/** 出演者は、登録済みのエントリーから出演者 1・2 を選ぶ。出演者 2 は「なし」にできる。 */
+export const SelectPerformers: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.rows = [
+        videoRow('予選/M1256.mp4', { performers: [null, null] }),
+      ]
+    }),
+  ],
+  play: async ({ canvas, userEvent }) => {
+    const first = canvas.getByRole('combobox', {
+      name: '予選/M1256.mp4 の出演者 1',
+    })
+    const second = canvas.getByRole('combobox', {
+      name: '予選/M1256.mp4 の出演者 2',
+    })
+    await expect(first).toHaveDisplayValue('選んでください')
+    await expect(second).toHaveDisplayValue('なし')
+    await userEvent.selectOptions(first, 'No. 3 ヲタ')
+    await expect(first).toHaveDisplayValue('No. 3 ヲタ')
+    // 同じ人を 2 回選ぶと、その場で誤りを出す
+    await userEvent.selectOptions(second, 'No. 3 ヲタ')
+    await expect(
+      canvas.getByText('出演者 1 と出演者 2 に同じ人を選んでいます'),
+    ).toBeVisible()
+    // 支援技術にも、どちらの欄の誤りかと、その文が伝わる
+    await expect(second).toHaveAttribute('aria-invalid', 'true')
+    await expect(second).toHaveAccessibleDescription(
+      '出演者 1 と出演者 2 に同じ人を選んでいます',
+    )
+    await expect(first).toHaveAccessibleDescription(
+      '出演者 1 と出演者 2 に同じ人を選んでいます',
+    )
+    await userEvent.selectOptions(second, 'なし')
+    await expect(
+      canvas.queryByText('出演者 1 と出演者 2 に同じ人を選んでいます'),
+    ).toBeNull()
+    await expect(second).not.toHaveAttribute('aria-invalid')
+    await expect(second).not.toHaveAttribute('aria-describedby')
+  },
+}
+
+/**
+ * 選んだイベントにエントリーがまだなければ、エントリーの登録へ案内する。
+ * 案内のリンクで移ると選んだファイルが失われるので、ファイルを選ぶ・アップロード・出演者を選ぶこともできない。
+ */
+export const NoEntries: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.entries = []
+      editor.state.rows = [
+        videoRow('予選/M1256.mp4', { performers: [null, null] }),
+      ]
+      editor.state.remote = new Map()
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('link', { name: '先にエントリーを登録してください' }),
+    ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
+    await expect(canvas.getByLabelText('フォルダを選ぶ')).toBeDisabled()
+    await expect(canvas.getByLabelText('ファイルを選ぶ')).toBeDisabled()
+    await expect(
+      canvas.getByRole('button', { name: /R2 にアップロード/ }),
+    ).toBeDisabled()
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 1' }),
+    ).toBeDisabled()
+  },
+}
+
+/** API を待っているあいだは、出演者を選び直せない。 */
+export const BusyPerformers: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.rows = [videoRow('予選/M1256.mp4')]
+      editor.state.busy = true
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 2' }),
+    ).toBeDisabled()
+  },
+}
+
+/** 読み込んだときに出演者が 3 人以上いた動画 (db:import で作れる) は、登録すると外れる人を行に出し続ける。 */
+export const DroppedPerformers: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.rows = [
+        videoRow('予選/M1256.mp4', {
+          performers: [1, 2],
+          droppedPerformers: [3],
+        }),
+      ]
+      editor.state.messages = { kind: 'info', lines: ['ほかの操作の知らせ'] }
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByText('出演者は 2 人までなので、登録すると No. 3 が外れます'),
+    ).toBeVisible()
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 2' }),
+    ).toHaveAccessibleDescription(
+      '出演者は 2 人までなので、登録すると No. 3 が外れます',
+    )
   },
 }

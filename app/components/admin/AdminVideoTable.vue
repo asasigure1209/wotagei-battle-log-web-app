@@ -16,7 +16,8 @@ const { state } = useAdminVideoEditor()
           <th>パス</th>
           <th>長さ (秒)</th>
           <th>サイズ</th>
-          <th>出演 No.</th>
+          <th>出演者 1</th>
+          <th>出演者 2</th>
           <th>R2</th>
           <th />
         </tr>
