@@ -1,6 +1,6 @@
 // 管理画面で使う DB の読み書き。画面の API (repository.ts) と違い、manifest と同じ形で返し、
 // 管理画面がそのまま手直しして取り込み直せるようにする
-import { and, asc, desc, eq, gt, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, notExists, sql } from 'drizzle-orm'
 import {
   chunks,
   insertContents,
@@ -164,7 +164,8 @@ export async function listPerformedEntries(series: string, event: string) {
 
 /**
  * 登録済みのイベントのエントリーだけを登録する (管理画面のエントリーの登録)。entries は No. を 1 から順に振ったもの
- * (parseEntryNamesBody の形)。ある No. は名前だけを書き換え、ない No. は足し、新しい一覧より後ろの No. は消す。
+ * (parseEntryNamesBody の形)。ある No. は名前だけを書き換え、ない No. は足し、新しい一覧より後ろの No. は
+ * (動画に出ていなければ) 消す。
  * エントリーを全部消してから入れると出演者も ON DELETE CASCADE で消えるので、残る No. の行は消さない。
  * 動画・出演者・イベントの行には触れず、1 つの batch で流す。イベントがなければ外部キーで batch ごと失敗する
  */
@@ -187,11 +188,26 @@ export async function saveAdminEntries(
       }),
   )
   await db.batch([
-    db
-      .delete(entries)
-      .where(
-        and(inEvent(entries, series, event), gt(entries.entryNo, rows.length)),
+    db.delete(entries).where(
+      and(
+        inEvent(entries, series, event),
+        gt(entries.entryNo, rows.length),
+        // API は登録の前に、消える No. が動画に出ていないかを確かめるが、確かめてからここまでの間に
+        // 動画の登録で出演者が付くことがある。そのまま消すと出演者も ON DELETE CASCADE で消えてしまうので、
+        // 出演者のいない行だけを消す (出演者のいる行は残り、動画の登録の画面で外してから消し直す)
+        notExists(
+          db
+            .select({ entryNo: performers.entryNo })
+            .from(performers)
+            .where(
+              and(
+                inEvent(performers, series, event),
+                eq(performers.entryNo, entries.entryNo),
+              ),
+            ),
+        ),
       ),
+    ),
     ...upserts,
   ])
 }

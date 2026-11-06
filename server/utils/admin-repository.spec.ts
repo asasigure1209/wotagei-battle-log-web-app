@@ -214,12 +214,20 @@ describe('エントリーだけの登録', () => {
     ])
     expect(await listPlayers('s', 'e')).toHaveLength(3)
 
-    // 消すかどうかは API が確かめる。ここでは出演者ごと消える (ON DELETE CASCADE)
+    await saveAdminEntries('s', 'e', [
+      { entryNo: 1, name: 'A' },
+      { entryNo: 2, name: 'B' },
+    ])
+    expect(await listPlayers('s', 'e')).toHaveLength(2)
+  })
+
+  it('動画に出ている No. は、減らしても消さず、出演者も残す (API の確認のあとに出演者が付いたとき)', async () => {
     await saveAdminEntries('s', 'e', [{ entryNo: 1, name: 'A' }])
     expect(await listPlayers('s', 'e')).toEqual([
       { no: '01', name: 'A', count: 2 },
+      { no: '02', name: 'B', count: 1 },
     ])
-    expect(await listPerformedEntries('s', 'e')).toHaveLength(2)
+    expect(await listPerformedEntries('s', 'e')).toHaveLength(3)
   })
 
   it('ほかのイベントには触れない', async () => {
