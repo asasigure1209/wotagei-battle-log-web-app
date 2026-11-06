@@ -10,16 +10,19 @@ const { state, names, selected } = useAdminEntriesForm()
   <section class="admin-card">
     <h2 class="admin-heading">2. エントリー</h2>
     <div class="columns">
-      <label class="admin-field">
-        <span>1 行に 1 人、名前だけを書く ({{ names.length }} 人)</span>
+      <div class="admin-field">
+        <label for="admin-entry-names">1 行に 1 人、名前だけを書く</label>
         <textarea
+          id="admin-entry-names"
           v-model="state.namesText"
           class="admin-input names"
           rows="12"
           placeholder="BLAZE&#10;しぐれ"
           :disabled="!selected || state.busy"
         />
-      </label>
+        <!-- 人数はラベルに入れず、書くたびに読み上げを繰り返さないよう、変わったときだけ控えめに知らせる -->
+        <p class="admin-hint" aria-live="polite">{{ names.length }} 人</p>
+      </div>
       <div class="table-wrap">
         <table class="numbered" aria-label="エントリー No. と名前">
           <thead>
@@ -32,6 +35,9 @@ const { state, names, selected } = useAdminEntriesForm()
             <tr v-for="(name, i) in names" :key="i">
               <td class="no">{{ i + 1 }}</td>
               <td>{{ name }}</td>
+            </tr>
+            <tr v-if="!names.length">
+              <td colspan="2" class="empty">まだ名前がありません</td>
             </tr>
           </tbody>
         </table>
@@ -86,6 +92,10 @@ const { state, names, selected } = useAdminEntriesForm()
 .numbered td {
   padding: 4px 8px;
   border-bottom: 1px solid var(--color-border);
+}
+
+.empty {
+  color: var(--color-muted);
 }
 
 .no {

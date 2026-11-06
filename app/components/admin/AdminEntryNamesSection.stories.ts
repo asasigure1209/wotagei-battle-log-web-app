@@ -20,11 +20,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** 書いた名前に、書いた順の No. を付けて並べ、人数を出す。 */
+/** 書いた名前に、書いた順の No. を付けて並べ、人数をラベルの外に出す。 */
 export const Filled: Story = {
   decorators: [withAdminEntriesForm(fillEntryNames)],
   play: async ({ canvas }) => {
-    await expect(canvas.getByText(/\(3 人\)/)).toBeVisible()
+    await expect(canvas.getByText('3 人')).toBeVisible()
     const rows = within(
       canvas.getByRole('table', { name: 'エントリー No. と名前' }),
     ).getAllByRole('row')
@@ -44,7 +44,7 @@ export const Typing: Story = {
   decorators: [withAdminEntriesForm(fillEntryNames)],
   play: async ({ canvas, userEvent }) => {
     await userEvent.type(canvas.getByLabelText(/1 行に 1 人/), '\n\n  はやて ')
-    await expect(canvas.getByText(/\(4 人\)/)).toBeVisible()
+    await expect(canvas.getByText('4 人')).toBeVisible()
     await expect(canvas.getByRole('row', { name: '4 はやて' })).toBeVisible()
   },
 }
@@ -67,6 +67,11 @@ export const NotSelected: Story = {
   decorators: [withAdminEntriesForm()],
   play: async ({ canvas }) => {
     await expect(canvas.getByLabelText(/1 行に 1 人/)).toBeDisabled()
-    await expect(canvas.getByText(/\(0 人\)/)).toBeVisible()
+    await expect(canvas.getByText('0 人')).toBeVisible()
+    await expect(
+      within(
+        canvas.getByRole('table', { name: 'エントリー No. と名前' }),
+      ).getByText('まだ名前がありません'),
+    ).toBeVisible()
   },
 }
