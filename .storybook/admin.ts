@@ -1,11 +1,17 @@
 // 管理画面のストーリーで使う道具。
-// 管理画面のコンポーネントはエディター (useAdminVideoEditor) やイベントの登録画面 (useAdminEventForm) を inject するので、
+// 管理画面のコンポーネントはエディター (useAdminVideoEditor)・イベントの登録画面 (useAdminEventForm)・
+// エントリーの登録画面 (useAdminEntriesForm) を inject するので、
 // 状態を作り込んだものを provide して描く。
 // API を呼ぶストーリーは、parameters.fetch に返す値を書く (preview.ts が $fetch として返す)
 import type { Decorator } from '@storybook/vue3-vite'
 import { provide } from 'vue'
 import '../app/assets/css/admin.css'
 import type { SelectedEvent } from '../app/utils/adminCommon/eventSelection'
+import {
+  type AdminEntriesForm,
+  adminEntriesFormKey,
+  createAdminEntriesForm,
+} from '../app/utils/adminEntries/form'
 import {
   type AdminEventForm,
   adminEventFormKey,
@@ -51,6 +57,21 @@ export function withAdminEventForm(
   })
 }
 
+/** prepare で状態を作り込んだエントリーの登録画面を、ストーリーのコンポーネントに渡す */
+export function withAdminEntriesForm(
+  prepare: (form: AdminEntriesForm) => void = () => {},
+): Decorator {
+  return (story) => ({
+    components: { story },
+    setup() {
+      const form = createAdminEntriesForm(() => {})
+      prepare(form)
+      provide(adminEntriesFormKey, form)
+    },
+    template: '<story />',
+  })
+}
+
 /** 登録済みのイベント (一覧の 1 件)。fillEvent で書くイベントと同じもの */
 export const registeredEvent = {
   seriesId: 'elnino',
@@ -77,6 +98,13 @@ export function fillEvent(editor: AdminVideoEditor) {
   editor.state.registeredEvents = [registeredEvent]
   editor.state.event = selectedEvent
   editor.state.entriesText = '1: BLAZE\n2: しぐれ\n3: ヲタ'
+}
+
+/** エントリーの登録画面で、登録済みのイベントを選び、エントリーの名前を書いたところ */
+export function fillEntryNames(form: AdminEntriesForm) {
+  form.state.registeredEvents = [registeredEvent]
+  form.state.event = selectedEvent
+  form.state.namesText = 'BLAZE\nしぐれ\nヲタ'
 }
 
 /** 動画の行。file を渡すと、この画面で選んだファイルの行になる */

@@ -189,13 +189,21 @@ describe('管理画面', () => {
     )
     expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
   })
-  it('前の URL の /admin/entries?event= で開くと、?event= を引き継いで /admin/videos に移る', async () => {
+  it('/admin/entries で、登録済みのイベントを選んでエントリーを登録する', async () => {
+    const wrapper = await mountSuspended(App, { route: '/admin/entries' })
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain('1 行に 1 人、名前だけを書く'),
+    )
+    expect(wrapper.find('textarea').attributes()).toHaveProperty('disabled')
+  })
+  it('/admin/entries?event= で開くと、そのイベントを選んで、登録済みのエントリーの名前を読み込む', async () => {
     const wrapper = await mountSuspended(App, {
       route: '/admin/entries?event=elnino/elnino_vol_5',
     })
-    expect(useRoute().fullPath).toBe('/admin/videos?event=elnino/elnino_vol_5')
+    expect(useRoute().fullPath).toBe('/admin/entries?event=elnino/elnino_vol_5')
     await vi.waitFor(() =>
-      expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
+      expect(wrapper.find('textarea').element.value).toBe('BLAZE'),
     )
+    expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
   })
 })
