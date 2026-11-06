@@ -1,7 +1,8 @@
-// 選んだイベントを読み込み、書いたエントリーと動画を manifest の形にして DB に登録する
+// 選んだイベントの読み込み方と、書いたエントリーと動画を manifest の形にして DB に登録する処理
 
-import { adminApi, type EventIds } from '~/utils/adminApi'
+import { adminApi } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
+import { type EventLoader, eventIds } from '~/utils/adminCommon/eventSelection'
 import { info, run, showErrors } from '~/utils/adminCommon/operation'
 import {
   formatEntriesText,
@@ -9,7 +10,7 @@ import {
   parsePerformers,
 } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
-import { type EditorState, eventIds, newRow, type VideoRow } from './state'
+import { type EditorState, newRow, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
 const DRY_RUN_OK = '問題ありません。このまま登録できます'
@@ -59,31 +60,31 @@ export async function register(state: EditorState, dryRun: boolean) {
 }
 
 /**
- * 登録済みのイベントと、その R2 の動画を読み込む。読み込む前に前のイベントを外すので、
- * 失敗しても、選んだものと違うイベントの中身が残ることはない
+ * 選んだ登録済みのイベントと、その R2 の動画を読み込み、画面に書き写す。
+ * 選ぶ・選び直す・外す処理は adminCommon/eventSelection がこれを使って行う
  */
-export async function loadEvent(state: EditorState, ids: EventIds) {
-  clear(state)
-  const seq = state.loadSeq
-  await run(state, async () => {
-    // 2 つは別々に引けるので、待ち合わせずに並べて引く
-    const [data, remote] = await Promise.all([
-      adminApi.getEvent(ids),
-      fetchRemote(ids),
-    ])
-    // 待っている間にほかのイベントを選び直していたら、この結果は使わない
-    if (seq !== state.loadSeq) return
+export const editorLoader: EventLoader<
+  EditorState,
+  [Manifest, Map<string, number>]
+> = {
+  // 2 つは別々に引けるので、待ち合わせずに並べて引く
+  fetch: (ids) => Promise.all([adminApi.getEvent(ids), fetchRemote(ids)]),
+  toEvent: ([data]) => ({ series: data.series, event: data.event }),
+  fill: (state, [data, remote]) => {
     fill(state, data)
     state.remote = remote
-  })
+  },
+  reset: (state) => {
+    state.entriesText = ''
+    state.rows = []
+    state.remote = null
+  },
 }
 
-/** 登録済みのイベントを、画面に書き写す */
+/** 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく) */
 export function fill(state: EditorState, data: Manifest) {
-  const event = { series: data.series, event: data.event }
-  state.event = event
   state.entriesText = formatEntriesText(data.entries)
-  const prefix = eventPrefix(eventIds(event))
+  const prefix = eventPrefix(eventIds(data))
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
@@ -91,14 +92,4 @@ export function fill(state: EditorState, data: Manifest) {
       performersText: v.performers.join(', '),
     }),
   )
-}
-
-/** 選んだイベントを外し、書いた内容を空に戻す。読み込み中のイベントがあれば、その結果も使わない */
-export function clear(state: EditorState) {
-  state.loadSeq++
-  state.event = null
-  state.entriesText = ''
-  state.rows = []
-  state.remote = null
-  state.messages = null
 }

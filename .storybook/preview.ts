@@ -16,6 +16,11 @@ setup((app) => {
   )
 })
 
+/** parameters.fetch から、url の API が返す値を取り出す (関数なら url を渡して呼ぶ) */
+function fetchResult(fetch: unknown, url: string): unknown {
+  return typeof fetch === 'function' ? fetch(url) : fetch
+}
+
 const preview: Preview = {
   parameters: {
     // モックの画面と同じ背景色。docs のストーリー枠にも効く
@@ -29,13 +34,14 @@ const preview: Preview = {
   // モックはスマホの幅 (390px) で作られているので、その幅に収める。管理画面のように広い画面で使うものは、
   // parameters.maxWidth で幅を変える。
   // docs ページでは Storybook の文字色とフォントが継承されるので、アプリの body と同じものを付け直す
-  // Storybook は Nuxt なしで動き $fetch がないので、ストーリーごとに parameters.fetch の値を返す (Error なら投げる)
+  // Storybook は Nuxt なしで動き $fetch がないので、ストーリーごとに parameters.fetch の値を返す (Error なら投げる)。
+  // API ごとに返す値を変えるときは、parameters.fetch を、URL を受けて値を返す関数にする
   // $fetch を置き、終わったら元に戻す。指定のないストーリーで API を呼ぶと失敗する
   beforeEach: ({ parameters }) => {
     const g = globalThis as { $fetch?: unknown }
     const previous = g.$fetch
-    g.$fetch = async () => {
-      const result: unknown = parameters.fetch
+    g.$fetch = async (url: string) => {
+      const result = fetchResult(parameters.fetch, url)
       if (result === undefined) {
         throw new Error(
           'parameters.fetch を指定していないストーリーで API を呼びました',
