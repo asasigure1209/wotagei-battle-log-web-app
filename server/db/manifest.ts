@@ -241,7 +241,7 @@ export async function importManifest(db: Db, manifest: Manifest) {
 }
 
 /** そのイベントを指す ID の組 (エントリー・動画・出演者の表の列名にそろえる) */
-export type EventRowIds = { seriesId: string; eventId: string }
+type EventRowIds = { seriesId: string; eventId: string }
 
 /** manifest のエントリー・動画・出演者を入れる文 (そのイベントの行がすでにあること)。batch に入れて使う */
 export function insertContents(db: Db, manifest: Manifest) {
