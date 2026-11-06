@@ -55,16 +55,16 @@ export function performerOptions(
 
 /** 選んだ出演者の誤り (出演者 1 を選んでいない・同じ人を 2 回・登録済みのエントリーにない No.)。なければ空 */
 export function performerProblems(
-  [first, second]: Performers,
-  entryNos: readonly number[],
+  performers: Performers,
+  entries: Manifest['entries'],
 ): string[] {
   const problems: string[] = []
-  if (first === null) problems.push(NO_FIRST_PERFORMER)
-  if (isSamePerformerTwice([first, second])) {
+  if (performers[0] === null) problems.push(NO_FIRST_PERFORMER)
+  if (isSamePerformerTwice(performers)) {
     problems.push('出演者 1 と出演者 2 に同じ人を選んでいます')
   }
-  const unregistered = performerNos([first, second]).filter(
-    (no) => !entryNos.includes(no),
+  const unregistered = performerNos(performers).filter(
+    (no) => !isRegistered(entries, no),
   )
   for (const no of new Set(unregistered)) {
     problems.push(`出演者の No. ${no} は登録されていません`)

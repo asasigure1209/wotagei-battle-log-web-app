@@ -64,26 +64,26 @@ describe('isSamePerformerTwice', () => {
 })
 
 describe('performerProblems', () => {
-  const nos = [1, 2]
-
   it('出演者 1 を選び、出演者 2 は「なし」か別の人なら、誤りはない', () => {
-    expect(performerProblems([1, null], nos)).toEqual([])
-    expect(performerProblems([1, 2], nos)).toEqual([])
+    expect(performerProblems([1, null], entries)).toEqual([])
+    expect(performerProblems([1, 2], entries)).toEqual([])
   })
 
   it('出演者 1 を選んでいなければ誤り', () => {
-    expect(performerProblems([null, null], nos)).toEqual([NO_FIRST_PERFORMER])
-    expect(performerProblems([null, 2], nos)).toEqual([NO_FIRST_PERFORMER])
+    expect(performerProblems([null, null], entries)).toEqual([
+      NO_FIRST_PERFORMER,
+    ])
+    expect(performerProblems([null, 2], entries)).toEqual([NO_FIRST_PERFORMER])
   })
 
   it('同じ人を 2 回選んでいれば誤り', () => {
-    expect(performerProblems([1, 1], nos)).toEqual([
+    expect(performerProblems([1, 1], entries)).toEqual([
       '出演者 1 と出演者 2 に同じ人を選んでいます',
     ])
   })
 
   it('登録済みのエントリーにない No. があれば、No. ごとに誤り', () => {
-    expect(performerProblems([9, 8], nos)).toEqual([
+    expect(performerProblems([9, 8], entries)).toEqual([
       '出演者の No. 9 は登録されていません',
       '出演者の No. 8 は登録されていません',
     ])

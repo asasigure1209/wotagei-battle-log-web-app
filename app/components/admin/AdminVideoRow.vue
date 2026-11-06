@@ -23,7 +23,8 @@ const props = defineProps<{
   index: number
 }>()
 
-const { state, updateRow, moveRow, removeRow } = useAdminVideoEditor()
+const { state, hasEntries, updateRow, moveRow, removeRow } =
+  useAdminVideoEditor()
 // 行ごとに出すので、ほかの行が送信中でも、この行は描き直さない
 const status = computed(() => rowState(props.row, state.remote))
 const last = computed(() => props.index === state.rows.length - 1)
@@ -47,10 +48,9 @@ function onDuration(e: Event) {
  */
 const performerWarnings = computed(() =>
   [
-    ...performerProblems(
-      props.row.performers,
-      state.entries.map((e) => e.entryNo),
-    ).filter((p) => p !== NO_FIRST_PERFORMER),
+    ...performerProblems(props.row.performers, state.entries).filter(
+      (p) => p !== NO_FIRST_PERFORMER,
+    ),
     droppedPerformersWarning(props.row.droppedPerformers),
   ].filter(Boolean),
 )
@@ -63,7 +63,7 @@ const warningsId = computed(() =>
 )
 
 /** 出演者を選べるか (待っているあいだと、エントリーがないあいだは選べない) */
-const selectable = computed(() => !state.busy && state.entries.length > 0)
+const selectable = computed(() => !state.busy && hasEntries.value)
 
 function setPerformer(slot: 0 | 1, no: number | null) {
   const performers: Performers = [...props.row.performers]

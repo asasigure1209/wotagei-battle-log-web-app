@@ -32,10 +32,10 @@ const NO_ENTRIES =
 /** 動画の 1 行を、manifest の videos の 1 本と同じ形にする。出演者・長さの誤りは problems に足す */
 function videoOf(
   row: VideoRow,
-  { prefix, entryNos }: { prefix: string; entryNos: number[] },
+  { prefix, entries }: Pick<VideoEditorState, 'entries'> & { prefix: string },
   problems: string[],
 ) {
-  for (const p of performerProblems(row.performers, entryNos)) {
+  for (const p of performerProblems(row.performers, entries)) {
     problems.push(`${p}: ${row.relPath}`)
   }
   if (row.durationSec === null || Number.isNaN(row.durationSec)) {
@@ -58,10 +58,7 @@ export function buildVideos(state: VideoEditorState) {
   if (!ids) return { ids: null, videos: [], problems: [NOT_SELECTED] }
   if (!state.entries.length) return { ids, videos: [], problems: [NO_ENTRIES] }
   const problems: string[] = []
-  const scope = {
-    prefix: eventPrefix(ids),
-    entryNos: state.entries.map((e) => e.entryNo),
-  }
+  const scope = { prefix: eventPrefix(ids), entries: state.entries }
   const videos = state.rows.map((row) => videoOf(row, scope, problems))
   return { ids, videos, problems }
 }
