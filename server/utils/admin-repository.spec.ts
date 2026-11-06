@@ -7,7 +7,9 @@ import {
   getAdminEvent,
   hasAdminEvent,
   listAdminEvents,
+  listPerformedEntries,
   replaceAdminEventContents,
+  saveAdminEntries,
   saveAdminEventInfo,
 } from './admin-repository'
 import { getEvent, listPlayers } from './repository'
@@ -174,5 +176,72 @@ describe('エントリー・動画・出演者だけの登録', () => {
     await expect(replaceAdminEventContents(manifest('e'))).rejects.toThrow()
     expect(await db.select().from(eventSeries)).toEqual([])
     expect(await listPlayers('s', 'e')).toEqual([])
+  })
+})
+
+describe('エントリーだけの登録', () => {
+  beforeEach(async () => {
+    const db = await resetTestDb()
+    await importManifest(db, manifest('e'))
+    await importManifest(db, manifest('f'))
+  })
+
+  it('listPerformedEntries は、動画に出ているエントリーの No.・名前と動画のキーを返す', async () => {
+    expect(await listPerformedEntries('s', 'e')).toEqual([
+      { entryNo: 1, name: 'A', key: 's/e/予選/1.mp4' },
+      { entryNo: 1, name: 'A', key: 's/e/本戦/2.mp4' },
+      { entryNo: 2, name: 'B', key: 's/e/本戦/2.mp4' },
+    ])
+    expect(await listPerformedEntries('s', 'x')).toEqual([])
+  })
+
+  it('名前を直しても、出演者の紐づけは残る', async () => {
+    await saveAdminEntries('s', 'e', [
+      { entryNo: 1, name: 'A2' },
+      { entryNo: 2, name: 'B2' },
+    ])
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A2', count: 2 },
+      { no: '02', name: 'B2', count: 1 },
+    ])
+  })
+
+  it('増やした No. は足し、減らした No. は消す', async () => {
+    await saveAdminEntries('s', 'e', [
+      { entryNo: 1, name: 'A' },
+      { entryNo: 2, name: 'B' },
+      { entryNo: 3, name: 'C' },
+    ])
+    expect(await listPlayers('s', 'e')).toHaveLength(3)
+
+    // 消すかどうかは API が確かめる。ここでは出演者ごと消える (ON DELETE CASCADE)
+    await saveAdminEntries('s', 'e', [{ entryNo: 1, name: 'A' }])
+    expect(await listPlayers('s', 'e')).toEqual([
+      { no: '01', name: 'A', count: 2 },
+    ])
+    expect(await listPerformedEntries('s', 'e')).toHaveLength(2)
+  })
+
+  it('ほかのイベントには触れない', async () => {
+    await saveAdminEntries('s', 'e', [{ entryNo: 1, name: 'X' }])
+    expect(await listPlayers('s', 'f')).toEqual([
+      { no: '01', name: 'A', count: 2 },
+      { no: '02', name: 'B', count: 1 },
+    ])
+  })
+
+  it('D1 の 1 つの SQL に渡せる値の上限を超える数のエントリーも入れられる', async () => {
+    const many = Array.from({ length: 60 }, (_, i) => ({
+      entryNo: i + 1,
+      name: `P${i + 1}`,
+    }))
+    await saveAdminEntries('s', 'e', many)
+    expect(await listPlayers('s', 'e')).toHaveLength(60)
+  })
+
+  it('イベントがなければ失敗する', async () => {
+    await expect(
+      saveAdminEntries('s', 'x', [{ entryNo: 1, name: 'A' }]),
+    ).rejects.toThrow()
   })
 })
