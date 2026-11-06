@@ -3,6 +3,7 @@ import {
   compareRelPath,
   formatBytes,
   formatEntriesText,
+  formatEntryNames,
   formatSeconds,
   parseEntriesText,
   parseEntryNames,
@@ -54,6 +55,21 @@ describe('parseEntryNames', () => {
 
   it('「1: BLAZE」のように No. を書いても、名前として扱う (No. は書いた順に付く)', () => {
     expect(parseEntryNames('1: BLAZE')).toEqual(['1: BLAZE'])
+  })
+})
+
+describe('formatEntryNames', () => {
+  it('エントリーを No. の順に並べ、名前を 1 行に 1 人ずつ書く (parseEntryNames で読み戻せる)', () => {
+    const text = formatEntryNames([
+      { entryNo: 2, name: 'しぐれ' },
+      { entryNo: 1, name: 'BLAZE' },
+    ])
+    expect(text).toBe('BLAZE\nしぐれ')
+    expect(parseEntryNames(text)).toEqual(['BLAZE', 'しぐれ'])
+  })
+
+  it('エントリーがなければ空', () => {
+    expect(formatEntryNames([])).toBe('')
   })
 })
 

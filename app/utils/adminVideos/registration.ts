@@ -3,7 +3,13 @@
 import { adminApi } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
 import { type EventLoader, eventIds } from '~/utils/adminCommon/eventSelection'
-import { info, run, showErrors } from '~/utils/adminCommon/operation'
+import {
+  DRY_RUN_OK,
+  info,
+  REGISTERED,
+  run,
+  showErrors,
+} from '~/utils/adminCommon/operation'
 import {
   formatEntriesText,
   parseEntriesText,
@@ -12,10 +18,6 @@ import {
 import type { Manifest } from '~~/server/db/manifest'
 import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
-
-const DRY_RUN_OK = '問題ありません。このまま登録できます'
-const REGISTERED =
-  '登録しました。公開ページは最大 1 時間とっておかれるので、すぐに出したいときは Vercel で本番を再デプロイしてください'
 
 /** 動画の 1 行を manifest の形にする。出演者・長さの書き方の誤りは problems に足す */
 function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {

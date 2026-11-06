@@ -4,24 +4,19 @@ import {
   type EventLoader,
   selectedIds,
 } from '~/utils/adminCommon/eventSelection'
-import { info, run, showErrors } from '~/utils/adminCommon/operation'
-import { parseEntryNames } from '~/utils/adminManifest'
+import {
+  DRY_RUN_OK,
+  info,
+  REGISTERED,
+  run,
+  showErrors,
+} from '~/utils/adminCommon/operation'
+import { formatEntryNames, parseEntryNames } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
 import type { EntriesFormState } from './state'
 
-const DRY_RUN_OK = '問題ありません。このまま登録できます'
-const SAVED =
-  '登録しました。続けて、このイベントの動画を登録できます。公開ページは最大 1 時間とっておかれるので、すぐに出したいときは Vercel で本番を再デプロイしてください'
 const NOT_SELECTED = 'イベントを選んでください'
 const NO_NAMES = 'エントリーの名前を 1 行に 1 人ずつ書いてください'
-
-/** エントリーを No. の順に並べ、名前を 1 行に 1 人ずつ書いた文にする */
-function formatNames(entries: Manifest['entries']) {
-  return [...entries]
-    .sort((a, b) => a.entryNo - b.entryNo)
-    .map((e) => e.name)
-    .join('\n')
-}
 
 /**
  * 選んだ登録済みのイベントを読み込み、登録済みのエントリーの名前を画面に書き写す。
@@ -31,7 +26,7 @@ export const entriesLoader: EventLoader<EntriesFormState, Manifest> = {
   fetch: (ids) => adminApi.getEvent(ids),
   toEvent: (data) => ({ series: data.series, event: data.event }),
   fill: (state, data) => {
-    state.namesText = formatNames(data.entries)
+    state.namesText = formatEntryNames(data.entries)
   },
   reset: (state) => {
     state.namesText = ''
@@ -67,6 +62,6 @@ export async function save(state: EntriesFormState, dryRun: boolean) {
   // 送った名前に書き直し、画面を登録したものと同じにする
   state.namesText = names.join('\n')
   state.registered = true
-  info(state, SAVED)
+  info(state, REGISTERED)
   return true
 }

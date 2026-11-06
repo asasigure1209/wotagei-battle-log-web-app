@@ -2,6 +2,13 @@
 // Vue に依存しない関数として書き、各画面が状態を reactive にして渡す
 import { adminErrorMessages, isUnauthorized } from '~/utils/adminApi'
 
+/** 「確認だけ」で誤りがなかったときの知らせ */
+export const DRY_RUN_OK = '問題ありません。このまま登録できます'
+
+/** エントリーや動画を DB に登録できたときの知らせ */
+export const REGISTERED =
+  '登録しました。公開ページは最大 1 時間とっておかれるので、すぐに出したいときは Vercel で本番を再デプロイしてください'
+
 /** 画面の下に出す知らせ */
 export type OperationMessages = { kind: 'error' | 'info'; lines: string[] }
 

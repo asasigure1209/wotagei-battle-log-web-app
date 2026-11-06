@@ -11,6 +11,14 @@ export function parseEntryNames(text: string): string[] {
     .filter(Boolean)
 }
 
+/** エントリーを No. の順に並べ、名前を 1 行に 1 人ずつ書いた文にする (parseEntryNames で読み戻せる) */
+export function formatEntryNames(entries: { entryNo: number; name: string }[]) {
+  return [...entries]
+    .sort((a, b) => a.entryNo - b.entryNo)
+    .map((e) => e.name)
+    .join('\n')
+}
+
 /** 「1: BLAZE」の形の行を、エントリー No. をキーにした名前にする。形の違う行は problems に入れる */
 export function parseEntriesText(text: string) {
   const entries: Record<string, string> = {}
