@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   invalidManifest,
+  invalidOnDbError,
   parseEntryNamesBody,
   parseEventInfoBody,
   parseManifestBody,
@@ -89,11 +90,17 @@ describe('エントリーだけの登録のリクエスト', () => {
   })
 
   it('parseEntryNamesBody は、1 人もいない・names が名前の配列でないときも 400', () => {
-    for (const body of [{ names: [] }, {}, null, { names: 'A' }]) {
+    expect(() => parseEntryNamesBody({ names: [] })).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: { problems: ['エントリーを 1 人以上書いてください'] },
+      }),
+    )
+    for (const body of [{}, null, { names: 'A' }]) {
       expect(() => parseEntryNamesBody(body)).toThrow(
         expect.objectContaining({
           statusCode: 400,
-          data: { problems: ['エントリーを 1 人以上書いてください'] },
+          data: { problems: ['names は名前の配列で書いてください'] },
         }),
       )
     }
@@ -124,5 +131,34 @@ describe('エントリーだけの登録のリクエスト', () => {
       name: '新しい名前',
     }))
     expect(removedPerformerProblems(renamed, performed)).toEqual([])
+  })
+})
+
+describe('DB の失敗', () => {
+  it('invalidOnDbError は、書き込みの結果をそのまま返す', async () => {
+    expect(await invalidOnDbError(async () => 1)).toBe(1)
+  })
+
+  it('invalidOnDbError は、DB に弾かれたら (原因の文があればそれを添えて) 400 にする', async () => {
+    const error = new Error('Failed query', {
+      cause: new Error('FOREIGN KEY constraint failed'),
+    })
+    await expect(invalidOnDbError(() => Promise.reject(error))).rejects.toEqual(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            'DB に登録できませんでした: FOREIGN KEY constraint failed',
+          ],
+        },
+      }),
+    )
+    await expect(
+      invalidOnDbError(() => Promise.reject(new Error('失敗'))),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        data: { problems: ['DB に登録できませんでした: 失敗'] },
+      }),
+    )
   })
 })

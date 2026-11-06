@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
   if (problems.length) throw invalidManifest(problems)
 
   if (getQuery(event).dryRun) return { ok: true, dryRun: true }
-  await saveAdminEntries(series, eventId, entries)
+  // 確かめたあとにイベントが消されていたら、外部キーで弾かれて 400 になる
+  await invalidOnDbError(() => saveAdminEntries(series, eventId, entries))
   return { ok: true, dryRun: false }
 })

@@ -64,9 +64,11 @@ export function unregisteredEvent(seriesId: string, eventId: string) {
  */
 export function parseEntryNamesBody(body: unknown): Manifest['entries'] {
   const { names } = (body ?? {}) as Record<string, unknown>
-  if (!Array.isArray(names) || !names.length) {
-    throw invalidManifest(['エントリーを 1 人以上書いてください'])
+  if (!Array.isArray(names)) {
+    throw invalidManifest(['names は名前の配列で書いてください'])
   }
+  if (!names.length)
+    throw invalidManifest(['エントリーを 1 人以上書いてください'])
   const entries = names.map((name, i) => ({
     entryNo: i + 1,
     name: trimmedText(name),
@@ -84,7 +86,7 @@ function trimmedText(value: unknown) {
 }
 
 /** 動画に出ているエントリー (今 DB にある No.・名前と、その動画のキー) */
-export type PerformedEntry = { entryNo: number; name: string; key: string }
+type PerformedEntry = { entryNo: number; name: string; key: string }
 
 /**
  * 新しいエントリーの一覧から消える No. のうち、動画に出ているものを誤りの文にする。
@@ -102,5 +104,27 @@ export function removedPerformerProblems(
   return [...removed].map(
     ([entryNo, rows]) =>
       `エントリー No. ${entryNo} (${rows[0]?.name}) は動画に出ているので消せません: ${rows.map((r) => r.key).join(', ')}`,
+  )
+}
+
+/**
+ * DB への書き込みを流し、DB に弾かれたら (確かめたあとにイベントが消された・ほかのイベントと動画のキーが重なるなど)
+ * 500 ではなく、誤りの文を持つ 400 にする
+ */
+export async function invalidOnDbError<T>(write: () => Promise<T>) {
+  try {
+    return await write()
+  } catch (error) {
+    throw invalidManifest([`DB に登録できませんでした: ${errorMessage(error)}`])
+  }
+}
+
+/** DB のエラーの文。Drizzle は SQL を添えた文で包むので、原因 (cause) があればそちらを使う */
+function errorMessage(error: unknown) {
+  const cause = error instanceof Error ? error.cause : undefined
+  return String(
+    cause instanceof Error
+      ? cause.message
+      : ((error as Error)?.message ?? error),
   )
 }

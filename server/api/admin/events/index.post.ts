@@ -17,21 +17,7 @@ export default defineEventHandler(async (event) => {
   if (problems.length) throw invalidManifest(problems)
 
   if (getQuery(event).dryRun) return { ok: true, dryRun: true }
-  try {
-    // 確かめたあとにイベントが消されていたら、外部キーで弾かれてここに来る
-    await replaceAdminEventContents(manifest)
-  } catch (error) {
-    // ほかのイベントと動画のキーが重なるなど、DB に弾かれたとき
-    throw invalidManifest([`DB に取り込めませんでした: ${errorMessage(error)}`])
-  }
+  // 確かめたあとにイベントが消されていたら・ほかのイベントと動画のキーが重なるなど、DB に弾かれたら 400
+  await invalidOnDbError(() => replaceAdminEventContents(manifest))
   return { ok: true, dryRun: false }
 })
-
-function errorMessage(error: unknown) {
-  const cause = error instanceof Error ? error.cause : undefined
-  return String(
-    cause instanceof Error
-      ? cause.message
-      : ((error as Error)?.message ?? error),
-  )
-}
