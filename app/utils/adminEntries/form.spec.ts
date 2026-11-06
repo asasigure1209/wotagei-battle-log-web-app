@@ -16,7 +16,7 @@ describe('画面の算出値', () => {
     expect(form.names.value).toEqual(['BLAZE', 'しぐれ'])
   })
 
-  it('canSave は、イベントを選び、名前が 1 人以上いて、待っていないときだけ true', () => {
+  it('canSave は、イベントを選び、読み込んだ No. に抜けがなく、名前が 1 人以上いて、待っていないときだけ true', () => {
     const form = formWithEvent()
     expect(form.canSave.value).toBe(false)
     form.state.namesText = 'BLAZE'
@@ -24,6 +24,10 @@ describe('画面の算出値', () => {
     form.state.busy = true
     expect(form.canSave.value).toBe(false)
     form.state.busy = false
+    form.state.entryNosProblem =
+      '登録済みのエントリーの No. に抜けがあります (1, 3)'
+    expect(form.canSave.value).toBe(false)
+    form.state.entryNosProblem = ''
     form.state.event = null
     expect(form.canSave.value).toBe(false)
   })

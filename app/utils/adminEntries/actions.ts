@@ -11,12 +11,23 @@ import {
   run,
   showErrors,
 } from '~/utils/adminCommon/operation'
-import { formatEntryNames, parseEntryNames } from '~/utils/adminManifest'
+import {
+  formatEntryNames,
+  isNumberedFromOne,
+  parseEntryNames,
+} from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
 import type { EntriesFormState } from './state'
 
 const NOT_SELECTED = 'イベントを選んでください'
 const NO_NAMES = 'エントリーの名前を 1 行に 1 人ずつ書いてください'
+
+/** 読み込んだエントリーの No. が 1 から抜けなく並んでいなければ、その誤りの文 (並んでいれば空) */
+function entryNosProblem(entries: Manifest['entries']) {
+  if (isNumberedFromOne(entries)) return ''
+  const nos = entries.map((e) => e.entryNo).sort((a, b) => a - b)
+  return `登録済みのエントリーの No. に抜けがあります (${nos.join(', ')})。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません。動画の登録の画面のエントリーの欄で No. を 1 から抜けなく付け直し、出演 No. も合わせて直してから登録してください`
+}
 
 /**
  * 選んだ登録済みのイベントを読み込み、登録済みのエントリーの名前を画面に書き写す。
@@ -27,9 +38,12 @@ export const entriesLoader: EventLoader<EntriesFormState, Manifest> = {
   toEvent: (data) => ({ series: data.series, event: data.event }),
   fill: (state, data) => {
     state.namesText = formatEntryNames(data.entries)
+    state.entryNosProblem = entryNosProblem(data.entries)
+    if (state.entryNosProblem) showErrors(state, [state.entryNosProblem])
   },
   reset: (state) => {
     state.namesText = ''
+    state.entryNosProblem = ''
     state.registered = false
   },
 }
@@ -38,8 +52,9 @@ export const entriesLoader: EventLoader<EntriesFormState, Manifest> = {
 function saveTarget(state: EntriesFormState) {
   const ids = selectedIds(state)
   const names = parseEntryNames(state.namesText)
-  if (ids && names.length) return { ids, names }
-  showErrors(state, [ids ? NO_NAMES : NOT_SELECTED])
+  const problem = !ids ? NOT_SELECTED : state.entryNosProblem
+  if (ids && !problem && names.length) return { ids, names }
+  showErrors(state, [problem || NO_NAMES])
   return null
 }
 

@@ -19,6 +19,15 @@ export function formatEntryNames(entries: { entryNo: number; name: string }[]) {
     .join('\n')
 }
 
+/**
+ * エントリーの No. が 1 から抜けなく並んでいるか (並び順は問わない)。
+ * parseEntryNames の書き方では No. が書いた順に 1 から付くので、そうでないエントリーは名前だけでは書き表せない
+ */
+export function isNumberedFromOne(entries: { entryNo: number }[]) {
+  const nos = entries.map((e) => e.entryNo).sort((a, b) => a - b)
+  return nos.every((no, i) => no === i + 1)
+}
+
 /** 「1: BLAZE」の形の行を、エントリー No. をキーにした名前にする。形の違う行は problems に入れる */
 export function parseEntriesText(text: string) {
   const entries: Record<string, string> = {}

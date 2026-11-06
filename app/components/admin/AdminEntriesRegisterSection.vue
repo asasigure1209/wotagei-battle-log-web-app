@@ -14,6 +14,9 @@ const { state, canSave, currentKey, save } = useAdminEntriesForm()
       は書いた順に 1
       から)。動画・出演者はそのまま残ります。動画に出ているエントリーが消える登録はできません。
     </p>
+    <p v-if="state.entryNosProblem" class="admin-warn">
+      {{ state.entryNosProblem }}
+    </p>
     <div class="admin-actions">
       <button
         type="button"

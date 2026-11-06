@@ -71,6 +71,28 @@ export const NoNames: Story = {
   },
 }
 
+/** 読み込んだエントリーの No. に抜けがあれば、そのことを出し、登録できない (No. が振り直されて出演者がずれるため)。 */
+export const EntryNosProblem: Story = {
+  decorators: [
+    withAdminEntriesForm((form) => {
+      fillEntryNames(form)
+      form.state.entryNosProblem =
+        '登録済みのエントリーの No. に抜けがあります (1, 3)。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません'
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByText(/No\. に抜けがあります \(1, 3\)/),
+    ).toBeVisible()
+    await expect(
+      canvas.getByRole('button', { name: '確認だけ' }),
+    ).toBeDisabled()
+    await expect(
+      canvas.getByRole('button', { name: '登録する' }),
+    ).toBeDisabled()
+  },
+}
+
 /** イベントを選んでいなければ、登録できない。 */
 export const NotSelected: Story = {
   decorators: [

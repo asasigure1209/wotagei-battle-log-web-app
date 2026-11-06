@@ -11,6 +11,11 @@ import {
 export type EntriesFormState = EventSelectionState & {
   /** 1 行に 1 人の名前。エントリー No. は書いた順に 1 から付く */
   namesText: string
+  /**
+   * 読み込んだエントリーの No. が 1 から抜けなく並んでいないときの誤り (なければ空)。
+   * この画面で登録すると No. が振り直されて出演者がずれるので、あるあいだは登録できない
+   */
+  entryNosProblem: string
   /** 選んだイベントにエントリーを登録できたか (確認だけのときは変えない)。選び直すと false に戻す */
   registered: boolean
 }
@@ -21,6 +26,7 @@ export function createEntriesFormState(
   return {
     ...createEventSelectionState(onUnauthorized),
     namesText: '',
+    entryNosProblem: '',
     registered: false,
   }
 }

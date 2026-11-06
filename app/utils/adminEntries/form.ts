@@ -24,7 +24,11 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
   const selected = computed(() => state.event !== null)
   const currentKey = computed(() => selectedKey(state))
   const canSave = computed(
-    () => selected.value && names.value.length > 0 && !state.busy,
+    () =>
+      selected.value &&
+      !state.entryNosProblem &&
+      names.value.length > 0 &&
+      !state.busy,
   )
 
   return {

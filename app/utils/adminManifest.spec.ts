@@ -5,6 +5,7 @@ import {
   formatEntriesText,
   formatEntryNames,
   formatSeconds,
+  isNumberedFromOne,
   parseEntriesText,
   parseEntryNames,
   parsePerformers,
@@ -70,6 +71,28 @@ describe('formatEntryNames', () => {
 
   it('エントリーがなければ空', () => {
     expect(formatEntryNames([])).toBe('')
+  })
+})
+
+describe('isNumberedFromOne', () => {
+  it('No. が 1 から抜けなく並んでいれば true (並び順は問わない)', () => {
+    expect(isNumberedFromOne([])).toBe(true)
+    expect(
+      isNumberedFromOne([
+        { entryNo: 2, name: 'B' },
+        { entryNo: 1, name: 'A' },
+      ]),
+    ).toBe(true)
+  })
+
+  it('抜けがあったり、1 から始まっていなければ false', () => {
+    expect(
+      isNumberedFromOne([
+        { entryNo: 1, name: 'A' },
+        { entryNo: 3, name: 'C' },
+      ]),
+    ).toBe(false)
+    expect(isNumberedFromOne([{ entryNo: 2, name: 'B' }])).toBe(false)
   })
 })
 

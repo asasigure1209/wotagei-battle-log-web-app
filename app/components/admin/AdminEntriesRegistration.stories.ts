@@ -18,12 +18,21 @@ const registered = {
   videos: [],
 }
 
+/** No. に抜けがある登録済みのエントリー (db:import や動画の画面で「1: BLAZE / 3: ヲタ」のように作れる) */
+const withGap = {
+  ...registered,
+  entries: [
+    { entryNo: 1, name: 'BLAZE' },
+    { entryNo: 3, name: 'ヲタ' },
+  ],
+}
+
 /** 一覧と選んだイベントで返す値を分け、エントリーの登録 (PUT) には saved を返す (Error なら投げる) */
-function api(saved: unknown = { ok: true }) {
+function api(saved: unknown = { ok: true }, event: unknown = registered) {
   return (url: string) => {
     if (url === '/api/admin/events') return [registeredEvent]
     if (url.endsWith('/entries')) return saved
-    return registered
+    return event
   }
 }
 
@@ -105,5 +114,22 @@ export const Rejected: Story = {
     await expect(
       canvas.queryByRole('link', { name: /動画を登録する/ }),
     ).toBeNull()
+  },
+}
+
+/** 読み込んだエントリーの No. に抜けがあれば、誤りを出し、登録できない。 */
+export const EntryNosGap: Story = {
+  args: { initialEvent: 'elnino/elnino_vol_5' },
+  parameters: { fetch: api({ ok: true }, withGap) },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole('status')).toHaveTextContent(
+      'No. に抜けがあります (1, 3)',
+    )
+    await expect(canvas.getByLabelText(/1 行に 1 人/)).toHaveValue(
+      'BLAZE\nヲタ',
+    )
+    await expect(
+      canvas.getByRole('button', { name: '登録する' }),
+    ).toBeDisabled()
   },
 }
