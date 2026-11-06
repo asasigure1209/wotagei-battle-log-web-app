@@ -15,12 +15,8 @@ import {
   showErrors,
 } from '~/utils/adminCommon/operation'
 import type { Manifest } from '~~/server/db/manifest'
-import {
-  MAX_PERFORMERS,
-  performerNos,
-  performerProblems,
-  toPerformers,
-} from './performers'
+import { MAX_PERFORMERS } from '~~/shared/utils/performers'
+import { performerNos, performerProblems, toPerformers } from './performers'
 import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 

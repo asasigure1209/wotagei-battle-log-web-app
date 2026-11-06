@@ -1,6 +1,7 @@
 // 動画の出演者の選び方 (出演者 1・2 の選択肢と、選んだものの誤り)。
 // 出演者は、選んだイベントに登録済みのエントリーから選ぶ (この画面ではエントリーを書き換えない)
 import type { Manifest } from '~~/server/db/manifest'
+import { MAX_PERFORMERS } from '~~/shared/utils/performers'
 
 /** 動画の出演者。出演者 1 (必須) と出演者 2 (任意)。選んでいなければ null */
 export type Performers = [number | null, number | null]
@@ -8,16 +9,18 @@ export type Performers = [number | null, number | null]
 /** 出演者の選択肢の 1 つ */
 export type PerformerOption = { value: number; label: string }
 
-/** 1 本の動画に選べる出演者の数 (バトルの動画には 2 人が出る。サーバーの上限と同じ) */
-export const MAX_PERFORMERS = 2
-
 /** 出演者 1 を選んでいないときの誤り */
 export const NO_FIRST_PERFORMER = '出演者 1 を選んでください'
 
-/** 出演者の No. の並び (DB の形) を、出演者 1・2 にする。3 人目からは入らない */
+/** 出演者の No. の並び (DB の形) を、出演者 1・2 にする。MAX_PERFORMERS 人目より後ろは入らない */
 export function toPerformers(nos: number[]): Performers {
-  const [first = null, second = null] = nos
+  const [first = null, second = null] = nos.slice(0, MAX_PERFORMERS)
   return [first, second]
+}
+
+/** No. が登録済みのエントリーにあるか (選んでいない null は false) */
+export function isRegistered(entries: Manifest['entries'], no: number | null) {
+  return entries.some((e) => e.entryNo === no)
 }
 
 /** 選んだ出演者の No. を、出演者 1・2 の順に並べる (DB の形) */
@@ -36,7 +39,7 @@ export function performerOptions(
   const options = [...entries]
     .sort((a, b) => a.entryNo - b.entryNo)
     .map((e) => ({ value: e.entryNo, label: `No. ${e.entryNo} ${e.name}` }))
-  if (selected === null || options.some((o) => o.value === selected)) {
+  if (selected === null || isRegistered(entries, selected)) {
     return options
   }
   return [

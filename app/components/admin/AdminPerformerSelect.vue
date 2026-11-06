@@ -3,7 +3,7 @@
 // 選んでいる No. が登録済みのエントリーにない (古いデータ) ときは、そのことが分かる選択肢で出す
 
 import { computed } from 'vue'
-import { performerOptions } from '~/utils/adminVideos/performers'
+import { isRegistered, performerOptions } from '~/utils/adminVideos/performers'
 import type { Manifest } from '~~/server/db/manifest'
 
 const props = defineProps<{
@@ -20,9 +20,7 @@ const selected = defineModel<number | null>({ required: true })
 
 const options = computed(() => performerOptions(props.entries, selected.value))
 const unregistered = computed(
-  () =>
-    selected.value !== null &&
-    !props.entries.some((e) => e.entryNo === selected.value),
+  () => selected.value !== null && !isRegistered(props.entries, selected.value),
 )
 </script>
 

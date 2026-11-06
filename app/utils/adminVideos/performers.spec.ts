@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isRegistered,
   NO_FIRST_PERFORMER,
   performerNos,
   performerOptions,
@@ -41,6 +42,14 @@ describe('performerOptions', () => {
       { value: 2, label: 'No. 2 しぐれ' },
     ])
     expect(performerOptions(entries, 1)).toHaveLength(2)
+  })
+})
+
+describe('isRegistered', () => {
+  it('No. が登録済みのエントリーにあるときだけ true (選んでいない null は false)', () => {
+    expect(isRegistered(entries, 1)).toBe(true)
+    expect(isRegistered(entries, 9)).toBe(false)
+    expect(isRegistered(entries, null)).toBe(false)
   })
 })
 
