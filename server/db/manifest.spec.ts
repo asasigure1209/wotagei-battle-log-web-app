@@ -8,6 +8,7 @@ import {
   ManifestError,
   parseEventInfo,
   parseManifest,
+  parseVideoList,
   readManifest,
 } from './manifest'
 import { entries, eventSeries, videos } from './schema'
@@ -97,6 +98,62 @@ describe('parseManifest', () => {
         ],
       }),
     ).toThrow(ManifestError)
+  })
+})
+
+describe('parseVideoList', () => {
+  const scope = { prefix: 's/e/', entryNos: [1, 2, 3] }
+
+  it('動画の一覧だけを、manifest の videos と同じ規則で確かめる', () => {
+    expect(parseVideoList([qualifier(), battle()], scope)).toEqual([
+      qualifier(),
+      battle(),
+    ])
+    expect(() =>
+      parseVideoList([{ ...battle(), performers: [1, 9] }], scope),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'videos[0].performers の 9 は entries にありません (s/e/本戦/M2.mp4)',
+        ],
+      }),
+    )
+    expect(() => parseVideoList(null, scope)).toThrow(ManifestError)
+  })
+
+  it('entriesName を渡すと、エントリー No. の出どころをその名前で書く', () => {
+    expect(() =>
+      parseVideoList([{ ...qualifier(), performers: [9] }], {
+        ...scope,
+        entriesName: '登録済みのエントリー',
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'videos[0].performers の 9 は登録済みのエントリーにありません (s/e/予選/M1.mp4)',
+        ],
+      }),
+    )
+  })
+
+  it('maxPerformers を渡すと、出演者の人数も確かめる', () => {
+    const trio = { ...battle(), performers: [1, 2, 3] }
+    expect(() =>
+      parseVideoList([qualifier(), trio], { ...scope, maxPerformers: 2 }),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'videos[1].performers の出演者は 2 人までです (s/e/本戦/M2.mp4)',
+        ],
+      }),
+    )
+    expect(parseVideoList([trio], scope)).toEqual([trio])
+  })
+
+  it('db:import の manifest は、今までどおり出演者の人数を制限しない', () => {
+    const data = yaml()
+    data.videos = [{ ...battle(), performers: [1, 2, 3] }]
+    expect(parseManifest(data).videos[0]?.performers).toEqual([1, 2, 3])
   })
 })
 

@@ -5,6 +5,7 @@ import {
   parseEntryNamesBody,
   parseEventInfoBody,
   parseManifestBody,
+  parseVideosBody,
   removedPerformerProblems,
   unregisteredEvent,
 } from './admin-event'
@@ -134,7 +135,95 @@ describe('エントリーだけの登録のリクエスト', () => {
   })
 })
 
+describe('動画と出演者だけの登録のリクエスト', () => {
+  const video = (performers: unknown) => ({
+    key: 's/e/本戦/1.mp4',
+    durationSec: 192,
+    sizeBytes: 20,
+    performers,
+  })
+  const scope = { prefix: 's/e/', entryNos: [1, 2, 3] }
+
+  it('parseVideosBody は、本文の videos を manifest の動画と同じ形にする', () => {
+    expect(parseVideosBody({ videos: [video([1, 2])] }, scope)).toEqual([
+      video([1, 2]),
+    ])
+  })
+
+  it('parseVideosBody は、出演者が 1〜2 人で、登録済みのエントリーの No. でなければ、まとめて 400 にする', () => {
+    const body = {
+      videos: [
+        video([]),
+        { ...video([1, 2, 3]), key: 's/e/本戦/2.mp4' },
+        { ...video([4]), key: 's/e/本戦/3.mp4' },
+      ],
+    }
+    expect(() => parseVideosBody(body, scope)).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            'videos[0].performers に、出ているエントリー No. を書いてください (s/e/本戦/1.mp4)',
+            'videos[1].performers の出演者は 2 人までです (s/e/本戦/2.mp4)',
+            'videos[2].performers の 4 は登録済みのエントリーにありません (s/e/本戦/3.mp4)',
+          ],
+        },
+      }),
+    )
+  })
+
+  it('parseVideosBody は、videos が配列でなければ 400', () => {
+    for (const body of [{}, null, { videos: 'a' }, { videos: {} }]) {
+      expect(() => parseVideosBody(body, scope)).toThrow(
+        expect.objectContaining({
+          statusCode: 400,
+          data: { problems: ['videos は動画の配列で書いてください'] },
+        }),
+      )
+    }
+  })
+
+  it('parseVideosBody は、動画が 0 本なら (登録済みの動画をうっかり全部消さないよう) 400', () => {
+    expect(() => parseVideosBody({ videos: [] }, scope)).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: { problems: ['動画を 1 本以上書いてください'] },
+      }),
+    )
+  })
+
+  it('parseVideosBody は、ほかのイベントのキーなら 400', () => {
+    expect(() =>
+      parseVideosBody({ videos: [{ ...video([1]), key: 's/x/1.mp4' }] }, scope),
+    ).toThrow(
+      expect.objectContaining({
+        data: {
+          problems: ['videos[0].key は s/e/ で始まるはずです: s/x/1.mp4'],
+        },
+      }),
+    )
+  })
+
+  it('parseVideosBody は、エントリーがまだ登録されていなければ、先にエントリーを登録するよう案内する 400', () => {
+    expect(() =>
+      parseVideosBody({ videos: [video([1])] }, { ...scope, entryNos: [] }),
+    ).toThrow(
+      expect.objectContaining({
+        statusCode: 400,
+        data: {
+          problems: [
+            'エントリーがまだ登録されていません。先にエントリーの登録の画面でエントリーを登録してください',
+          ],
+        },
+      }),
+    )
+  })
+})
+
 describe('DB の失敗', () => {
+  const RETRY_HINT =
+    '確かめたあとにイベント・エントリー・動画が変わったかもしれません。画面を開き直してから、もう一度登録してください'
+
   it('invalidOnDbError は、書き込みの結果をそのまま返す', async () => {
     expect(await invalidOnDbError(async () => 1)).toBe(1)
   })
@@ -149,6 +238,7 @@ describe('DB の失敗', () => {
         data: {
           problems: [
             'DB に登録できませんでした: FOREIGN KEY constraint failed',
+            RETRY_HINT,
           ],
         },
       }),
@@ -157,7 +247,7 @@ describe('DB の失敗', () => {
       invalidOnDbError(() => Promise.reject(new Error('失敗'))),
     ).rejects.toEqual(
       expect.objectContaining({
-        data: { problems: ['DB に登録できませんでした: 失敗'] },
+        data: { problems: ['DB に登録できませんでした: 失敗', RETRY_HINT] },
       }),
     )
   })

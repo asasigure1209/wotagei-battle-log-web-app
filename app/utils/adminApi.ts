@@ -80,6 +80,20 @@ export const adminApi = {
       body: { names },
       query: dryRun ? { dryRun: 1 } : {},
     }),
+  /**
+   * 動画と出演者だけを入れ直す (本文の videos は manifest の videos と同じ形、動画の No. はその順)。
+   * dryRun なら確かめるだけ。エントリーは残る
+   */
+  saveVideos: (
+    { seriesId, eventId }: EventIds,
+    videos: unknown[],
+    dryRun: boolean,
+  ) =>
+    $fetch(`/api/admin/events/${seriesId}/${eventId}/videos`, {
+      method: 'PUT',
+      body: { videos },
+      query: dryRun ? { dryRun: 1 } : {},
+    }),
   deleteEvent: ({ seriesId, eventId }: EventIds) =>
     $fetch(`/api/admin/events/${seriesId}/${eventId}`, { method: 'DELETE' }),
   /** イベントの R2 にある動画のキーとサイズ */

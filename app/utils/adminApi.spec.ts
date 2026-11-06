@@ -31,6 +31,7 @@ const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events/s/e', body: {} },
   { method: 'PUT', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'PUT', path: '/api/admin/events/s/e/entries', body: { ok: true } },
+  { method: 'PUT', path: '/api/admin/events/s/e/videos', body: { ok: true } },
   { method: 'DELETE', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'GET', path: '/api/admin/objects', body: [] },
 ])
@@ -52,6 +53,8 @@ describe('adminApi', () => {
     })
     await adminApi.saveEntries(ids, ['A', 'B'], true)
     await adminApi.saveEntries(ids, ['A', 'B'], false)
+    await adminApi.saveVideos(ids, [], true)
+    await adminApi.saveVideos(ids, [], false)
     expect(api.calls).toEqual([
       'GET /api/admin/events',
       'GET /api/admin/events/s/e',
@@ -62,6 +65,8 @@ describe('adminApi', () => {
       'PUT /api/admin/events/s/e',
       'PUT /api/admin/events/s/e/entries?dryRun=1',
       'PUT /api/admin/events/s/e/entries',
+      'PUT /api/admin/events/s/e/videos?dryRun=1',
+      'PUT /api/admin/events/s/e/videos',
     ])
   })
 })
