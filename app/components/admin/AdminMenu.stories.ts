@@ -19,7 +19,10 @@ export const Default: Story = {
       canvas.getByRole('link', { name: /イベントを登録する/ }),
     ).toHaveAttribute('href', '/admin/events')
     await expect(
-      canvas.getByRole('link', { name: /エントリーと動画を登録する/ }),
+      canvas.getByRole('link', { name: /エントリーを登録する/ }),
+    ).toHaveAttribute('href', '/admin/entries')
+    await expect(
+      canvas.getByRole('link', { name: /動画を登録する/ }),
     ).toHaveAttribute('href', '/admin/videos')
   },
 }

@@ -144,14 +144,15 @@ describe('管理画面', () => {
   }))
   registerEndpoint('/api/admin/objects', () => [])
 
-  it('/admin は入口で、イベントの登録と、エントリーと動画の登録のページへ案内する', async () => {
+  it('/admin は入口で、イベント・エントリー・動画の登録のページへ案内する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin' })
     await vi.waitFor(() =>
       expect(wrapper.find('a[href="/admin/videos"]').exists()).toBe(true),
     )
     expect(wrapper.find('a[href="/admin/events"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/admin/entries"]').exists()).toBe(true)
     // 入口には登録の画面そのものは出さない
-    expect(wrapper.text()).not.toContain('1 行に 1 人')
+    expect(wrapper.find('textarea').exists()).toBe(false)
   })
 
   it('/admin/videos で、エントリーと動画を登録する', async () => {

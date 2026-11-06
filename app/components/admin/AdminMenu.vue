@@ -11,11 +11,19 @@
         シリーズ・イベント名・開催日・運営の連絡先を登録する。登録済みのイベントを直す・消すのもここ
       </span>
     </NuxtLink>
-    <NuxtLink class="admin-card item" to="/admin/videos">
-      <span class="admin-heading">エントリーと動画を登録する</span>
+    <NuxtLink class="admin-card item" to="/admin/entries">
+      <span class="admin-heading">エントリーを登録する</span>
       <span class="admin-hint">
-        イベントの情報とエントリーを書き、動画を R2
+        登録済みのイベントを選び、エントリーの名前を 1 行に 1
+        人ずつ書いて登録する。No. は書いた順に付く
+      </span>
+    </NuxtLink>
+    <NuxtLink class="admin-card item" to="/admin/videos">
+      <span class="admin-heading">動画を登録する</span>
+      <span class="admin-hint">
+        登録済みのイベントを選び、動画を R2
         にアップロードして、出演者と一緒に登録する
+        (エントリーもここで書き直せる)
       </span>
     </NuxtLink>
   </nav>

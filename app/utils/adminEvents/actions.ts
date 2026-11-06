@@ -5,7 +5,7 @@ import { info, run, showErrors } from '~/utils/adminCommon/operation'
 import { type EventFormState, emptyForm } from './state'
 
 const SAVED =
-  '登録しました。続けて、このイベントのエントリーと動画を登録できます'
+  '登録しました。続けて、このイベントのエントリー・動画を登録できます'
 const DELETED =
   'DB からイベントを消しました (エントリー・動画の登録も消え、R2 の動画は残っています)'
 const DUPLICATED =
