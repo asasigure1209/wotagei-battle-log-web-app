@@ -2,9 +2,9 @@
 // 2. エントリー: 「No.: 名前」の形で 1 行に 1 人ずつ書く
 
 import { computed } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEditor'
+import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 
-const { state, entries, selected } = useAdminEditor()
+const { state, entries, selected } = useAdminVideoEditor()
 const count = computed(() => Object.keys(entries.value.entries).length)
 </script>
 

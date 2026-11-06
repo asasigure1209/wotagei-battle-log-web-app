@@ -4,7 +4,7 @@ import {
   adminParameters,
   fillEvent,
   videoRow,
-  withAdminEditor,
+  withAdminVideoEditor,
 } from '../../../.storybook/admin'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 
@@ -21,7 +21,7 @@ type Story = StoryObj<typeof meta>
 /** すべての動画が R2 にあり、登録できる。 */
 export const Ready: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       fillEvent(editor)
       editor.state.rows = [videoRow('予選/M1256.mp4', { sizeBytes: 10 })]
       editor.state.remote = new Map([['予選/M1256.mp4', 10]])
@@ -36,7 +36,7 @@ export const Ready: Story = {
 /** R2 にまだない動画があると、登録できない。 */
 export const NotUploaded: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       fillEvent(editor)
       editor.state.rows = [videoRow('予選/M1256.mp4', { withFile: true })]
       editor.state.remote = new Map()
@@ -51,7 +51,7 @@ export const NotUploaded: Story = {
 
 /** 選んだイベントの公開ページを開ける。 */
 export const PublicLink: Story = {
-  decorators: [withAdminEditor(fillEvent)],
+  decorators: [withAdminVideoEditor(fillEvent)],
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole('link', { name: '公開ページを開く' }),
@@ -62,7 +62,7 @@ export const PublicLink: Story = {
 /** イベントを選んでいなければ、登録できない。 */
 export const NotSelected: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       editor.state.rows = [videoRow('予選/M1256.mp4', { sizeBytes: 10 })]
       editor.state.remote = new Map([['予選/M1256.mp4', 10]])
     }),

@@ -2,10 +2,10 @@
 // 動画の一覧の 1 行。長さと出演 No. をその場で直し、並べ替えや取り外しをする
 
 import { computed } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEditor'
-import { rowState } from '~/utils/adminEditor/rows'
-import type { VideoRow } from '~/utils/adminEditor/state'
+import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes, formatSeconds } from '~/utils/adminManifest'
+import { rowState } from '~/utils/adminVideos/rows'
+import type { VideoRow } from '~/utils/adminVideos/state'
 
 const props = defineProps<{
   /** 動画の行。書き換えはエディターの updateRow を通す */
@@ -14,7 +14,7 @@ const props = defineProps<{
   index: number
 }>()
 
-const { state, updateRow, moveRow, removeRow } = useAdminEditor()
+const { state, updateRow, moveRow, removeRow } = useAdminVideoEditor()
 // 行ごとに出すので、ほかの行が送信中でも、この行は描き直さない
 const status = computed(() => rowState(props.row, state.remote))
 const last = computed(() => props.index === state.rows.length - 1)

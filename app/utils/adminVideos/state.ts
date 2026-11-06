@@ -23,7 +23,7 @@ export type VideoRow = {
  * エントリーと動画の登録画面の状態。選んだ登録済みのイベント (EventSelectionState の event) は、
  * この画面ではイベントの情報を書かず、登録のときもそれをそのまま送る
  */
-export type EditorState = EventSelectionState & {
+export type VideoEditorState = EventSelectionState & {
   entriesText: string
   rows: VideoRow[]
   /** R2 にある動画 (相対パス → サイズ)。まだ調べていなければ null */
@@ -32,7 +32,9 @@ export type EditorState = EventSelectionState & {
   uploadAbort: AbortController | null
 }
 
-export function createEditorState(onUnauthorized: () => void): EditorState {
+export function createVideoEditorState(
+  onUnauthorized: () => void,
+): VideoEditorState {
   return {
     ...createEventSelectionState(onUnauthorized),
     entriesText: '',

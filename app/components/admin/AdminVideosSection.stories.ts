@@ -5,7 +5,7 @@ import {
   adminParameters,
   fillEvent,
   videoRow,
-  withAdminEditor,
+  withAdminVideoEditor,
 } from '../../../.storybook/admin'
 import AdminVideosSection from './AdminVideosSection.vue'
 
@@ -24,7 +24,7 @@ type Story = StoryObj<typeof meta>
 
 /** まだ動画を選んでいない。 */
 export const Empty: Story = {
-  decorators: [withAdminEditor(fillEvent)],
+  decorators: [withAdminVideoEditor(fillEvent)],
   play: async ({ canvas }) => {
     await expect(canvas.getByText('まだ動画がありません。')).toBeVisible()
   },
@@ -33,7 +33,7 @@ export const Empty: Story = {
 /** 行の状態の見本。R2 にあり・未アップロード・R2 と違う・R2 にない・失敗が並ぶ。 */
 export const RowStates: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       fillEvent(editor)
       editor.state.rows = [
         videoRow('予選/M1256.mp4', { sizeBytes: 100 }),
@@ -71,7 +71,7 @@ export const RowStates: Story = {
 /** アップロードしている間は、送信中の割合と中止のボタンを出す。 */
 export const Uploading: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       fillEvent(editor)
       editor.state.rows = [
         videoRow('予選/M1256.mp4', {
@@ -97,7 +97,7 @@ export const Uploading: Story = {
 /** イベントを選んでいない (R2 をまだ調べていない) あいだは、R2 を確かめられず、アップロードもできない。 */
 export const RemoteUnknown: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       editor.state.rows = [videoRow('予選/M1256.mp4', { withFile: true })]
     }),
   ],

@@ -6,12 +6,12 @@ import {
   removeRow,
   rowState,
   updateRow,
-} from '~/utils/adminEditor/rows'
-import { createEditorState, newRow } from '~/utils/adminEditor/state'
+} from '~/utils/adminVideos/rows'
+import { createVideoEditorState, newRow } from '~/utils/adminVideos/state'
 import { videoFile } from '~~/test/nuxt/adminTestUtils'
 
 const stateWith = (...paths: string[]) => {
-  const state = createEditorState(() => {})
+  const state = createVideoEditorState(() => {})
   state.rows = paths.map((p) => newRow(p))
   return state
 }

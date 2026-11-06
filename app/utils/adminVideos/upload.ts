@@ -5,7 +5,7 @@ import { selectedIds } from '~/utils/adminCommon/eventSelection'
 import { info, run } from '~/utils/adminCommon/operation'
 import { uploadMultipart } from '~/utils/multipartUpload'
 import { needsUpload } from './rows'
-import type { EditorState, VideoRow } from './state'
+import type { VideoEditorState, VideoRow } from './state'
 
 /** 送信中の進み具合を画面に反映する間隔 */
 const PROGRESS_INTERVAL_MS = 200
@@ -17,7 +17,7 @@ export async function fetchRemote(ids: EventIds) {
   return new Map(objects.map((o) => [o.key.slice(prefix.length), o.size]))
 }
 
-export async function refreshRemote(state: EditorState) {
+export async function refreshRemote(state: VideoEditorState) {
   state.remote = null
   const ids = selectedIds(state)
   if (!ids) return
@@ -27,11 +27,11 @@ export async function refreshRemote(state: EditorState) {
 }
 
 /** アップロードが要る行 */
-export function uploadTargets(state: EditorState) {
+export function uploadTargets(state: VideoEditorState) {
   return state.rows.filter((r) => needsUpload(r, state.remote))
 }
 
-export async function uploadAll(state: EditorState) {
+export async function uploadAll(state: VideoEditorState) {
   const ids = selectedIds(state)
   if (!ids || !state.remote) return
   state.messages = null
@@ -47,7 +47,7 @@ export async function uploadAll(state: EditorState) {
 }
 
 async function uploadRow(
-  state: EditorState,
+  state: VideoEditorState,
   row: VideoRow,
   prefix: string,
   signal: AbortSignal,
@@ -84,6 +84,6 @@ function throttledProgress(row: VideoRow) {
   }
 }
 
-export function cancelUpload(state: EditorState) {
+export function cancelUpload(state: VideoEditorState) {
   state.uploadAbort?.abort()
 }
