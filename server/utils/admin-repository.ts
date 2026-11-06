@@ -2,8 +2,8 @@
 // 管理画面がそのまま手直しして取り込み直せるようにする
 import { and, asc, desc, eq, gt, notExists, sql } from 'drizzle-orm'
 import {
-  chunks,
   insertContents,
+  insertEntries,
   type Manifest,
   upsertSeries,
 } from '../db/manifest'
@@ -175,17 +175,16 @@ export async function saveAdminEntries(
   rows: Manifest['entries'],
 ) {
   const db = await useDb()
-  const upserts = chunks(
-    rows.map((e) => ({ seriesId: series, eventId: event, ...e })),
-  ).map((chunk) =>
-    db
-      .insert(entries)
-      .values(chunk)
-      .onConflictDoUpdate({
-        target: [entries.seriesId, entries.eventId, entries.entryNo],
-        // 行ごとに名前が違うので、入れようとした値 (excluded) で書き換える
-        set: { name: sql.raw(`excluded.${entries.name.name}`) },
-      }),
+  const upserts = insertEntries(
+    db,
+    { seriesId: series, eventId: event },
+    rows,
+  ).map((insert) =>
+    insert.onConflictDoUpdate({
+      target: [entries.seriesId, entries.eventId, entries.entryNo],
+      // 行ごとに名前が違うので、入れようとした値 (excluded) で書き換える
+      set: { name: sql.raw(`excluded.${entries.name.name}`) },
+    }),
   )
   await db.batch([
     db.delete(entries).where(

@@ -292,7 +292,7 @@ export function insertVideos(
 }
 
 /** D1 は 1 つの SQL に渡せる値が 100 個までなので、insert する行をそれに収まるよう分ける */
-export function chunks<T extends object>(rows: T[]) {
+function chunks<T extends object>(rows: T[]) {
   const first = rows[0]
   if (!first) return []
   const size = Math.floor(100 / Object.keys(first).length)
