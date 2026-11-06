@@ -1,5 +1,33 @@
 // 管理画面で入力した内容を、DB に取り込む manifest (server/db/manifest.ts) の形にする
 
+/**
+ * 1 行に 1 人の名前を書いた文を、書いた順の名前の並びにする (エントリー No. はこの順に 1 から付く)。
+ * 前後の空白は除き、空行はとばす
+ */
+export function parseEntryNames(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+/** エントリーを No. の順に並べ、名前を 1 行に 1 人ずつ書いた文にする (parseEntryNames で読み戻せる) */
+export function formatEntryNames(entries: { entryNo: number; name: string }[]) {
+  return [...entries]
+    .sort((a, b) => a.entryNo - b.entryNo)
+    .map((e) => e.name)
+    .join('\n')
+}
+
+/**
+ * エントリーの No. が 1 から抜けなく並んでいるか (並び順は問わない)。
+ * parseEntryNames の書き方では No. が書いた順に 1 から付くので、そうでないエントリーは名前だけでは書き表せない
+ */
+export function isNumberedFromOne(entries: { entryNo: number }[]) {
+  const nos = entries.map((e) => e.entryNo).sort((a, b) => a - b)
+  return nos.every((no, i) => no === i + 1)
+}
+
 /** 「1: BLAZE」の形の行を、エントリー No. をキーにした名前にする。形の違う行は problems に入れる */
 export function parseEntriesText(text: string) {
   const entries: Record<string, string> = {}

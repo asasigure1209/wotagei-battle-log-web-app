@@ -144,14 +144,15 @@ describe('管理画面', () => {
   }))
   registerEndpoint('/api/admin/objects', () => [])
 
-  it('/admin は入口で、イベントの登録と、エントリーと動画の登録のページへ案内する', async () => {
+  it('/admin は入口で、イベント・エントリー・動画の登録のページへ案内する', async () => {
     const wrapper = await mountSuspended(App, { route: '/admin' })
     await vi.waitFor(() =>
       expect(wrapper.find('a[href="/admin/videos"]').exists()).toBe(true),
     )
     expect(wrapper.find('a[href="/admin/events"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/admin/entries"]').exists()).toBe(true)
     // 入口には登録の画面そのものは出さない
-    expect(wrapper.text()).not.toContain('1 行に 1 人')
+    expect(wrapper.find('textarea').exists()).toBe(false)
   })
 
   it('/admin/videos で、エントリーと動画を登録する', async () => {
@@ -189,13 +190,21 @@ describe('管理画面', () => {
     )
     expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
   })
-  it('前の URL の /admin/entries?event= で開くと、?event= を引き継いで /admin/videos に移る', async () => {
+  it('/admin/entries で、登録済みのイベントを選んでエントリーを登録する', async () => {
+    const wrapper = await mountSuspended(App, { route: '/admin/entries' })
+    await vi.waitFor(() =>
+      expect(wrapper.text()).toContain('1 行に 1 人、名前だけを書く'),
+    )
+    expect(wrapper.find('textarea').attributes()).toHaveProperty('disabled')
+  })
+  it('/admin/entries?event= で開くと、そのイベントを選んで、登録済みのエントリーの名前を読み込む', async () => {
     const wrapper = await mountSuspended(App, {
       route: '/admin/entries?event=elnino/elnino_vol_5',
     })
-    expect(useRoute().fullPath).toBe('/admin/videos?event=elnino/elnino_vol_5')
+    expect(useRoute().fullPath).toBe('/admin/entries?event=elnino/elnino_vol_5')
     await vi.waitFor(() =>
-      expect(wrapper.find('textarea').element.value).toBe('1: BLAZE'),
+      expect(wrapper.find('textarea').element.value).toBe('BLAZE'),
     )
+    expect(wrapper.find('textarea').attributes()).not.toHaveProperty('disabled')
   })
 })

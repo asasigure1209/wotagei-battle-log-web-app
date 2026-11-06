@@ -1,11 +1,24 @@
 <script setup lang="ts">
-// エントリーと動画の登録は /admin/videos に移った。前の URL (ブックマークなど) で開いても、
-// ?event= を引き継いで /admin/videos へ移す
-definePageMeta({
-  redirect: (to) => ({ path: '/admin/videos', query: to.query }),
-})
+// エントリーの登録。登録済みのイベントを選んで行う。?event=<シリーズID>/<イベントID> で、そのイベントを選んだ状態で開く
+useHead({ title: 'エントリーの登録 | 管理画面' })
+
+const loggedIn = useAdminLoggedIn()
+const initialEvent = String(useRoute().query.event ?? '')
 </script>
 
 <template>
-  <div />
+  <div>
+    <h2 class="heading">エントリーの登録</h2>
+    <AdminEntriesRegistration
+      :initial-event="initialEvent"
+      @unauthorized="loggedIn = false"
+    />
+  </div>
 </template>
+
+<style scoped>
+.heading {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+</style>

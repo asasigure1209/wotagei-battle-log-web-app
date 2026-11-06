@@ -3,8 +3,11 @@ import {
   compareRelPath,
   formatBytes,
   formatEntriesText,
+  formatEntryNames,
   formatSeconds,
+  isNumberedFromOne,
   parseEntriesText,
+  parseEntryNames,
   parsePerformers,
   relPathOf,
 } from '~/utils/adminManifest'
@@ -34,6 +37,62 @@ describe('parseEntriesText', () => {
       { entryNo: 2, name: 'B: C' },
     ])
     expect(parseEntriesText(text).entries).toEqual({ '1': 'A', '2': 'B: C' })
+  })
+})
+
+describe('parseEntryNames', () => {
+  it('1 行に 1 人の名前を、書いた順に並べる (前後の空白は除き、空行はとばす)', () => {
+    expect(parseEntryNames(' BLAZE \n\n しぐれ\r\n  \nAce Of Base')).toEqual([
+      'BLAZE',
+      'しぐれ',
+      'Ace Of Base',
+    ])
+  })
+
+  it('何も書いていなければ空', () => {
+    expect(parseEntryNames('')).toEqual([])
+    expect(parseEntryNames(' \n\n')).toEqual([])
+  })
+
+  it('「1: BLAZE」のように No. を書いても、名前として扱う (No. は書いた順に付く)', () => {
+    expect(parseEntryNames('1: BLAZE')).toEqual(['1: BLAZE'])
+  })
+})
+
+describe('formatEntryNames', () => {
+  it('エントリーを No. の順に並べ、名前を 1 行に 1 人ずつ書く (parseEntryNames で読み戻せる)', () => {
+    const text = formatEntryNames([
+      { entryNo: 2, name: 'しぐれ' },
+      { entryNo: 1, name: 'BLAZE' },
+    ])
+    expect(text).toBe('BLAZE\nしぐれ')
+    expect(parseEntryNames(text)).toEqual(['BLAZE', 'しぐれ'])
+  })
+
+  it('エントリーがなければ空', () => {
+    expect(formatEntryNames([])).toBe('')
+  })
+})
+
+describe('isNumberedFromOne', () => {
+  it('No. が 1 から抜けなく並んでいれば true (並び順は問わない)', () => {
+    expect(isNumberedFromOne([])).toBe(true)
+    expect(
+      isNumberedFromOne([
+        { entryNo: 2, name: 'B' },
+        { entryNo: 1, name: 'A' },
+      ]),
+    ).toBe(true)
+  })
+
+  it('抜けがあったり、1 から始まっていなければ false', () => {
+    expect(
+      isNumberedFromOne([
+        { entryNo: 1, name: 'A' },
+        { entryNo: 3, name: 'C' },
+      ]),
+    ).toBe(false)
+    expect(isNumberedFromOne([{ entryNo: 2, name: 'B' }])).toBe(false)
   })
 })
 

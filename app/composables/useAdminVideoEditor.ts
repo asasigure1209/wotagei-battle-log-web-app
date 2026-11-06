@@ -8,7 +8,7 @@ import {
 
 /**
  * エディターを作り、子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ。
- * initialEvent (`シリーズID/イベントID`) があれば、一覧を読んだあとに選ぶ
+ * initialEvent (`シリーズID/イベントID`) があれば、一覧を読んだあとに選ぶ (一覧を読めなければ選ばない)
  */
 export function provideAdminVideoEditor(
   onUnauthorized: () => void,
@@ -16,11 +16,7 @@ export function provideAdminVideoEditor(
 ) {
   const editor = createAdminVideoEditor(onUnauthorized)
   provide(adminVideoEditorKey, editor)
-  onMounted(async () => {
-    await editor.events.reload()
-    // 一覧を読む間は選べない (選択肢がなく、読み終わるまで busy) ので、自分で選んだものを上書きすることはない
-    if (initialEvent) await editor.open(initialEvent)
-  })
+  onMounted(() => editor.start(initialEvent))
   return editor
 }
 

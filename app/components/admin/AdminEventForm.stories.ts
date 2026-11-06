@@ -55,7 +55,7 @@ export const InvalidId: Story = {
 }
 
 /**
- * 登録済みのイベントを選んだところ。ID は変えられず、エントリーと動画の登録へ進める。
+ * 登録済みのイベントを選んだところ。ID は変えられず、エントリーの登録と動画の登録へ進める。
  * 消すボタンは、1 回目は確かめるだけで、もう一度押すと消す。
  */
 export const Selected: Story = {
@@ -73,9 +73,10 @@ export const Selected: Story = {
       canvas.getByLabelText('イベント ID (英数字と _ -)'),
     ).toBeDisabled()
     await expect(
-      canvas.getByRole('link', {
-        name: 'このイベントのエントリーと動画を登録する',
-      }),
+      canvas.getByRole('link', { name: 'このイベントのエントリーを登録する' }),
+    ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
+    await expect(
+      canvas.getByRole('link', { name: 'このイベントの動画を登録する' }),
     ).toHaveAttribute('href', '/admin/videos?event=elnino/elnino_vol_5')
     await userEvent.click(
       canvas.getByRole('button', { name: 'このイベントを消す' }),
