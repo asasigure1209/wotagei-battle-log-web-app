@@ -5,7 +5,6 @@ import {
   type Manifest,
   ManifestError,
   parseEventInfo,
-  parseManifest,
   parseVideoList,
   type VideoListScope,
 } from '../db/manifest'
@@ -28,11 +27,6 @@ function orInvalid<T>(parse: () => T) {
     if (error instanceof ManifestError) throw invalidManifest(error.problems)
     throw error
   }
-}
-
-/** manifest を確かめる。誤りがあれば 400 */
-export function parseManifestBody(body: unknown) {
-  return orInvalid(() => parseManifest(body))
 }
 
 /**

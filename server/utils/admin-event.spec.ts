@@ -4,7 +4,6 @@ import {
   invalidOnDbError,
   parseEntryNamesBody,
   parseEventInfoBody,
-  parseManifestBody,
   parseVideosBody,
   removedPerformerProblems,
   unregisteredEvent,
@@ -25,12 +24,6 @@ describe('管理画面のイベントの登録のリクエスト', () => {
         message: 'a\nb',
         data: { problems: ['a', 'b'] },
       }),
-    )
-  })
-
-  it('parseManifestBody は、manifest の誤りを 400 にする', () => {
-    expect(() => parseManifestBody({})).toThrow(
-      expect.objectContaining({ statusCode: 400 }),
     )
   })
 

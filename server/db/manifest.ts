@@ -280,7 +280,7 @@ export async function importManifest(db: Db, manifest: Manifest) {
 type EventRowIds = { seriesId: string; eventId: string }
 
 /** manifest のエントリー・動画・出演者を入れる文 (そのイベントの行がすでにあること)。batch に入れて使う */
-export function insertContents(db: Db, manifest: Manifest) {
+function insertContents(db: Db, manifest: Manifest) {
   const ids = { seriesId: manifest.series.id, eventId: manifest.event.id }
   return [
     ...insertEntries(db, ids, manifest.entries),

@@ -27,7 +27,6 @@ describe('API のエラーの読み取り', () => {
 
 const api = fakeAdminApi([
   { method: 'GET', path: '/api/admin/events', body: [] },
-  { method: 'POST', path: '/api/admin/events', body: { ok: true } },
   { method: 'GET', path: '/api/admin/events/s/e', body: {} },
   { method: 'PUT', path: '/api/admin/events/s/e', body: { ok: true } },
   { method: 'PUT', path: '/api/admin/events/s/e/entries', body: { ok: true } },
@@ -43,8 +42,6 @@ describe('adminApi', () => {
     await adminApi.getEvent(ids)
     await adminApi.deleteEvent(ids)
     await adminApi.listObjects(ids)
-    await adminApi.saveEvent({}, true)
-    await adminApi.saveEvent({}, false)
     await adminApi.saveEventInfo(ids, {
       seriesName: 'シリーズ',
       name: 'イベント',
@@ -60,8 +57,6 @@ describe('adminApi', () => {
       'GET /api/admin/events/s/e',
       'DELETE /api/admin/events/s/e',
       'GET /api/admin/objects?series=s&event=e',
-      'POST /api/admin/events?dryRun=1',
-      'POST /api/admin/events',
       'PUT /api/admin/events/s/e',
       'PUT /api/admin/events/s/e/entries?dryRun=1',
       'PUT /api/admin/events/s/e/entries',
