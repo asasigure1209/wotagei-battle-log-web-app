@@ -1,5 +1,16 @@
 // 管理画面で入力した内容を、DB に取り込む manifest (server/db/manifest.ts) の形にする
 
+/**
+ * 1 行に 1 人の名前を書いた文を、書いた順の名前の並びにする (エントリー No. はこの順に 1 から付く)。
+ * 前後の空白は除き、空行はとばす
+ */
+export function parseEntryNames(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 /** 「1: BLAZE」の形の行を、エントリー No. をキーにした名前にする。形の違う行は problems に入れる */
 export function parseEntriesText(text: string) {
   const entries: Record<string, string> = {}
