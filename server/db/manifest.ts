@@ -41,6 +41,7 @@ export function parseManifest(data: unknown): Manifest {
   const root = asRecord(data)
   const { series, event } = parseInfo(root, check)
   const entries = parseEntries(root.entries, check)
+  // db:import は、出演者の人数を制限しない
   const videos = parseVideos(root.videos, check, {
     prefix: `${series.id}/${event.id}/`,
     entryNos: new Set(entries.map((e) => e.entryNo)),
@@ -61,6 +62,33 @@ export function parseEventInfo(
   const info = parseInfo(asRecord(data), check)
   if (check.problems.length) throw new ManifestError(check.problems)
   return info
+}
+
+/** parseVideoList に渡す、動画の一覧のほかから決まる値 */
+export type VideoListScope = {
+  /** key が始まるはずの `シリーズ ID/イベント ID/` */
+  prefix: string
+  /** 出演者として書いてよいエントリー No. */
+  entryNos: Iterable<number>
+  /** 1 本の動画の出演者の上限。渡さなければ制限しない */
+  maxPerformers?: number
+}
+
+/**
+ * 動画の一覧だけを、manifest の videos と同じ規則で確かめる (管理画面の動画の登録)。
+ * 誤りがあれば ManifestError を投げる
+ */
+export function parseVideoList(
+  data: unknown,
+  { entryNos, ...scope }: VideoListScope,
+): Manifest['videos'] {
+  const check = new Checker()
+  const videos = parseVideos(data, check, {
+    ...scope,
+    entryNos: new Set(entryNos),
+  })
+  if (check.problems.length) throw new ManifestError(check.problems)
+  return videos
 }
 
 /** シリーズとイベントの情報 (manifest とイベントの登録で共通の部分) */
@@ -100,11 +128,7 @@ class Checker {
 }
 
 /** 動画を確かめるのに使う、manifest のほかの部分から決まる値 */
-type VideoScope = {
-  /** key が始まるはずの `シリーズ ID/イベント ID/` */
-  prefix: string
-  entryNos: Set<number>
-}
+type VideoScope = Omit<VideoListScope, 'entryNos'> & { entryNos: Set<number> }
 
 function parseSeries(value: unknown, check: Checker): Manifest['series'] {
   const series = asRecord(value)
@@ -149,7 +173,7 @@ function parseEntries(value: unknown, check: Checker): Manifest['entries'] {
 function parseVideos(
   value: unknown,
   check: Checker,
-  { prefix, entryNos }: VideoScope,
+  scope: VideoScope,
 ): Manifest['videos'] {
   const rawVideos = Array.isArray(value) ? value : []
   if (!rawVideos.length) check.push('videos がありません')
@@ -158,7 +182,7 @@ function parseVideos(
   return rawVideos.map((raw, i) => {
     const video = asRecord(raw)
     const path = `videos[${i}]`
-    const key = videoKey(video.key, `${path}.key`, check, prefix, keys)
+    const key = videoKey(video.key, `${path}.key`, check, scope.prefix, keys)
     return {
       key,
       durationSec: check.count(video.durationSec, `${path}.durationSec`),
@@ -168,7 +192,7 @@ function parseVideos(
         `${path}.performers`,
         key,
         check,
-        entryNos,
+        scope,
       ),
     }
   })
@@ -199,11 +223,14 @@ function performerList(
   path: string,
   key: string,
   check: Checker,
-  entryNos: Set<number>,
+  { entryNos, maxPerformers = Number.POSITIVE_INFINITY }: VideoScope,
 ) {
   const nos: number[] = Array.isArray(value) ? value : []
   if (!nos.length) {
     check.push(`${path} に、出ているエントリー No. を書いてください (${key})`)
+  }
+  if (nos.length > maxPerformers) {
+    check.push(`${path} の出演者は ${maxPerformers} 人までです (${key})`)
   }
   for (const no of nos.filter((no) => !entryNos.has(no))) {
     check.push(`${path} の ${no} は entries にありません (${key})`)
