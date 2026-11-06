@@ -32,10 +32,10 @@ describe('動画の行の操作', () => {
   it('updateRow は長さと出演者を書き換える', () => {
     const state = stateWith('a.mp4')
     const id = state.rows[0]?.id ?? 0
-    updateRow(state, id, { durationSec: 12, performersText: '1, 2' })
+    updateRow(state, id, { durationSec: 12, performers: [1, 2] })
     expect(state.rows[0]).toMatchObject({
       durationSec: 12,
-      performersText: '1, 2',
+      performers: [1, 2],
     })
   })
 
@@ -48,7 +48,7 @@ describe('動画の行の操作', () => {
   it('addFiles はパス順に足し、同じパスの行は出演者を残してファイルを付け替え、.mp4 でないものはとばす', async () => {
     const state = stateWith('予選/M1.mp4')
     const [loaded] = state.rows
-    if (loaded) loaded.performersText = '1'
+    if (loaded) loaded.performers = [1, null]
     await addFiles(
       state,
       [
@@ -59,7 +59,10 @@ describe('動画の行の操作', () => {
       '予選',
     )
     expect(paths(state)).toEqual(['予選/A.mp4', '予選/M1.mp4'])
-    expect(state.rows[1]).toMatchObject({ performersText: '1', sizeBytes: 3 })
+    expect(state.rows[1]).toMatchObject({
+      performers: [1, null],
+      sizeBytes: 3,
+    })
     expect(state.messages?.lines).toEqual([
       '.mp4 ではないファイルを 1 個とばしました',
     ])

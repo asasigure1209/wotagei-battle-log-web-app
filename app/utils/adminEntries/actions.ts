@@ -26,7 +26,7 @@ const NO_NAMES = 'エントリーの名前を 1 行に 1 人ずつ書いてく�
 function entryNosProblem(entries: Manifest['entries']) {
   if (isNumberedFromOne(entries)) return ''
   const nos = entries.map((e) => e.entryNo).sort((a, b) => a - b)
-  return `登録済みのエントリーの No. に抜けがあります (${nos.join(', ')})。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません。動画の登録の画面のエントリーの欄で No. を 1 から抜けなく付け直し、出演 No. も合わせて直してから登録してください`
+  return `登録済みのエントリーの No. に抜けがあります (${nos.join(', ')})。この画面で登録すると No. が振り直されて動画の出演者がずれるので、登録できません。No. を 1 から抜けなく付け直し、動画の出演者も合わせて直した manifest を bun run db:import で取り込み直してから登録してください (手順は docs/production-db.md の「エントリーの No. に抜けがあるイベントを直す」)`
 }
 
 /**

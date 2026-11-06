@@ -1,4 +1,4 @@
-// エントリーと動画の登録画面のエディターを、親 (AdminVideoEditor) が provideAdminVideoEditor で作って渡し、
+// 動画の登録画面のエディターを、親 (AdminVideoEditor) が provideAdminVideoEditor で作って渡し、
 // 各セクションは useAdminVideoEditor で受け取る。エディターそのものは utils/adminVideos/editor.ts
 import { inject, onMounted, provide } from 'vue'
 import {

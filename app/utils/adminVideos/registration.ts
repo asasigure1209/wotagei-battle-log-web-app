@@ -1,4 +1,4 @@
-// 選んだイベントの読み込み方と、書いたエントリーと動画を manifest の形にして DB に登録する処理
+// 選んだイベントの読み込み方と、動画と選んだ出演者を manifest の形にして DB に登録する処理
 
 import { adminApi } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
@@ -10,20 +10,24 @@ import {
   run,
   showErrors,
 } from '~/utils/adminCommon/operation'
-import {
-  formatEntriesText,
-  parseEntriesText,
-  parsePerformers,
-} from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
+import {
+  MAX_PERFORMERS,
+  performerNos,
+  performerProblems,
+  toPerformers,
+} from './performers'
 import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
-/** 動画の 1 行を manifest の形にする。出演者・長さの書き方の誤りは problems に足す */
-function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
-  const performers = parsePerformers(row.performersText)
-  if (!performers) {
-    problems.push(`出演は No. をカンマで区切って書いてください: ${row.relPath}`)
+/** 動画の 1 行を manifest の形にする。出演者・長さの誤りは problems に足す */
+function manifestVideo(
+  row: VideoRow,
+  { prefix, entryNos }: { prefix: string; entryNos: number[] },
+  problems: string[],
+) {
+  for (const p of performerProblems(row.performers, entryNos)) {
+    problems.push(`${p}: ${row.relPath}`)
   }
   if (row.durationSec === null || Number.isNaN(row.durationSec)) {
     problems.push(`長さ (秒) を書いてください: ${row.relPath}`)
@@ -32,7 +36,7 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
     key: prefix + row.relPath,
     durationSec: row.durationSec ?? 0,
     sizeBytes: row.sizeBytes,
-    performers: performers ?? [],
+    performers: performerNos(row.performers),
   }
 }
 
@@ -40,9 +44,16 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
 export function buildManifest(state: VideoEditorState) {
   const { event } = state
   if (!event) return { manifest: null, problems: ['イベントを選んでください'] }
-  const { entries, problems } = parseEntriesText(state.entriesText)
-  const prefix = eventPrefix(eventIds(event))
-  const videos = state.rows.map((row) => manifestVideo(row, prefix, problems))
+  const problems: string[] = []
+  const scope = {
+    prefix: eventPrefix(eventIds(event)),
+    entryNos: state.entries.map((e) => e.entryNo),
+  }
+  const videos = state.rows.map((row) => manifestVideo(row, scope, problems))
+  // エントリーは書き換えないので、読み込んだものをそのまま送る
+  const entries = Object.fromEntries(
+    state.entries.map((e) => [String(e.entryNo), e.name]),
+  )
   const manifest = { ...event, entries, videos }
   return { manifest, problems }
 }
@@ -77,21 +88,31 @@ export const editorLoader: EventLoader<
     state.remote = remote
   },
   reset: (state) => {
-    state.entriesText = ''
+    state.entries = []
     state.rows = []
     state.remote = null
   },
 }
 
-/** 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく) */
+/**
+ * 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく)。
+ * 動画は、登録済みの出演者を選んだ状態にする
+ */
 export function fill(state: VideoEditorState, data: Manifest) {
-  state.entriesText = formatEntriesText(data.entries)
+  state.entries = data.entries
   const prefix = eventPrefix(eventIds(data))
   state.rows = data.videos.map((v) =>
     newRow(v.key.slice(prefix.length), {
       durationSec: v.durationSec,
       sizeBytes: v.sizeBytes,
-      performersText: v.performers.join(', '),
+      performers: toPerformers(v.performers),
     }),
   )
+  // db:import では 3 人以上も登録できるが、この画面では 2 人までしか選べないので、外れることを知らせる
+  const over = data.videos.filter((v) => v.performers.length > MAX_PERFORMERS)
+  if (over.length) {
+    showErrors(state, [
+      `出演者が ${MAX_PERFORMERS + 1} 人以上の動画があります。この画面では ${MAX_PERFORMERS} 人までしか選べないので、登録すると ${MAX_PERFORMERS + 1} 人目からは外れます: ${over.map((v) => v.key).join(', ')}`,
+    ])
+  }
 }

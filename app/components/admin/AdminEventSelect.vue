@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 登録済みのイベントを選ぶ欄。イベントの登録の画面と、エントリーと動画の画面で使う
+// 登録済みのイベントを選ぶ欄。イベントの登録の画面と、エントリー・動画の登録の画面で使う
 import type { EventSummary } from '~/utils/adminApi'
 import { eventKey } from '~/utils/adminCommon/eventKey'
 

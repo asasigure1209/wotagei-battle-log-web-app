@@ -6,7 +6,7 @@ import { eventInfo, videoFile } from '~~/test/nuxt/adminTestUtils'
 
 registerEndpoint('/api/admin/events/s/e', () => ({
   ...eventInfo(),
-  entries: [],
+  entries: [{ entryNo: 1, name: 'A' }],
   videos: [],
 }))
 
@@ -21,10 +21,11 @@ registerEndpoint('/api/admin/events', () => [
   },
 ])
 
-/** 登録済みのイベントを選んだエディター */
+/** 登録済みのイベント (エントリーは 1 人) を選んだエディター */
 function editorWithEvent() {
   const editor = createAdminVideoEditor(() => {})
   editor.state.event = eventInfo()
+  editor.state.entries = [{ entryNo: 1, name: 'A' }]
   return editor
 }
 
@@ -49,6 +50,16 @@ describe('エディターの算出値', () => {
     editor.state.remote = new Map([['a.mp4', 10]])
     expect(editor.canRegister.value).toBe(true)
     editor.state.rows.push(newRow('b.mp4', { sizeBytes: 1 }))
+    expect(editor.canRegister.value).toBe(false)
+  })
+
+  it('エントリーが 1 人もいなければ、hasEntries は false で、登録できない', () => {
+    const editor = editorWithEvent()
+    editor.state.rows = [newRow('a.mp4', { sizeBytes: 10 })]
+    editor.state.remote = new Map([['a.mp4', 10]])
+    expect(editor.hasEntries.value).toBe(true)
+    editor.state.entries = []
+    expect(editor.hasEntries.value).toBe(false)
     expect(editor.canRegister.value).toBe(false)
   })
 
@@ -85,11 +96,12 @@ describe('エディターの操作', () => {
     expect(editor.state.event).toBeNull()
   })
 
-  it('open は、一覧にあるイベントを、R2 の一覧とともに読み込む', async () => {
+  it('open は、一覧にあるイベントを、登録済みのエントリー・R2 の一覧とともに読み込む', async () => {
     const editor = createAdminVideoEditor(() => {})
     await editor.events.reload()
     await editor.open('s/e')
     expect(editor.currentKey.value).toBe('s/e')
+    expect(editor.state.entries).toEqual([{ entryNo: 1, name: 'A' }])
     expect(editor.state.remote).toEqual(new Map([['a.mp4', 10]]))
   })
 })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 3. 動画: ファイルを選んで並べ、R2 にアップロードする
+// 2. 動画: ファイルを選んで並べ、R2 にアップロードし、出演者を選ぶ。
+// 選んだイベントにエントリーがまだなければ、出演者を選べないので、エントリーの登録へ案内する
 
 import { ref } from 'vue'
 import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
@@ -9,6 +10,8 @@ import AdminVideoTable from './AdminVideoTable.vue'
 const {
   state,
   selected,
+  hasEntries,
+  currentKey,
   targets,
   totalUploadBytes,
   canUpload,
@@ -32,12 +35,18 @@ async function onPickFiles(e: Event) {
 
 <template>
   <section class="admin-card">
-    <h2 class="admin-heading">3. 動画</h2>
+    <h2 class="admin-heading">2. 動画</h2>
     <p class="admin-hint">
       撮影したファイルをそのまま送ります
       (エンコードはしません)。フォルダを選ぶと、その下の分類 (予選・本戦など)
       のフォルダ構成がキーになります。並び順がイベントの中での動画の No.
-      になります。
+      になります。出演者は、登録済みのエントリーから 1〜2 人選びます。
+    </p>
+    <p v-if="selected && !hasEntries" class="admin-warn">
+      このイベントにはまだエントリーがないので、出演者を選べず、登録もできません。
+      <NuxtLink class="link" :to="`/admin/entries?event=${currentKey}`"
+        >先にエントリーを登録してください</NuxtLink
+      >。
     </p>
     <div class="admin-actions">
       <label class="admin-btn picker">
@@ -118,5 +127,9 @@ async function onPickFiles(e: Event) {
 
 .category {
   width: 160px;
+}
+
+.link {
+  color: var(--color-accent);
 }
 </style>

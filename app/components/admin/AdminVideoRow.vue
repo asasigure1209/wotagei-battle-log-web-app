@@ -1,11 +1,18 @@
 <script setup lang="ts">
-// 動画の一覧の 1 行。長さと出演 No. をその場で直し、並べ替えや取り外しをする
+// 動画の一覧の 1 行。長さと出演者をその場で直し、並べ替えや取り外しをする。
+// 出演者は、登録済みのエントリーから出演者 1 (必須)・出演者 2 (任意) を選ぶ
 
 import { computed } from 'vue'
 import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes, formatSeconds } from '~/utils/adminManifest'
+import {
+  NO_FIRST_PERFORMER,
+  type Performers,
+  performerProblems,
+} from '~/utils/adminVideos/performers'
 import { rowState } from '~/utils/adminVideos/rows'
 import type { VideoRow } from '~/utils/adminVideos/state'
+import AdminPerformerSelect from './AdminPerformerSelect.vue'
 
 const props = defineProps<{
   /** 動画の行。書き換えはエディターの updateRow を通す */
@@ -31,10 +38,21 @@ function onDuration(e: Event) {
   })
 }
 
-function onPerformers(e: Event) {
-  updateRow(props.row.id, {
-    performersText: (e.target as HTMLInputElement).value,
-  })
+/**
+ * 選んだ出演者の誤り。同じ人を 2 回選んだ・登録されていない No. は、送る前にその場で出す
+ * (出演者 1 をまだ選んでいないのは、足したばかりの行ではいつもなので、登録のときにだけ出す)
+ */
+const performerWarnings = computed(() =>
+  performerProblems(
+    props.row.performers,
+    state.entries.map((e) => e.entryNo),
+  ).filter((p) => p !== NO_FIRST_PERFORMER),
+)
+
+function setPerformer(slot: 0 | 1, no: number | null) {
+  const performers: Performers = [...props.row.performers]
+  performers[slot] = no
+  updateRow(props.row.id, { performers })
 }
 </script>
 
@@ -54,12 +72,25 @@ function onPerformers(e: Event) {
     </td>
     <td class="mono">{{ formatBytes(row.sizeBytes) }}</td>
     <td>
-      <input
-        :value="row.performersText"
-        class="admin-input performers"
-        placeholder="1, 2"
-        @input="onPerformers"
-      >
+      <AdminPerformerSelect
+        :model-value="row.performers[0]"
+        :label="`${row.relPath} の出演者 1`"
+        empty-label="選んでください"
+        :entries="state.entries"
+        @update:model-value="setPerformer(0, $event)"
+      />
+    </td>
+    <td>
+      <AdminPerformerSelect
+        :model-value="row.performers[1]"
+        :label="`${row.relPath} の出演者 2`"
+        empty-label="なし"
+        :entries="state.entries"
+        @update:model-value="setPerformer(1, $event)"
+      />
+      <p v-for="w in performerWarnings" :key="w" class="admin-warn warning">
+        {{ w }}
+      </p>
     </td>
     <td>
       <span :class="['state', status?.kind]">{{ status?.label }}</span>
@@ -114,8 +145,9 @@ td {
   width: 80px;
 }
 
-.performers {
-  width: 90px;
+.warning {
+  margin-top: 4px;
+  white-space: nowrap;
 }
 
 .ops {

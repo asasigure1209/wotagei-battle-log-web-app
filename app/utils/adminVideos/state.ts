@@ -1,9 +1,11 @@
-// エントリーと動画の登録画面 (エディター) の状態。
+// 動画の登録画面 (エディター) の状態。
 // Vue に依存しない関数として書き、エディター (editor.ts) が状態を reactive にして渡す
 import {
   createEventSelectionState,
   type EventSelectionState,
 } from '~/utils/adminCommon/eventSelection'
+import type { Manifest } from '~~/server/db/manifest'
+import type { Performers } from './performers'
 
 /** 動画の 1 行。file はこの画面で選んだファイル (DB から読んだだけの行にはない) */
 export type VideoRow = {
@@ -13,18 +15,20 @@ export type VideoRow = {
   file?: File
   durationSec: number | null
   sizeBytes: number
-  performersText: string
+  /** 出演者 1・2 のエントリー No. (選んでいなければ null) */
+  performers: Performers
   /** 送れたバイト数 (送っている間だけ) */
   sentBytes: number | null
   error: string
 }
 
 /**
- * エントリーと動画の登録画面の状態。選んだ登録済みのイベント (EventSelectionState の event) は、
- * この画面ではイベントの情報を書かず、登録のときもそれをそのまま送る
+ * 動画の登録画面の状態。選んだ登録済みのイベント (EventSelectionState の event) に、動画と出演者を登録する。
+ * この画面ではイベントの情報とエントリーは書き換えない
  */
 export type VideoEditorState = EventSelectionState & {
-  entriesText: string
+  /** 選んだイベントに登録済みのエントリー (読み込んだまま書き換えない)。出演者はここから選ぶ */
+  entries: Manifest['entries']
   rows: VideoRow[]
   /** R2 にある動画 (相対パス → サイズ)。まだ調べていなければ null */
   remote: Map<string, number> | null
@@ -37,7 +41,7 @@ export function createVideoEditorState(
 ): VideoEditorState {
   return {
     ...createEventSelectionState(onUnauthorized),
-    entriesText: '',
+    entries: [],
     rows: [],
     remote: null,
     uploadAbort: null,
@@ -55,7 +59,7 @@ export function newRow(
     relPath,
     durationSec: null,
     sizeBytes: 0,
-    performersText: '',
+    performers: [null, null],
     sentBytes: null,
     error: '',
     ...init,

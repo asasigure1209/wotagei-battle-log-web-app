@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 4. DB に登録: 書いたエントリーと動画を確かめて、選んだイベントに登録する
+// 3. DB に登録: 動画と選んだ出演者を確かめて、選んだイベントに登録する
 
 import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 
@@ -8,7 +8,7 @@ const { canRegister, currentKey, register } = useAdminVideoEditor()
 
 <template>
   <section class="admin-card">
-    <h2 class="admin-heading">4. DB に登録</h2>
+    <h2 class="admin-heading">3. DB に登録</h2>
     <p class="admin-hint">
       すべての動画が「R2
       にあり」になったら登録できます。登録すると、選んだイベントのエントリー・動画・出演者を入れ直します

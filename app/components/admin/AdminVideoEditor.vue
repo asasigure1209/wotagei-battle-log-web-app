@@ -1,8 +1,7 @@
 <script setup lang="ts">
-// 登録済みのイベントを選び、エントリーと動画を登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
+// 登録済みのイベントを選び、動画と出演者を登録するまでの画面。エディターを作って各セクションに渡し、並べるだけにする
 
 import { provideAdminVideoEditor } from '~/composables/useAdminVideoEditor'
-import AdminEntriesSection from './AdminEntriesSection.vue'
 import AdminEventPicker from './AdminEventPicker.vue'
 import AdminMessages from './AdminMessages.vue'
 import AdminRegisterSection from './AdminRegisterSection.vue'
@@ -33,7 +32,6 @@ const { state, currentKey, open } = provideAdminVideoEditor(
       :busy="state.busy"
       @update:model-value="open"
     />
-    <AdminEntriesSection />
     <AdminVideosSection />
     <AdminRegisterSection />
     <AdminMessages :messages="state.messages" />

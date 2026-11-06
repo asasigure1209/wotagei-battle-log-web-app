@@ -1,9 +1,8 @@
-// エントリーと動画の登録画面のエディター。utils/adminVideos/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
+// 動画の登録画面のエディター。utils/adminVideos/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
 // Nuxt が自動 import しない utils/ の下の階層に置き、画面からは composables の provideAdminVideoEditor を通して使う
 // (テストと Storybook はここから直接作る)
 import { computed, type InjectionKey, reactive } from 'vue'
 import { eventSelection, selectedKey } from '~/utils/adminCommon/eventSelection'
-import { parseEntriesText } from '~/utils/adminManifest'
 import { editorLoader, register } from './registration'
 import {
   addFiles,
@@ -29,13 +28,14 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
   )
   const { reload, open, start } = eventSelection(state, editorLoader)
 
-  const entries = computed(() => parseEntriesText(state.entriesText))
   const targets = computed(() => uploadTargets(state))
   const totalUploadBytes = computed(() =>
     targets.value.reduce((n, r) => n + r.sizeBytes, 0),
   )
-  /** イベントを選んでいるか。選ぶまではエントリー・動画を操作できない */
+  /** イベントを選んでいるか。選ぶまでは動画を操作できない */
   const selected = computed(() => state.event !== null)
+  /** 選んだイベントにエントリーが登録済みか。ないあいだは出演者を選べず、登録できない */
+  const hasEntries = computed(() => state.entries.length > 0)
   const currentKey = computed(() => selectedKey(state))
   const canUpload = computed(
     () =>
@@ -44,10 +44,11 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
       targets.value.length > 0 &&
       !state.busy,
   )
-  /** すべての動画が R2 にあり、登録できるか */
+  /** エントリーが登録済みで、すべての動画が R2 にあり、登録できるか */
   const canRegister = computed(
     () =>
       selected.value &&
+      hasEntries.value &&
       state.rows.length > 0 &&
       !state.busy &&
       state.rows.every((r) => rowState(r, state.remote).kind === 'ok'),
@@ -57,10 +58,10 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
     state,
     /** 登録済みのイベントの一覧 (一覧そのものは state.registeredEvents) */
     events: { reload },
-    entries,
     targets,
     totalUploadBytes,
     selected,
+    hasEntries,
     currentKey,
     canUpload,
     canRegister,

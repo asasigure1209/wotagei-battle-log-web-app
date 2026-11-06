@@ -57,25 +57,49 @@ describe('manifest の組み立て', () => {
     })
   })
 
-  it('fill で書き写した内容から、取り込みと同じ形の manifest を作る (イベントの情報は選んだイベントのもの)', () => {
+  it('fill は、登録済みのエントリーを持ち、動画の出演者を選んだ状態にする', () => {
     const state = filledState()
-    expect(state.entriesText).toBe('1: A\n2: B')
-    expect(state.rows.map((r) => r.relPath)).toEqual([
-      '予選/1.mp4',
-      '本戦/2.mp4',
+    expect(state.entries).toEqual(manifest().entries)
+    expect(state.rows.map((r) => [r.relPath, r.performers])).toEqual([
+      ['予選/1.mp4', [1, null]],
+      ['本戦/2.mp4', [1, 2]],
     ])
+  })
+
+  it('fill は、出演者が 3 人以上の動画があれば、3 人目から外れることを知らせる', () => {
+    const state = createVideoEditorState(() => {})
+    const data = manifest()
+    data.entries.push({ entryNo: 3, name: 'C' })
+    const [first] = data.videos
+    if (first) first.performers = [1, 2, 3]
+    fill(state, data)
+    expect(state.rows[0]?.performers).toEqual([1, 2])
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: [
+        '出演者が 3 人以上の動画があります。この画面では 2 人までしか選べないので、登録すると 3 人目からは外れます: s/e/予選/1.mp4',
+      ],
+    })
+  })
+
+  it('fill で書き写した内容から、取り込みと同じ形の manifest を作る (イベントの情報とエントリーは読み込んだもの)', () => {
+    const state = filledState()
     const { manifest: built, problems } = buildManifest(state)
     expect(problems).toEqual([])
     expect(built).toEqual({ ...manifest(), entries: { '1': 'A', '2': 'B' } })
   })
 
-  it('出演者・長さの書き方の誤りを集める', () => {
+  it('出演者・長さの誤りを集める', () => {
     const state = filledState()
     const [first, second] = state.rows
-    if (first) first.performersText = '1, x'
-    if (second) second.durationSec = null
+    if (first) first.performers = [2, 2]
+    if (second) {
+      second.performers = [9, null]
+      second.durationSec = null
+    }
     expect(buildManifest(state).problems).toEqual([
-      '出演は No. をカンマで区切って書いてください: 予選/1.mp4',
+      '出演者 1 と出演者 2 に同じ人を選んでいます: 予選/1.mp4',
+      '出演者の No. 9 は登録されていません: 本戦/2.mp4',
       '長さ (秒) を書いてください: 本戦/2.mp4',
     ])
   })
@@ -150,13 +174,13 @@ describe('登録・読み込み・削除', () => {
     expect(state.busy).toBe(false)
   })
 
-  it('選んだイベントを外すと、書いた内容と R2 の一覧も空に戻す', () => {
+  it('選んだイベントを外すと、エントリー・動画と R2 の一覧も空に戻す', () => {
     const state = filledState()
     state.remote = new Map()
     unselect(state, editorLoader)
     expect(state.event).toBeNull()
     expect(state.rows).toEqual([])
-    expect(state.entriesText).toBe('')
+    expect(state.entries).toEqual([])
     expect(state.remote).toBeNull()
   })
 })

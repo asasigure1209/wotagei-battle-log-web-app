@@ -8,7 +8,7 @@ import {
 } from '../../../.storybook/admin'
 import AdminRegisterSection from './AdminRegisterSection.vue'
 
-/** 4. DB に登録。すべての動画が R2 にあれば、選んだイベントにエントリーと動画を登録できる。 */
+/** 3. DB に登録。エントリーが登録済みで、すべての動画が R2 にあれば、選んだイベントに動画と出演者を登録できる。 */
 const meta = {
   component: AdminRegisterSection,
   tags: ['autodocs'],
@@ -40,6 +40,23 @@ export const NotUploaded: Story = {
       fillEvent(editor)
       editor.state.rows = [videoRow('予選/M1256.mp4', { withFile: true })]
       editor.state.remote = new Map()
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole('button', { name: '登録する' }),
+    ).toBeDisabled()
+  },
+}
+
+/** 選んだイベントにエントリーがまだなければ、登録できない。 */
+export const NoEntries: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.entries = []
+      editor.state.rows = [videoRow('予選/M1256.mp4', { sizeBytes: 10 })]
+      editor.state.remote = new Map([['予選/M1256.mp4', 10]])
     }),
   ],
   play: async ({ canvas }) => {
