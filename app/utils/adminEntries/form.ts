@@ -24,10 +24,7 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
   const selected = computed(() => state.event !== null)
   const currentKey = computed(() => selectedKey(state))
   /** 書いている文が、登録できた文のままか (このときだけ動画の登録へ案内する) */
-  const registered = computed(
-    () =>
-      state.savedNamesText !== null && state.savedNamesText === state.namesText,
-  )
+  const registered = computed(() => state.savedNamesText === state.namesText)
   const canSave = computed(
     () =>
       selected.value &&
