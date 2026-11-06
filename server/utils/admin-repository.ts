@@ -4,6 +4,7 @@ import { and, asc, desc, eq, gt, notExists, sql } from 'drizzle-orm'
 import {
   insertContents,
   insertEntries,
+  insertVideos,
   type Manifest,
   upsertSeries,
 } from '../db/manifest'
@@ -135,6 +136,35 @@ export async function replaceAdminEventContents(manifest: Manifest) {
     db.delete(videos).where(inEvent(videos, series, event)),
     ...insertContents(db, manifest),
   ])
+}
+
+/**
+ * 登録済みのイベントの、動画と出演者だけを入れ直す (管理画面の動画の登録)。動画の No. は videos の並び順。
+ * エントリー・シリーズ・イベントの行には触れず、1 つの batch で流す。
+ * イベントがなければ (消されていれば)、出演者のエントリーがなければ、外部キーで batch ごと失敗する
+ */
+export async function replaceAdminEventVideos(
+  series: string,
+  event: string,
+  rows: Manifest['videos'],
+) {
+  const db = await useDb()
+  await db.batch([
+    // 出演者は、動画を消すと ON DELETE CASCADE で消える
+    db.delete(videos).where(inEvent(videos, series, event)),
+    ...insertVideos(db, { seriesId: series, eventId: event }, rows),
+  ])
+}
+
+/** そのイベントのエントリーの No. (No. 順) */
+export async function listAdminEntryNos(series: string, event: string) {
+  const db = await useDb()
+  const rows = await db
+    .select({ entryNo: entries.entryNo })
+    .from(entries)
+    .where(inEvent(entries, series, event))
+    .orderBy(asc(entries.entryNo))
+  return rows.map((r) => r.entryNo)
 }
 
 /** そのイベントの動画に出ているエントリー (No.・名前と、その動画のキー)。No. 順、同じ No. は動画の No. 順 */

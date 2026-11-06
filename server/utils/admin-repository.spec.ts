@@ -6,9 +6,11 @@ import {
   deleteAdminEvent,
   getAdminEvent,
   hasAdminEvent,
+  listAdminEntryNos,
   listAdminEvents,
   listPerformedEntries,
   replaceAdminEventContents,
+  replaceAdminEventVideos,
   saveAdminEntries,
   saveAdminEventInfo,
 } from './admin-repository'
@@ -251,5 +253,59 @@ describe('エントリーだけの登録', () => {
     await expect(
       saveAdminEntries('s', 'x', [{ entryNo: 1, name: 'A' }]),
     ).rejects.toThrow()
+  })
+})
+
+describe('動画と出演者だけの登録', () => {
+  beforeEach(async () => {
+    const db = await resetTestDb()
+    await importManifest(db, manifest('e'))
+    await importManifest(db, manifest('f'))
+  })
+
+  it('listAdminEntryNos は、そのイベントのエントリーの No. を No. 順に返す', async () => {
+    expect(await listAdminEntryNos('s', 'e')).toEqual([1, 2])
+    expect(await listAdminEntryNos('s', 'x')).toEqual([])
+  })
+
+  it('動画と出演者を入れ直し、エントリーとシリーズ・イベントの情報は残す', async () => {
+    await replaceAdminEventVideos('s', 'e', [
+      {
+        key: 's/e/本戦/3.mp4',
+        durationSec: 100,
+        sizeBytes: 30,
+        performers: [2],
+      },
+    ])
+
+    const found = await getAdminEvent('s', 'e')
+    expect(found?.series).toEqual({ id: 's', name: 'シリーズ' })
+    expect(found?.event).toEqual({
+      id: 'e',
+      name: 'イベント e',
+      date: '2026-01-01',
+      contact: '連絡先',
+    })
+    expect(found?.entries).toEqual(manifest('e').entries)
+    expect(found?.videos).toEqual([
+      {
+        key: 's/e/本戦/3.mp4',
+        durationSec: 100,
+        sizeBytes: 30,
+        performers: [2],
+      },
+    ])
+  })
+
+  it('ほかのイベントには触れない', async () => {
+    const before = await getAdminEvent('s', 'f')
+    await replaceAdminEventVideos('s', 'e', manifest('e').videos.slice(0, 1))
+    expect(await getAdminEvent('s', 'f')).toEqual(before)
+  })
+
+  it('イベントがなければ失敗する', async () => {
+    const videos = manifest('x').videos
+    await expect(replaceAdminEventVideos('s', 'x', videos)).rejects.toThrow()
+    expect(await getAdminEvent('s', 'x')).toBeNull()
   })
 })
