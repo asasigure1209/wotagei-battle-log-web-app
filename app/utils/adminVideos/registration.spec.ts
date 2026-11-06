@@ -6,8 +6,8 @@ import {
   editorLoader,
   fill,
   register,
-} from '~/utils/adminEditor/registration'
-import { createEditorState } from '~/utils/adminEditor/state'
+} from '~/utils/adminVideos/registration'
+import { createVideoEditorState } from '~/utils/adminVideos/state'
 import { fakeAdminApi } from '~~/test/nuxt/adminTestUtils'
 
 const manifest = () => ({
@@ -40,7 +40,7 @@ const api = fakeAdminApi([
 
 /** manifest() のイベントを選んで読み込んだところ (loadSelectedEvent と同じく、イベントを入れてから書き写す) */
 function filledState(onUnauthorized = () => {}) {
-  const state = createEditorState(onUnauthorized)
+  const state = createVideoEditorState(onUnauthorized)
   state.event = editorLoader.toEvent([manifest(), new Map()])
   fill(state, manifest())
   return state
@@ -81,7 +81,7 @@ describe('manifest の組み立て', () => {
   })
 
   it('イベントを選んでいなければ、manifest を作らない', () => {
-    const state = createEditorState(() => {})
+    const state = createVideoEditorState(() => {})
     expect(buildManifest(state)).toEqual({
       manifest: null,
       problems: ['イベントを選んでください'],
@@ -91,7 +91,7 @@ describe('manifest の組み立て', () => {
 
 describe('登録・読み込み・削除', () => {
   it('editorLoader で読み込むと、イベントと R2 の一覧を読み込み、選んだイベントとして覚える', async () => {
-    const state = createEditorState(() => {})
+    const state = createVideoEditorState(() => {})
     await loadSelectedEvent(
       state,
       { seriesId: 's', eventId: 'e' },
@@ -131,7 +131,7 @@ describe('登録・読み込み・削除', () => {
   })
 
   it('register は、イベントを選んでいなければ送らずにエラーを出す', async () => {
-    const state = createEditorState(() => {})
+    const state = createVideoEditorState(() => {})
     expect(await register(state, false)).toBe(false)
     expect(api.calls).toEqual([])
     expect(state.messages).toEqual({

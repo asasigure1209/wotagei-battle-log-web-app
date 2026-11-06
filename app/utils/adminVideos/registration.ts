@@ -10,7 +10,7 @@ import {
   parsePerformers,
 } from '~/utils/adminManifest'
 import type { Manifest } from '~~/server/db/manifest'
-import { type EditorState, newRow, type VideoRow } from './state'
+import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
 const DRY_RUN_OK = '問題ありません。このまま登録できます'
@@ -35,7 +35,7 @@ function manifestVideo(row: VideoRow, prefix: string, problems: string[]) {
 }
 
 /** 送る内容 (manifest の YAML を読んだ値と同じ形) と、送る前に見つかった誤り */
-export function buildManifest(state: EditorState) {
+export function buildManifest(state: VideoEditorState) {
   const { event } = state
   if (!event) return { manifest: null, problems: ['イベントを選んでください'] }
   const { entries, problems } = parseEntriesText(state.entriesText)
@@ -46,7 +46,7 @@ export function buildManifest(state: EditorState) {
 }
 
 /** DB に登録する (dryRun なら確かめるだけ) */
-export async function register(state: EditorState, dryRun: boolean) {
+export async function register(state: VideoEditorState, dryRun: boolean) {
   const { manifest, problems } = buildManifest(state)
   if (!manifest || problems.length) {
     showErrors(state, problems)
@@ -64,7 +64,7 @@ export async function register(state: EditorState, dryRun: boolean) {
  * 選ぶ・選び直す・外す処理は adminCommon/eventSelection がこれを使って行う
  */
 export const editorLoader: EventLoader<
-  EditorState,
+  VideoEditorState,
   [Manifest, Map<string, number>]
 > = {
   // 2 つは別々に引けるので、待ち合わせずに並べて引く
@@ -82,7 +82,7 @@ export const editorLoader: EventLoader<
 }
 
 /** 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく) */
-export function fill(state: EditorState, data: Manifest) {
+export function fill(state: VideoEditorState, data: Manifest) {
   state.entriesText = formatEntriesText(data.entries)
   const prefix = eventPrefix(eventIds(data))
   state.rows = data.videos.map((v) =>

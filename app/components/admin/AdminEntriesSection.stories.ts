@@ -3,7 +3,7 @@ import { expect } from 'storybook/test'
 import {
   adminParameters,
   fillEvent,
-  withAdminEditor,
+  withAdminVideoEditor,
 } from '../../../.storybook/admin'
 import AdminEntriesSection from './AdminEntriesSection.vue'
 
@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>
 
 /** 書いた人数を見出しに出す。 */
 export const Filled: Story = {
-  decorators: [withAdminEditor(fillEvent)],
+  decorators: [withAdminVideoEditor(fillEvent)],
   play: async ({ canvas }) => {
     await expect(canvas.getByText(/\(3 人\)/)).toBeVisible()
   },
@@ -28,7 +28,7 @@ export const Filled: Story = {
 /** 形の違う行と、重なった No. を知らせる。 */
 export const WithProblems: Story = {
   decorators: [
-    withAdminEditor((editor) => {
+    withAdminVideoEditor((editor) => {
       editor.state.entriesText = '1: BLAZE\nしぐれ\n1: ヲタ'
     }),
   ],
@@ -44,7 +44,7 @@ export const WithProblems: Story = {
 
 /** イベントを選ぶまでは書けない。 */
 export const NotSelected: Story = {
-  decorators: [withAdminEditor()],
+  decorators: [withAdminVideoEditor()],
   play: async ({ canvas }) => {
     await expect(canvas.getByLabelText(/1 行に 1 人/)).toBeDisabled()
   },

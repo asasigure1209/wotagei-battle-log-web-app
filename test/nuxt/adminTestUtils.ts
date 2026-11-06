@@ -1,7 +1,7 @@
 // 管理画面のテストで共通に使う道具 (*.spec.ts ではないので、これ自体はテストとして流れない)
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createError, type HTTPMethod } from 'h3'
-import { createEditorState } from '~/utils/adminEditor/state'
+import { createVideoEditorState } from '~/utils/adminVideos/state'
 
 /** size バイトの動画のファイル */
 export const videoFile = (name: string, size = 0) =>
@@ -25,7 +25,7 @@ export const eventInfo = () => ({
 
 /** 登録済みのイベント (シリーズ ID 's'・イベント ID 'e') を選んだエディターの状態 */
 export function stateWithEvent() {
-  const state = createEditorState(() => {})
+  const state = createVideoEditorState(() => {})
   state.event = eventInfo()
   return state
 }

@@ -11,7 +11,7 @@
         シリーズ・イベント名・開催日・運営の連絡先を登録する。登録済みのイベントを直す・消すのもここ
       </span>
     </NuxtLink>
-    <NuxtLink class="admin-card item" to="/admin/entries">
+    <NuxtLink class="admin-card item" to="/admin/videos">
       <span class="admin-heading">エントリーと動画を登録する</span>
       <span class="admin-hint">
         イベントの情報とエントリーを書き、動画を R2

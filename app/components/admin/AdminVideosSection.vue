@@ -2,7 +2,7 @@
 // 3. 動画: ファイルを選んで並べ、R2 にアップロードする
 
 import { ref } from 'vue'
-import { useAdminEditor } from '~/composables/useAdminEditor'
+import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes } from '~/utils/adminManifest'
 import AdminVideoTable from './AdminVideoTable.vue'
 
@@ -17,7 +17,7 @@ const {
   sortRows,
   uploadAll,
   cancelUpload,
-} = useAdminEditor()
+} = useAdminVideoEditor()
 
 /** ファイルだけを選ぶときに置く分類 (予選など) */
 const category = ref('')

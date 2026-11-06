@@ -1,5 +1,5 @@
-// エントリーと動画の登録画面のエディター。utils/adminEditor/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
-// Nuxt が自動 import しない utils/ の下の階層に置き、画面からは composables の provideAdminEditor を通して使う
+// エントリーと動画の登録画面のエディター。utils/adminVideos/ の関数に、reactive にした状態を渡し、画面から呼べる形に束ねる。
+// Nuxt が自動 import しない utils/ の下の階層に置き、画面からは composables の provideAdminVideoEditor を通して使う
 // (テストと Storybook はここから直接作る)
 import { computed, type InjectionKey, reactive } from 'vue'
 import { eventSelection, selectedKey } from '~/utils/adminCommon/eventSelection'
@@ -13,17 +13,20 @@ import {
   sortRows,
   updateRow,
 } from './rows'
-import { createEditorState, type EditorState } from './state'
+import { createVideoEditorState, type VideoEditorState } from './state'
 import { cancelUpload, refreshRemote, uploadAll, uploadTargets } from './upload'
 
-export type AdminEditor = ReturnType<typeof createAdminEditor>
+export type AdminVideoEditor = ReturnType<typeof createAdminVideoEditor>
 
 /** エディターを provide / inject するキー。Storybook では、状態を作り込んだエディターをこれで渡す */
-export const adminEditorKey: InjectionKey<AdminEditor> = Symbol('adminEditor')
+export const adminVideoEditorKey: InjectionKey<AdminVideoEditor> =
+  Symbol('adminVideoEditor')
 
-/** エディターを作る。画面からは composables の provideAdminEditor を通して使う */
-export function createAdminEditor(onUnauthorized: () => void) {
-  const state: EditorState = reactive(createEditorState(onUnauthorized))
+/** エディターを作る。画面からは composables の provideAdminVideoEditor を通して使う */
+export function createAdminVideoEditor(onUnauthorized: () => void) {
+  const state: VideoEditorState = reactive(
+    createVideoEditorState(onUnauthorized),
+  )
   const { reload, open } = eventSelection(state, editorLoader)
 
   const entries = computed(() => parseEntriesText(state.entriesText))

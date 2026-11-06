@@ -1,7 +1,7 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
-import { createAdminEditor } from '~/utils/adminEditor/editor'
-import { newRow } from '~/utils/adminEditor/state'
+import { createAdminVideoEditor } from '~/utils/adminVideos/editor'
+import { newRow } from '~/utils/adminVideos/state'
 import { eventInfo, videoFile } from '~~/test/nuxt/adminTestUtils'
 
 registerEndpoint('/api/admin/events/s/e', () => ({
@@ -23,7 +23,7 @@ registerEndpoint('/api/admin/events', () => [
 
 /** 登録済みのイベントを選んだエディター */
 function editorWithEvent() {
-  const editor = createAdminEditor(() => {})
+  const editor = createAdminVideoEditor(() => {})
   editor.state.event = eventInfo()
   return editor
 }
@@ -62,7 +62,7 @@ describe('エディターの算出値', () => {
   })
 
   it('イベントを選んでいなければ、アップロードも登録もできない', () => {
-    const editor = createAdminEditor(() => {})
+    const editor = createAdminVideoEditor(() => {})
     editor.state.rows = [newRow('a.mp4', { sizeBytes: 10 })]
     editor.state.remote = new Map([['a.mp4', 10]])
     expect(editor.canRegister.value).toBe(false)
@@ -86,7 +86,7 @@ describe('エディターの操作', () => {
   })
 
   it('open は、一覧にあるイベントを、R2 の一覧とともに読み込む', async () => {
-    const editor = createAdminEditor(() => {})
+    const editor = createAdminVideoEditor(() => {})
     await editor.events.reload()
     await editor.open('s/e')
     expect(editor.currentKey.value).toBe('s/e')

@@ -4,7 +4,7 @@ import { info } from '~/utils/adminCommon/operation'
 import { compareRelPath, relPathOf } from '~/utils/adminManifest'
 import { readMp4Duration } from '~/utils/mp4Duration'
 import { isVideoRelPath } from '~~/shared/utils/video-key'
-import { type EditorState, newRow, type VideoRow } from './state'
+import { newRow, type VideoEditorState, type VideoRow } from './state'
 
 type RowState = {
   kind: 'ok' | 'pending' | 'uploading' | 'error' | 'unknown'
@@ -13,7 +13,7 @@ type RowState = {
 
 /** 選んだファイルを足す。同じ相対パスの行があれば、出演者はそのままでファイルを付け替える */
 export async function addFiles(
-  state: EditorState,
+  state: VideoEditorState,
   files: File[],
   category: string,
 ) {
@@ -35,7 +35,7 @@ export async function addFiles(
 
 /** 同じ相対パスの行があればファイルを付け替え、なければ足す */
 function upsertRow(
-  state: EditorState,
+  state: VideoEditorState,
   video: { file: File; relPath: string; durationSec: number | null },
 ) {
   const { file, relPath, durationSec } = video
@@ -47,7 +47,7 @@ function upsertRow(
 
 /** 行の長さ・出演者を書き換える */
 export function updateRow(
-  state: EditorState,
+  state: VideoEditorState,
   id: number,
   patch: Partial<Pick<VideoRow, 'durationSec' | 'performersText'>>,
 ) {
@@ -55,12 +55,12 @@ export function updateRow(
   if (row) Object.assign(row, patch)
 }
 
-export function removeRow(state: EditorState, id: number) {
+export function removeRow(state: VideoEditorState, id: number) {
   state.rows = state.rows.filter((r) => r.id !== id)
 }
 
 /** 行を delta だけ動かす (-1 で上へ、1 で下へ)。端を越えるときは動かさない */
-export function moveRow(state: EditorState, id: number, delta: number) {
+export function moveRow(state: VideoEditorState, id: number, delta: number) {
   const from = state.rows.findIndex((r) => r.id === id)
   const to = from + delta
   if (from < 0 || to < 0 || to >= state.rows.length) return
@@ -69,7 +69,7 @@ export function moveRow(state: EditorState, id: number, delta: number) {
 }
 
 /** パスの順に並べる (並び順がイベントの中での動画の No. になる) */
-export function sortRows(state: EditorState) {
+export function sortRows(state: VideoEditorState) {
   state.rows.sort((a, b) => compareRelPath(a.relPath, b.relPath))
 }
 

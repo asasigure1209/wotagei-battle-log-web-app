@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // 4. DB に登録: 書いたエントリーと動画を確かめて、選んだイベントに登録する
 
-import { useAdminEditor } from '~/composables/useAdminEditor'
+import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 
-const { canRegister, currentKey, register } = useAdminEditor()
+const { canRegister, currentKey, register } = useAdminVideoEditor()
 </script>
 
 <template>

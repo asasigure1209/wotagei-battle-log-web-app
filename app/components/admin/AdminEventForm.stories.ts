@@ -76,7 +76,7 @@ export const Selected: Story = {
       canvas.getByRole('link', {
         name: 'このイベントのエントリーと動画を登録する',
       }),
-    ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
+    ).toHaveAttribute('href', '/admin/videos?event=elnino/elnino_vol_5')
     await userEvent.click(
       canvas.getByRole('button', { name: 'このイベントを消す' }),
     )

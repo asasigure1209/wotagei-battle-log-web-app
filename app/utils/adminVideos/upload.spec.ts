@@ -1,13 +1,13 @@
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { newRow } from '~/utils/adminEditor/state'
+import { newRow } from '~/utils/adminVideos/state'
 import {
   cancelUpload,
   fetchRemote,
   refreshRemote,
   uploadAll,
   uploadTargets,
-} from '~/utils/adminEditor/upload'
+} from '~/utils/adminVideos/upload'
 import { uploadMultipart } from '~/utils/multipartUpload'
 import { stateWithEvent, videoFile } from '~~/test/nuxt/adminTestUtils'
 

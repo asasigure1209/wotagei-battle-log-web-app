@@ -5,18 +5,18 @@ import {
   registeredEvent,
   selectedEvent,
 } from '../../../.storybook/admin'
-import AdminEntriesEditor from './AdminEntriesEditor.vue'
+import AdminVideoEditor from './AdminVideoEditor.vue'
 
 /**
  * 登録済みのイベントを選び、エントリーと動画を登録するまでの画面全体。
  * 開くと、登録済みのイベントの一覧を読み込む。
  */
 const meta = {
-  component: AdminEntriesEditor,
+  component: AdminVideoEditor,
   tags: ['autodocs'],
   // 開いたときに読み込む、登録済みのイベントの一覧
   parameters: { ...adminParameters, fetch: [registeredEvent] },
-} satisfies Meta<typeof AdminEntriesEditor>
+} satisfies Meta<typeof AdminVideoEditor>
 
 export default meta
 type Story = StoryObj<typeof meta>
