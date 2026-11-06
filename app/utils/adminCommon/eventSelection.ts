@@ -113,7 +113,6 @@ export function eventSelection<S extends EventSelectionState, T>(
 ) {
   return {
     reload: () => reloadEvents(state),
-    has: (key: string) => hasEvent(state, key),
     /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
     open: async (key: string) => {
       if (!key) return unselect(state, loader)

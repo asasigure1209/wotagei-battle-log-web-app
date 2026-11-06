@@ -38,10 +38,10 @@ const createState = (onUnauthorized = () => {}): TestState => ({
 })
 
 /** 読み込んだイベント ID のイベント */
-const eventOf = (eventId: string) => ({
-  ...eventInfo(),
-  event: { ...eventInfo().event, id: eventId },
-})
+function eventOf(eventId: string) {
+  const info = eventInfo()
+  return { ...info, event: { ...info.event, id: eventId } }
+}
 
 /** ids のイベントを読み、そのイベント ID を text に書き写す読み込み方 */
 function testLoader(
@@ -170,7 +170,6 @@ describe('eventSelection', () => {
     const selection = eventSelection(state, testLoader())
     await selection.reload()
     await selection.open('s/e')
-    expect(selection.has('s/e')).toBe(true)
     expect(state.text).toBe('e')
   })
 

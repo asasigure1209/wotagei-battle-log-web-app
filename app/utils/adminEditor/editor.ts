@@ -24,7 +24,7 @@ export const adminEditorKey: InjectionKey<AdminEditor> = Symbol('adminEditor')
 /** エディターを作る。画面からは composables の provideAdminEditor を通して使う */
 export function createAdminEditor(onUnauthorized: () => void) {
   const state: EditorState = reactive(createEditorState(onUnauthorized))
-  const { reload, has, open } = eventSelection(state, editorLoader)
+  const { reload, open } = eventSelection(state, editorLoader)
 
   const entries = computed(() => parseEntriesText(state.entriesText))
   const targets = computed(() => uploadTargets(state))
@@ -53,7 +53,7 @@ export function createAdminEditor(onUnauthorized: () => void) {
   return {
     state,
     /** 登録済みのイベントの一覧 (一覧そのものは state.registeredEvents) */
-    events: { reload, has },
+    events: { reload },
     entries,
     targets,
     totalUploadBytes,
