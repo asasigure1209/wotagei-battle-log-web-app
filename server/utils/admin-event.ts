@@ -7,6 +7,7 @@ import {
   parseEventInfo,
   parseManifest,
   parseVideoList,
+  type VideoListScope,
 } from '../db/manifest'
 
 /** 誤りの一覧を持つ 400。画面は data.problems を 1 行ずつ出す */
@@ -114,23 +115,28 @@ const MAX_PERFORMERS = 2
 /**
  * 動画と出演者だけの登録の本文 ({ videos: [{ key, durationSec, sizeBytes, performers }] }) から、動画の一覧を作る。
  * prefix は `シリーズ ID/イベント ID/`、entryNos は DB に登録済みのエントリーの No.。
- * 出演者は 1〜2 人で、登録済みのエントリーの No. であること。誤りがあれば、まとめて 400
+ * 出演者は 1〜2 人で、登録済みのエントリーの No. であること。誤りがあれば、まとめて 400。
+ * 0 本の登録は、登録済みの動画をうっかり全部消さないよう弾く
  */
 export function parseVideosBody(
   body: unknown,
-  { prefix, entryNos }: { prefix: string; entryNos: number[] },
+  scope: Pick<VideoListScope, 'prefix' | 'entryNos'>,
 ): Manifest['videos'] {
-  if (!entryNos.length) {
+  if (!scope.entryNos.length) {
     throw invalidManifest([
       'エントリーがまだ登録されていません。先にエントリーの登録の画面でエントリーを登録してください',
     ])
   }
   const { videos } = (body ?? {}) as Record<string, unknown>
+  if (!Array.isArray(videos)) {
+    throw invalidManifest(['videos は動画の配列で書いてください'])
+  }
+  if (!videos.length) throw invalidManifest(['動画を 1 本以上書いてください'])
   return orInvalid(() =>
     parseVideoList(videos, {
-      prefix,
-      entryNos,
+      ...scope,
       maxPerformers: MAX_PERFORMERS,
+      entriesName: '登録済みのエントリー',
     }),
   )
 }

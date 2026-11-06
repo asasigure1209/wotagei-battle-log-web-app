@@ -69,9 +69,14 @@ export type VideoListScope = {
   /** key が始まるはずの `シリーズ ID/イベント ID/` */
   prefix: string
   /** 出演者として書いてよいエントリー No. */
-  entryNos: Iterable<number>
+  entryNos: readonly number[]
   /** 1 本の動画の出演者の上限。渡さなければ制限しない */
   maxPerformers?: number
+  /**
+   * 誤りの文で、エントリー No. の出どころを呼ぶ名前 (前後の空白も含めて、そのまま文に入れる)。
+   * 渡さなければ manifest の ` entries `
+   */
+  entriesName?: string
 }
 
 /**
@@ -223,7 +228,11 @@ function performerList(
   path: string,
   key: string,
   check: Checker,
-  { entryNos, maxPerformers = Number.POSITIVE_INFINITY }: VideoScope,
+  {
+    entryNos,
+    maxPerformers = Number.POSITIVE_INFINITY,
+    entriesName = ' entries ',
+  }: VideoScope,
 ) {
   const nos: number[] = Array.isArray(value) ? value : []
   if (!nos.length) {
@@ -233,7 +242,7 @@ function performerList(
     check.push(`${path} の出演者は ${maxPerformers} 人までです (${key})`)
   }
   for (const no of nos.filter((no) => !entryNos.has(no))) {
-    check.push(`${path} の ${no} は entries にありません (${key})`)
+    check.push(`${path} の ${no} は${entriesName}にありません (${key})`)
   }
   if (new Set(nos).size !== nos.length) {
     check.push(`${path} に同じエントリー No. が重なっています (${key})`)

@@ -165,19 +165,34 @@ describe('動画と出演者だけの登録のリクエスト', () => {
           problems: [
             'videos[0].performers に、出ているエントリー No. を書いてください (s/e/本戦/1.mp4)',
             'videos[1].performers の出演者は 2 人までです (s/e/本戦/2.mp4)',
-            'videos[2].performers の 4 は entries にありません (s/e/本戦/3.mp4)',
+            'videos[2].performers の 4 は登録済みのエントリーにありません (s/e/本戦/3.mp4)',
           ],
         },
       }),
     )
   })
 
-  it('parseVideosBody は、videos がない・ほかのイベントのキーなら 400', () => {
-    expect(() => parseVideosBody({}, scope)).toThrow(
+  it('parseVideosBody は、videos が配列でなければ 400', () => {
+    for (const body of [{}, null, { videos: 'a' }, { videos: {} }]) {
+      expect(() => parseVideosBody(body, scope)).toThrow(
+        expect.objectContaining({
+          statusCode: 400,
+          data: { problems: ['videos は動画の配列で書いてください'] },
+        }),
+      )
+    }
+  })
+
+  it('parseVideosBody は、動画が 0 本なら (登録済みの動画をうっかり全部消さないよう) 400', () => {
+    expect(() => parseVideosBody({ videos: [] }, scope)).toThrow(
       expect.objectContaining({
-        data: { problems: ['videos がありません'] },
+        statusCode: 400,
+        data: { problems: ['動画を 1 本以上書いてください'] },
       }),
     )
+  })
+
+  it('parseVideosBody は、ほかのイベントのキーなら 400', () => {
     expect(() =>
       parseVideosBody({ videos: [{ ...video([1]), key: 's/x/1.mp4' }] }, scope),
     ).toThrow(

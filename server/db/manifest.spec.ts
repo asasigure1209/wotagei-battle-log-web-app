@@ -121,6 +121,21 @@ describe('parseVideoList', () => {
     expect(() => parseVideoList(null, scope)).toThrow(ManifestError)
   })
 
+  it('entriesName を渡すと、エントリー No. の出どころをその名前で書く', () => {
+    expect(() =>
+      parseVideoList([{ ...qualifier(), performers: [9] }], {
+        ...scope,
+        entriesName: '登録済みのエントリー',
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        problems: [
+          'videos[0].performers の 9 は登録済みのエントリーにありません (s/e/予選/M1.mp4)',
+        ],
+      }),
+    )
+  })
+
   it('maxPerformers を渡すと、出演者の人数も確かめる', () => {
     const trio = { ...battle(), performers: [1, 2, 3] }
     expect(() =>
