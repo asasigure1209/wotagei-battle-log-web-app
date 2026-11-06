@@ -149,7 +149,10 @@ export async function invalidOnDbError<T>(write: () => Promise<T>) {
   try {
     return await write()
   } catch (error) {
-    throw invalidManifest([`DB に登録できませんでした: ${errorMessage(error)}`])
+    throw invalidManifest([
+      `DB に登録できませんでした: ${errorMessage(error)}`,
+      '確かめたあとにイベント・エントリー・動画が変わったかもしれません。画面を開き直してから、もう一度登録してください',
+    ])
   }
 }
 

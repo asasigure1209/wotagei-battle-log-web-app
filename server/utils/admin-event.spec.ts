@@ -221,6 +221,9 @@ describe('動画と出演者だけの登録のリクエスト', () => {
 })
 
 describe('DB の失敗', () => {
+  const RETRY_HINT =
+    '確かめたあとにイベント・エントリー・動画が変わったかもしれません。画面を開き直してから、もう一度登録してください'
+
   it('invalidOnDbError は、書き込みの結果をそのまま返す', async () => {
     expect(await invalidOnDbError(async () => 1)).toBe(1)
   })
@@ -235,6 +238,7 @@ describe('DB の失敗', () => {
         data: {
           problems: [
             'DB に登録できませんでした: FOREIGN KEY constraint failed',
+            RETRY_HINT,
           ],
         },
       }),
@@ -243,7 +247,7 @@ describe('DB の失敗', () => {
       invalidOnDbError(() => Promise.reject(new Error('失敗'))),
     ).rejects.toEqual(
       expect.objectContaining({
-        data: { problems: ['DB に登録できませんでした: 失敗'] },
+        data: { problems: ['DB に登録できませんでした: 失敗', RETRY_HINT] },
       }),
     )
   })
