@@ -11,8 +11,8 @@ const { canRegister, currentKey, register } = useAdminVideoEditor()
     <h2 class="admin-heading">3. DB に登録</h2>
     <p class="admin-hint">
       すべての動画が「R2
-      にあり」になったら登録できます。登録すると、選んだイベントのエントリー・動画・出演者を入れ直します
-      (ほかのイベントには触れません)。
+      にあり」になったら登録できます。登録すると、選んだイベントの動画と出演者を入れ直します
+      (エントリーと、ほかのイベントには触れません)。
     </p>
     <div class="admin-actions">
       <button

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminApi } from '~/utils/adminApi'
 import { loadSelectedEvent, unselect } from '~/utils/adminCommon/eventSelection'
+import { DRY_RUN_OK, REGISTERED } from '~/utils/adminCommon/operation'
 import {
-  buildManifest,
+  buildVideos,
   editorLoader,
   fill,
   register,
@@ -35,7 +36,11 @@ const api = fakeAdminApi([
     path: '/api/admin/objects',
     body: [{ key: 's/e/予選/1.mp4', size: 10 }],
   },
-  { method: 'POST', path: '/api/admin/events', body: { ok: true } },
+  {
+    method: 'PUT',
+    path: '/api/admin/events/s/e/videos',
+    body: { ok: true },
+  },
 ])
 
 /** manifest() のイベントを選んで読み込んだところ (loadSelectedEvent と同じく、イベントを入れてから書き写す) */
@@ -49,7 +54,7 @@ function filledState(onUnauthorized = () => {}) {
 beforeEach(() => api.reset())
 afterEach(() => vi.restoreAllMocks())
 
-describe('manifest の組み立て', () => {
+describe('送る動画の組み立て', () => {
   it('editorLoader.toEvent は、読み込んだ manifest のシリーズ・イベントの情報を取り出す', () => {
     expect(editorLoader.toEvent([manifest(), new Map()])).toEqual({
       series: manifest().series,
@@ -82,11 +87,30 @@ describe('manifest の組み立て', () => {
     })
   })
 
-  it('fill で書き写した内容から、取り込みと同じ形の manifest を作る (イベントの情報とエントリーは読み込んだもの)', () => {
+  it('fill で書き写した内容から、選んだイベントの ID と、manifest の videos と同じ形の動画を作る (エントリーは送らない)', () => {
     const state = filledState()
-    const { manifest: built, problems } = buildManifest(state)
-    expect(problems).toEqual([])
-    expect(built).toEqual({ ...manifest(), entries: { '1': 'A', '2': 'B' } })
+    expect(buildVideos(state)).toEqual({
+      ids: { seriesId: 's', eventId: 'e' },
+      videos: manifest().videos,
+      problems: [],
+    })
+  })
+
+  it('出演者 1 を選んでいない動画は、誤りにする (出演者 2 だけは送らない)', () => {
+    const state = filledState()
+    const [first] = state.rows
+    if (first) first.performers = [null, 2]
+    expect(buildVideos(state).problems).toEqual([
+      '出演者 1 を選んでください: 予選/1.mp4',
+    ])
+  })
+
+  it('エントリーが 1 人もいなければ、エントリーの登録へ案内する誤りにする', () => {
+    const state = filledState()
+    state.entries = []
+    expect(buildVideos(state).problems).toEqual([
+      'このイベントにはまだエントリーがありません。先にエントリーの登録の画面で登録してください',
+    ])
   })
 
   it('出演者・長さの誤りを集める', () => {
@@ -97,17 +121,18 @@ describe('manifest の組み立て', () => {
       second.performers = [9, null]
       second.durationSec = null
     }
-    expect(buildManifest(state).problems).toEqual([
+    expect(buildVideos(state).problems).toEqual([
       '出演者 1 と出演者 2 に同じ人を選んでいます: 予選/1.mp4',
       '出演者の No. 9 は登録されていません: 本戦/2.mp4',
       '長さ (秒) を書いてください: 本戦/2.mp4',
     ])
   })
 
-  it('イベントを選んでいなければ、manifest を作らない', () => {
+  it('イベントを選んでいなければ、送るものを作らない', () => {
     const state = createVideoEditorState(() => {})
-    expect(buildManifest(state)).toEqual({
-      manifest: null,
+    expect(buildVideos(state)).toEqual({
+      ids: null,
+      videos: [],
       problems: ['イベントを選んでください'],
     })
   })
@@ -144,14 +169,46 @@ describe('登録・読み込み・削除', () => {
     expect(state.messages).toEqual({ kind: 'error', lines: ['読めません'] })
   })
 
-  it('register は、確かめるだけなら dryRun を付けて送る', async () => {
+  it('register は、選んだイベントの動画だけを送り、確かめるだけなら dryRun を付ける', async () => {
     const state = filledState()
+    const save = vi.spyOn(adminApi, 'saveVideos')
     expect(await register(state, true)).toBe(true)
+    expect(state.messages?.lines).toEqual([DRY_RUN_OK])
     expect(await register(state, false)).toBe(true)
+    expect(state.messages?.lines).toEqual([REGISTERED])
     expect(api.calls).toEqual([
-      'POST /api/admin/events?dryRun=1',
-      'POST /api/admin/events',
+      'PUT /api/admin/events/s/e/videos?dryRun=1',
+      'PUT /api/admin/events/s/e/videos',
     ])
+    expect(save).toHaveBeenLastCalledWith(
+      { seriesId: 's', eventId: 'e' },
+      manifest().videos,
+      false,
+    )
+  })
+
+  it('register は、出演者に誤りがあれば送らずにエラーを出す', async () => {
+    const state = filledState()
+    const [first] = state.rows
+    if (first) first.performers = [1, 1]
+    expect(await register(state, false)).toBe(false)
+    expect(api.calls).toEqual([])
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: ['出演者 1 と出演者 2 に同じ人を選んでいます: 予選/1.mp4'],
+    })
+  })
+
+  it('register は、サーバーに弾かれたら、その誤りを画面に出す', async () => {
+    const state = filledState()
+    vi.spyOn(adminApi, 'saveVideos').mockRejectedValueOnce({
+      data: { data: { problems: ['s/e/予選/1.mp4 が R2 にありません'] } },
+    })
+    expect(await register(state, false)).toBe(false)
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: ['s/e/予選/1.mp4 が R2 にありません'],
+    })
   })
 
   it('register は、イベントを選んでいなければ送らずにエラーを出す', async () => {

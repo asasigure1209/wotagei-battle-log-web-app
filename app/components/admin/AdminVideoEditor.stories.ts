@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
 import {
   adminParameters,
+  fetchError,
   registeredEntries,
   registeredEvent,
   selectedEvent,
@@ -101,6 +102,25 @@ export const SelectPerformersAndRegister: Story = {
     await userEvent.click(register)
     await expect(await canvas.findByRole('status')).toHaveTextContent(
       '登録しました',
+    )
+  },
+}
+
+/** 登録をサーバーが弾いたら (R2 の動画のサイズが違うなど)、その誤りをそのまま出す。 */
+export const Rejected: Story = {
+  args: { initialEvent: 'elnino/elnino_vol_5' },
+  parameters: {
+    fetch: api(
+      registered,
+      fetchError(400, 'elnino/elnino_vol_5/予選/M1256.mp4 のサイズが違います'),
+    ),
+  },
+  play: async ({ canvas, userEvent }) => {
+    const register = canvas.getByRole('button', { name: '登録する' })
+    await waitFor(() => expect(register).toBeEnabled())
+    await userEvent.click(register)
+    await expect(await canvas.findByRole('status')).toHaveTextContent(
+      'elnino/elnino_vol_5/予選/M1256.mp4 のサイズが違います',
     )
   },
 }

@@ -1,8 +1,12 @@
-// 選んだイベントの読み込み方と、動画と選んだ出演者を manifest の形にして DB に登録する処理
+// 選んだイベントの読み込み方と、動画と選んだ出演者を (エントリーは送らずに) DB に登録する処理
 
 import { adminApi } from '~/utils/adminApi'
 import { eventPrefix } from '~/utils/adminCommon/eventKey'
-import { type EventLoader, eventIds } from '~/utils/adminCommon/eventSelection'
+import {
+  type EventLoader,
+  eventIds,
+  selectedIds,
+} from '~/utils/adminCommon/eventSelection'
 import {
   DRY_RUN_OK,
   info,
@@ -20,8 +24,12 @@ import {
 import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
-/** 動画の 1 行を manifest の形にする。出演者・長さの誤りは problems に足す */
-function manifestVideo(
+const NOT_SELECTED = 'イベントを選んでください'
+const NO_ENTRIES =
+  'このイベントにはまだエントリーがありません。先にエントリーの登録の画面で登録してください'
+
+/** 動画の 1 行を、manifest の videos の 1 本と同じ形にする。出演者・長さの誤りは problems に足す */
+function videoOf(
   row: VideoRow,
   { prefix, entryNos }: { prefix: string; entryNos: number[] },
   problems: string[],
@@ -40,33 +48,32 @@ function manifestVideo(
   }
 }
 
-/** 送る内容 (manifest の YAML を読んだ値と同じ形) と、送る前に見つかった誤り */
-export function buildManifest(state: VideoEditorState) {
-  const { event } = state
-  if (!event) return { manifest: null, problems: ['イベントを選んでください'] }
+/**
+ * 送る内容 (選んだイベントの ID と、manifest の videos と同じ形の動画。エントリーは送らない) と、
+ * 送る前に見つかった誤り
+ */
+export function buildVideos(state: VideoEditorState) {
+  const ids = selectedIds(state)
+  if (!ids) return { ids: null, videos: [], problems: [NOT_SELECTED] }
+  if (!state.entries.length) return { ids, videos: [], problems: [NO_ENTRIES] }
   const problems: string[] = []
   const scope = {
-    prefix: eventPrefix(eventIds(event)),
+    prefix: eventPrefix(ids),
     entryNos: state.entries.map((e) => e.entryNo),
   }
-  const videos = state.rows.map((row) => manifestVideo(row, scope, problems))
-  // エントリーは書き換えないので、読み込んだものをそのまま送る
-  const entries = Object.fromEntries(
-    state.entries.map((e) => [String(e.entryNo), e.name]),
-  )
-  const manifest = { ...event, entries, videos }
-  return { manifest, problems }
+  const videos = state.rows.map((row) => videoOf(row, scope, problems))
+  return { ids, videos, problems }
 }
 
-/** DB に登録する (dryRun なら確かめるだけ) */
+/** 選んだイベントの動画と出演者を入れ直す (dryRun なら確かめるだけ)。エントリーには触れない */
 export async function register(state: VideoEditorState, dryRun: boolean) {
-  const { manifest, problems } = buildManifest(state)
-  if (!manifest || problems.length) {
+  const { ids, videos, problems } = buildVideos(state)
+  if (!ids || problems.length) {
     showErrors(state, problems)
     return false
   }
   const ok = await run(state, async () => {
-    await adminApi.saveEvent(manifest, dryRun)
+    await adminApi.saveVideos(ids, videos, dryRun)
   })
   if (ok) info(state, dryRun ? DRY_RUN_OK : REGISTERED)
   return ok
