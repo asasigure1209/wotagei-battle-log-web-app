@@ -16,7 +16,7 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
   const state: EntriesFormState = reactive(
     createEntriesFormState(onUnauthorized),
   )
-  const { reload, open } = eventSelection(state, entriesLoader)
+  const { reload, open, start } = eventSelection(state, entriesLoader)
 
   /** 書いた名前。エントリー No. はこの順に 1 から付く */
   const names = computed(() => parseEntryNames(state.namesText))
@@ -35,6 +35,8 @@ export function createAdminEntriesForm(onUnauthorized: () => void) {
     canSave,
     /** 登録済みのイベントの一覧を読み直す (一覧そのものは state.registeredEvents) */
     reload,
+    /** 画面を開いたときに呼ぶ。一覧を読み、initialEvent があれば開く (一覧を読めなければ開かない) */
+    start,
     /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
     open,
     /** 登録する (dryRun なら確かめるだけ) */

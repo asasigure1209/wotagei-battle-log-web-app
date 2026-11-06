@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EventIds } from '~/utils/adminApi'
+import { adminApi, type EventIds } from '~/utils/adminApi'
 import {
   createEventSelectionState,
   type EventLoader,
@@ -193,6 +193,39 @@ describe('eventSelection', () => {
     expect(state.messages).toEqual({
       kind: 'error',
       lines: ['登録済みのイベントに見つかりません: s/x'],
+    })
+  })
+})
+
+describe('eventSelection の start', () => {
+  it('一覧を読んでから、initialEvent を開く', async () => {
+    const state = createState()
+    await eventSelection(state, testLoader()).start('s/e')
+    expect(api.calls).toEqual(['GET /api/admin/events'])
+    expect(state.event).toEqual(eventInfo())
+    expect(state.text).toBe('e')
+  })
+
+  it('initialEvent が空なら、一覧を読むだけにする', async () => {
+    const state = createState()
+    const fetch = vi.fn(async () => 'x')
+    await eventSelection(state, testLoader(fetch)).start('')
+    expect(state.registeredEvents).toEqual([registeredEvent])
+    expect(fetch).not.toHaveBeenCalled()
+    expect(state.messages).toBeNull()
+  })
+
+  it('一覧を読めなければ initialEvent を開かず、読めなかった誤りを残す', async () => {
+    vi.spyOn(adminApi, 'listEvents').mockRejectedValueOnce(
+      new Error('一覧を読めませんでした'),
+    )
+    const state = createState()
+    const fetch = vi.fn(async () => 'e')
+    await eventSelection(state, testLoader(fetch)).start('s/e')
+    expect(fetch).not.toHaveBeenCalled()
+    expect(state.messages).toEqual({
+      kind: 'error',
+      lines: ['一覧を読めませんでした'],
     })
   })
 })

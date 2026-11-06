@@ -8,7 +8,7 @@ import {
 
 /**
  * 作って子のコンポーネントに渡す。onUnauthorized はログインが切れたときに呼ぶ。
- * initialEvent (`シリーズID/イベントID`) があれば、一覧を読んだあとに選ぶ
+ * initialEvent (`シリーズID/イベントID`) があれば、一覧を読んだあとに選ぶ (一覧を読めなければ選ばない)
  */
 export function provideAdminEntriesForm(
   onUnauthorized: () => void,
@@ -16,11 +16,7 @@ export function provideAdminEntriesForm(
 ) {
   const form = createAdminEntriesForm(onUnauthorized)
   provide(adminEntriesFormKey, form)
-  onMounted(async () => {
-    await form.reload()
-    // 一覧を読む間は選べない (選択肢がなく、読み終わるまで busy) ので、自分で選んだものを上書きすることはない
-    if (initialEvent) await form.open(initialEvent)
-  })
+  onMounted(() => form.start(initialEvent))
   return form
 }
 

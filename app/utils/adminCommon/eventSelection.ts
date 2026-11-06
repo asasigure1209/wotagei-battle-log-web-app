@@ -63,9 +63,9 @@ export function selectedKey(state: EventSelectionState) {
   return ids ? eventKey(ids) : ''
 }
 
-/** 登録済みのイベントの一覧を読み直す。失敗したときは、ほかの操作と同じく画面にエラーを出す */
-export async function reloadEvents(state: EventSelectionState) {
-  await run(state, async () => {
+/** 登録済みのイベントの一覧を読み直す。失敗したときは、ほかの操作と同じく画面にエラーを出して false */
+export function reloadEvents(state: EventSelectionState) {
+  return run(state, async () => {
     state.registeredEvents = await adminApi.listEvents()
   })
 }
@@ -111,15 +111,24 @@ export function eventSelection<S extends EventSelectionState, T>(
   state: S,
   loader: EventLoader<S, T>,
 ) {
+  /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
+  const open = async (key: string) => {
+    if (!key) return unselect(state, loader)
+    if (!hasEvent(state, key)) {
+      return showErrors(state, [`登録済みのイベントに見つかりません: ${key}`])
+    }
+    await loadSelectedEvent(state, parseEventKey(key), loader)
+  }
   return {
     reload: () => reloadEvents(state),
-    /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
-    open: async (key: string) => {
-      if (!key) return unselect(state, loader)
-      if (!hasEvent(state, key)) {
-        return showErrors(state, [`登録済みのイベントに見つかりません: ${key}`])
-      }
-      await loadSelectedEvent(state, parseEventKey(key), loader)
+    open,
+    /**
+     * 画面を開いたときに呼ぶ。一覧を読み、initialEvent (`シリーズID/イベントID`) があれば開く。
+     * 一覧を読めなければ開かない (開くと「見つかりません」で、読めなかった本当の誤りを上書きしてしまう)。
+     * 一覧を読む間は選べない (選択肢がなく、読み終わるまで busy) ので、自分で選んだものを上書きすることはない
+     */
+    start: async (initialEvent = '') => {
+      if ((await reloadEvents(state)) && initialEvent) await open(initialEvent)
     },
   }
 }

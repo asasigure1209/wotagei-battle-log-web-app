@@ -27,7 +27,7 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
   const state: VideoEditorState = reactive(
     createVideoEditorState(onUnauthorized),
   )
-  const { reload, open } = eventSelection(state, editorLoader)
+  const { reload, open, start } = eventSelection(state, editorLoader)
 
   const entries = computed(() => parseEntriesText(state.entriesText))
   const targets = computed(() => uploadTargets(state))
@@ -66,6 +66,8 @@ export function createAdminVideoEditor(onUnauthorized: () => void) {
     canRegister,
     /** 登録済みのイベントを開く。key が空なら選んだイベントを外し、一覧になければそのことを知らせる */
     open,
+    /** 画面を開いたときに呼ぶ。一覧を読み、initialEvent があれば開く (一覧を読めなければ開かない) */
+    start,
     /** ファイルを足し、R2 をまだ調べていなければ調べる */
     addFiles: async (files: File[], category: string) => {
       await addFiles(state, files, category)
