@@ -66,3 +66,9 @@ export function performerProblems(
   }
   return problems
 }
+
+/** 登録すると外れる出演者 (読み込んだときに MAX_PERFORMERS 人目より後ろにいた No.) の警告。いなければ空 */
+export function droppedPerformersWarning(dropped: readonly number[]) {
+  if (!dropped.length) return ''
+  return `出演者は ${MAX_PERFORMERS} 人までなので、登録すると No. ${dropped.join(', ')} が外れます`
+}

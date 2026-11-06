@@ -6,6 +6,7 @@ import { computed } from 'vue'
 import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes, formatSeconds } from '~/utils/adminManifest'
 import {
+  droppedPerformersWarning,
   NO_FIRST_PERFORMER,
   type Performers,
   performerProblems,
@@ -39,14 +40,18 @@ function onDuration(e: Event) {
 }
 
 /**
- * 選んだ出演者の誤り。同じ人を 2 回選んだ・登録されていない No. は、送る前にその場で出す
- * (出演者 1 をまだ選んでいないのは、足したばかりの行ではいつもなので、登録のときにだけ出す)
+ * 出演者の警告。同じ人を 2 回選んだ・登録されていない No. は、送る前にその場で出す
+ * (出演者 1 をまだ選んでいないのは、足したばかりの行ではいつもなので、登録のときにだけ出す)。
+ * 読み込んだときに 3 人目からいた出演者は、登録すると外れるので、登録するまで出し続ける
  */
 const performerWarnings = computed(() =>
-  performerProblems(
-    props.row.performers,
-    state.entries.map((e) => e.entryNo),
-  ).filter((p) => p !== NO_FIRST_PERFORMER),
+  [
+    ...performerProblems(
+      props.row.performers,
+      state.entries.map((e) => e.entryNo),
+    ).filter((p) => p !== NO_FIRST_PERFORMER),
+    droppedPerformersWarning(props.row.droppedPerformers),
+  ].filter(Boolean),
 )
 
 function setPerformer(slot: 0 | 1, no: number | null) {

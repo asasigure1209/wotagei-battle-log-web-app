@@ -17,6 +17,11 @@ export type VideoRow = {
   sizeBytes: number
   /** 出演者 1・2 のエントリー No. (選んでいなければ null) */
   performers: Performers
+  /**
+   * 読み込んだときに出演者 1・2 に入りきらなかった (MAX_PERFORMERS 人目より後ろの) No.。
+   * 登録するとこの人たちは外れるので、行に警告を出し続ける。登録できたら空にする
+   */
+  droppedPerformers: number[]
   /** 送れたバイト数 (送っている間だけ) */
   sentBytes: number | null
   error: string
@@ -60,6 +65,7 @@ export function newRow(
     durationSec: null,
     sizeBytes: 0,
     performers: [null, null],
+    droppedPerformers: [],
     sentBytes: null,
     error: '',
     ...init,

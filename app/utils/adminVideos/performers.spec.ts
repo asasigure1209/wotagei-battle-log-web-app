@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  droppedPerformersWarning,
   isRegistered,
   NO_FIRST_PERFORMER,
   performerNos,
@@ -77,5 +78,14 @@ describe('performerProblems', () => {
       '出演者の No. 9 は登録されていません',
       '出演者の No. 8 は登録されていません',
     ])
+  })
+})
+
+describe('droppedPerformersWarning', () => {
+  it('外れる出演者があれば、その No. を挙げた警告にする (なければ空)', () => {
+    expect(droppedPerformersWarning([])).toBe('')
+    expect(droppedPerformersWarning([3, 4])).toBe(
+      '出演者は 2 人までなので、登録すると No. 3, 4 が外れます',
+    )
   })
 })

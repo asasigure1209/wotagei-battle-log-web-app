@@ -159,3 +159,24 @@ export const NoEntries: Story = {
     ).toHaveAttribute('href', '/admin/entries?event=elnino/elnino_vol_5')
   },
 }
+
+/** 読み込んだときに出演者が 3 人以上いた動画 (db:import で作れる) は、登録すると外れる人を行に出し続ける。 */
+export const DroppedPerformers: Story = {
+  decorators: [
+    withAdminVideoEditor((editor) => {
+      fillEvent(editor)
+      editor.state.rows = [
+        videoRow('予選/M1256.mp4', {
+          performers: [1, 2],
+          droppedPerformers: [3],
+        }),
+      ]
+      editor.state.messages = { kind: 'info', lines: ['ほかの操作の知らせ'] }
+    }),
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByText('出演者は 2 人までなので、登録すると No. 3 が外れます'),
+    ).toBeVisible()
+  },
+}

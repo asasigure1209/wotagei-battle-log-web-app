@@ -16,7 +16,12 @@ import {
 } from '~/utils/adminCommon/operation'
 import type { Manifest } from '~~/server/db/manifest'
 import { MAX_PERFORMERS } from '~~/shared/utils/performers'
-import { performerNos, performerProblems, toPerformers } from './performers'
+import {
+  droppedPerformersWarning,
+  performerNos,
+  performerProblems,
+  toPerformers,
+} from './performers'
 import { newRow, type VideoEditorState, type VideoRow } from './state'
 import { fetchRemote } from './upload'
 
@@ -71,8 +76,25 @@ export async function register(state: VideoEditorState, dryRun: boolean) {
   const ok = await run(state, async () => {
     await adminApi.saveVideos(ids, videos, dryRun)
   })
-  if (ok) info(state, dryRun ? DRY_RUN_OK : REGISTERED)
-  return ok
+  if (!ok) return false
+  if (dryRun) {
+    info(state, DRY_RUN_OK, ...droppedWarnings(state))
+    return true
+  }
+  // 登録したので、外れた出演者はもう DB にもない
+  for (const row of state.rows) row.droppedPerformers = []
+  info(state, REGISTERED)
+  return true
+}
+
+/** 登録すると外れる出演者 (3 人目から) がいる動画の警告 */
+function droppedWarnings(state: VideoEditorState) {
+  return state.rows
+    .filter((row) => row.droppedPerformers.length)
+    .map(
+      (row) =>
+        `${droppedPerformersWarning(row.droppedPerformers)}: ${row.relPath}`,
+    )
 }
 
 /**
@@ -99,7 +121,8 @@ export const editorLoader: EventLoader<
 
 /**
  * 登録済みのイベントのエントリーと動画を、画面に書き写す (選んだイベントの情報は state.event に入れておく)。
- * 動画は、登録済みの出演者を選んだ状態にする
+ * 動画は、登録済みの出演者を選んだ状態にする。db:import では 3 人以上も登録できるが、この画面では
+ * MAX_PERFORMERS 人までしか選べないので、選べない出演者は行の印 (droppedPerformers) に残し、警告を出し続ける
  */
 export function fill(state: VideoEditorState, data: Manifest) {
   state.entries = data.entries
@@ -109,13 +132,7 @@ export function fill(state: VideoEditorState, data: Manifest) {
       durationSec: v.durationSec,
       sizeBytes: v.sizeBytes,
       performers: toPerformers(v.performers),
+      droppedPerformers: v.performers.slice(MAX_PERFORMERS),
     }),
   )
-  // db:import では 3 人以上も登録できるが、この画面では 2 人までしか選べないので、外れることを知らせる
-  const over = data.videos.filter((v) => v.performers.length > MAX_PERFORMERS)
-  if (over.length) {
-    showErrors(state, [
-      `出演者が ${MAX_PERFORMERS + 1} 人以上の動画があります。この画面では ${MAX_PERFORMERS} 人までしか選べないので、登録すると ${MAX_PERFORMERS + 1} 人目からは外れます: ${over.map((v) => v.key).join(', ')}`,
-    ])
-  }
 }

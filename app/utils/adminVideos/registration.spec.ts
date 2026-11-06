@@ -43,6 +43,15 @@ const api = fakeAdminApi([
   },
 ])
 
+/** manifest() の 1 本目の動画に、3 人目の出演者 (No. 3) がいるもの (db:import で作れる) */
+function withThreePerformers() {
+  const data = manifest()
+  data.entries.push({ entryNo: 3, name: 'C' })
+  const [first] = data.videos
+  if (first) first.performers = [1, 2, 3]
+  return data
+}
+
 /** manifest() のイベントを選んで読み込んだところ (loadSelectedEvent と同じく、イベントを入れてから書き写す) */
 function filledState(onUnauthorized = () => {}) {
   const state = createVideoEditorState(onUnauthorized)
@@ -71,20 +80,12 @@ describe('送る動画の組み立て', () => {
     ])
   })
 
-  it('fill は、出演者が 3 人以上の動画があれば、3 人目から外れることを知らせる', () => {
+  it('fill は、出演者が 3 人以上の動画は、選べない 3 人目からを行の印 (droppedPerformers) に残す', () => {
     const state = createVideoEditorState(() => {})
-    const data = manifest()
-    data.entries.push({ entryNo: 3, name: 'C' })
-    const [first] = data.videos
-    if (first) first.performers = [1, 2, 3]
-    fill(state, data)
+    fill(state, withThreePerformers())
     expect(state.rows[0]?.performers).toEqual([1, 2])
-    expect(state.messages).toEqual({
-      kind: 'error',
-      lines: [
-        '出演者が 3 人以上の動画があります。この画面では 2 人までしか選べないので、登録すると 3 人目からは外れます: s/e/予選/1.mp4',
-      ],
-    })
+    expect(state.rows[0]?.droppedPerformers).toEqual([3])
+    expect(state.rows[1]?.droppedPerformers).toEqual([])
   })
 
   it('fill で書き写した内容から、選んだイベントの ID と、manifest の videos と同じ形の動画を作る (エントリーは送らない)', () => {
@@ -185,6 +186,23 @@ describe('登録・読み込み・削除', () => {
       manifest().videos,
       false,
     )
+  })
+
+  it('register は、3 人目から外れる動画があれば「確認だけ」の結果に添え、登録できたら行の印を消す', async () => {
+    const state = createVideoEditorState(() => {})
+    state.event = editorLoader.toEvent([manifest(), new Map()])
+    fill(state, withThreePerformers())
+    expect(await register(state, true)).toBe(true)
+    expect(state.messages).toEqual({
+      kind: 'info',
+      lines: [
+        DRY_RUN_OK,
+        '出演者は 2 人までなので、登録すると No. 3 が外れます: 予選/1.mp4',
+      ],
+    })
+    expect(state.rows[0]?.droppedPerformers).toEqual([3])
+    expect(await register(state, false)).toBe(true)
+    expect(state.rows[0]?.droppedPerformers).toEqual([])
   })
 
   it('register は、出演者に誤りがあれば送らずにエラーを出す', async () => {
