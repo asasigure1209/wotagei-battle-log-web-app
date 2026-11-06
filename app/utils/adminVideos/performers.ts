@@ -18,6 +18,11 @@ export function toPerformers(nos: number[]): Performers {
   return [first, second]
 }
 
+/** 出演者 1 と出演者 2 に同じ人を選んでいるか */
+export function isSamePerformerTwice([first, second]: Performers) {
+  return first !== null && first === second
+}
+
 /** No. が登録済みのエントリーにあるか (選んでいない null は false) */
 export function isRegistered(entries: Manifest['entries'], no: number | null) {
   return entries.some((e) => e.entryNo === no)
@@ -55,7 +60,7 @@ export function performerProblems(
 ): string[] {
   const problems: string[] = []
   if (first === null) problems.push(NO_FIRST_PERFORMER)
-  if (first !== null && first === second) {
+  if (isSamePerformerTwice([first, second])) {
     problems.push('出演者 1 と出演者 2 に同じ人を選んでいます')
   }
   const unregistered = performerNos([first, second]).filter(

@@ -14,6 +14,10 @@ const props = defineProps<{
   /** 登録済みのエントリー */
   entries: Manifest['entries']
   disabled?: boolean
+  /** この欄の誤りを説明する要素の id (aria-describedby) */
+  describedby?: string
+  /** 登録済みでない No. のほかに、この欄を誤りとして伝えるか (同じ人を 2 回選んだときの出演者 2 など) */
+  invalid?: boolean
 }>()
 
 /** 選んだエントリー No.。選んでいなければ null */
@@ -31,7 +35,8 @@ const unregistered = computed(
     :class="['admin-input', 'performer', { unregistered }]"
     :aria-label="label"
     :disabled="disabled"
-    :aria-invalid="unregistered || undefined"
+    :aria-invalid="unregistered || invalid || undefined"
+    :aria-describedby="describedby"
   >
     <option :value="null">{{ emptyLabel }}</option>
     <option v-for="o in options" :key="o.value" :value="o.value">

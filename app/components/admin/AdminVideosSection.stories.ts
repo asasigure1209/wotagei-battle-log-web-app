@@ -138,10 +138,20 @@ export const SelectPerformers: Story = {
     await expect(
       canvas.getByText('出演者 1 と出演者 2 に同じ人を選んでいます'),
     ).toBeVisible()
+    // 支援技術にも、どちらの欄の誤りかと、その文が伝わる
+    await expect(second).toHaveAttribute('aria-invalid', 'true')
+    await expect(second).toHaveAccessibleDescription(
+      '出演者 1 と出演者 2 に同じ人を選んでいます',
+    )
+    await expect(first).toHaveAccessibleDescription(
+      '出演者 1 と出演者 2 に同じ人を選んでいます',
+    )
     await userEvent.selectOptions(second, 'なし')
     await expect(
       canvas.queryByText('出演者 1 と出演者 2 に同じ人を選んでいます'),
     ).toBeNull()
+    await expect(second).not.toHaveAttribute('aria-invalid')
+    await expect(second).not.toHaveAttribute('aria-describedby')
   },
 }
 
@@ -209,5 +219,10 @@ export const DroppedPerformers: Story = {
     await expect(
       canvas.getByText('出演者は 2 人までなので、登録すると No. 3 が外れます'),
     ).toBeVisible()
+    await expect(
+      canvas.getByRole('combobox', { name: '予選/M1256.mp4 の出演者 2' }),
+    ).toHaveAccessibleDescription(
+      '出演者は 2 人までなので、登録すると No. 3 が外れます',
+    )
   },
 }

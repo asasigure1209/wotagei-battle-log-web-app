@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   droppedPerformersWarning,
   isRegistered,
+  isSamePerformerTwice,
   NO_FIRST_PERFORMER,
   performerNos,
   performerOptions,
@@ -51,6 +52,14 @@ describe('isRegistered', () => {
     expect(isRegistered(entries, 1)).toBe(true)
     expect(isRegistered(entries, 9)).toBe(false)
     expect(isRegistered(entries, null)).toBe(false)
+  })
+})
+
+describe('isSamePerformerTwice', () => {
+  it('出演者 1 と出演者 2 に同じ人を選んでいるときだけ true', () => {
+    expect(isSamePerformerTwice([1, 1])).toBe(true)
+    expect(isSamePerformerTwice([1, 2])).toBe(false)
+    expect(isSamePerformerTwice([null, null])).toBe(false)
   })
 })
 

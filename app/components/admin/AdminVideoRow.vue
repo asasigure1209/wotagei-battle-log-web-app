@@ -7,6 +7,7 @@ import { useAdminVideoEditor } from '~/composables/useAdminVideoEditor'
 import { formatBytes, formatSeconds } from '~/utils/adminManifest'
 import {
   droppedPerformersWarning,
+  isSamePerformerTwice,
   NO_FIRST_PERFORMER,
   type Performers,
   performerProblems,
@@ -54,6 +55,13 @@ const performerWarnings = computed(() =>
   ].filter(Boolean),
 )
 
+/** 出演者の警告を出している要素の id。警告がなければ undefined (select の aria-describedby を付けない) */
+const warningsId = computed(() =>
+  performerWarnings.value.length
+    ? `performer-warnings-${props.row.id}`
+    : undefined,
+)
+
 /** 出演者を選べるか (待っているあいだと、エントリーがないあいだは選べない) */
 const selectable = computed(() => !state.busy && state.entries.length > 0)
 
@@ -86,6 +94,7 @@ function setPerformer(slot: 0 | 1, no: number | null) {
         empty-label="選んでください"
         :entries="state.entries"
         :disabled="!selectable"
+        :describedby="warningsId"
         @update:model-value="setPerformer(0, $event)"
       />
     </td>
@@ -96,11 +105,15 @@ function setPerformer(slot: 0 | 1, no: number | null) {
         empty-label="なし"
         :entries="state.entries"
         :disabled="!selectable"
+        :describedby="warningsId"
+        :invalid="isSamePerformerTwice(row.performers)"
         @update:model-value="setPerformer(1, $event)"
       />
-      <p v-for="w in performerWarnings" :key="w" class="admin-warn warning">
-        {{ w }}
-      </p>
+      <div v-if="warningsId" :id="warningsId">
+        <p v-for="w in performerWarnings" :key="w" class="admin-warn warning">
+          {{ w }}
+        </p>
+      </div>
     </td>
     <td>
       <span :class="['state', status?.kind]">{{ status?.label }}</span>
