@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>wotagei battle log</title>
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="16" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0a0a0d" />
+
+  <g transform="translate(0 10) rotate(-32 256 196)">
+    <rect
+      x="226"
+      y="58"
+      width="60"
+      height="276"
+      rx="30"
+      fill="#d9ff3b"
+      filter="url(#glow)"
+      opacity="0.75"
+    />
+    <rect x="226" y="58" width="60" height="276" rx="30" fill="#d9ff3b" />
+    <rect x="244" y="80" width="16" height="232" rx="8" fill="#f6ffd0" />
+    <rect x="222" y="334" width="68" height="120" rx="16" fill="#4a4a57" />
+    <rect x="222" y="334" width="68" height="18" fill="#2a2a33" />
+  </g>
+
+  <g transform="translate(0 10) rotate(32 256 196)">
+    <rect
+      x="226"
+      y="58"
+      width="60"
+      height="276"
+      rx="30"
+      fill="#d9ff3b"
+      filter="url(#glow)"
+      opacity="0.75"
+    />
+    <rect x="226" y="58" width="60" height="276" rx="30" fill="#d9ff3b" />
+    <rect x="244" y="80" width="16" height="232" rx="8" fill="#f6ffd0" />
+    <rect x="222" y="334" width="68" height="120" rx="16" fill="#4a4a57" />
+    <rect x="222" y="334" width="68" height="18" fill="#2a2a33" />
+  </g>
+</svg>

@@ -64,6 +64,10 @@ export default defineNuxtConfig({
       // モック (mock-ui-html) で使っているフォント。CSS の @import より先に読み始められるよう head に置く。
       // 同じものを .storybook/preview-head.html にも書いている
       link: [
+        // アプリのアイコン (public/)。SVG を読めないブラウザは favicon.ico を使う
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         {
           rel: 'preconnect',
