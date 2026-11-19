@@ -1,6 +1,12 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '~/app.vue'
+
+// どのテストも同じルーターを使うので、前のテストの画面が残っていると次のテストの遷移に反応してしまう。
+// ないイベントへ遷移すると残った画面も 404 を投げ、その画面のエラー境界はもう止まっているので、
+// 捕まらないエラーになる (vue 3.5.45 から)。テストごとに外しておく
+enableAutoUnmount(afterEach)
 
 // nuxt 環境のテストではサーバー (Nitro) も DB も動かないので、API の応答を差し替える
 registerEndpoint('/api/elnino/elnino_vol_5', () => ({
