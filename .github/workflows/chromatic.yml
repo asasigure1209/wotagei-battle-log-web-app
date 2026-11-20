@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # ベースラインの探索と TurboSnap (onlyChanged) に git 履歴全体が必要
-      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       - run: bun install --frozen-lockfile
       - uses: chromaui/action@6ac4c49524e1b1358b8c593c5eea877604228268 # v18.14.2
         with:
